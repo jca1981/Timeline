@@ -49,6 +49,7 @@ interface AppState {
   removeItem(id: string): void;
   duplicateItem(id: string): void;
   clearAll(): void;
+  importDoc(doc: TimelineDoc): void;
   addRelation(fromId: string, toId: string, typeId: string, note?: string): void;
   removeRelation(id: string): void;
   toggleRelation(fromId: string, toId: string, typeId: string): void;
@@ -123,6 +124,11 @@ export const useApp = create<AppState>((set, get) => ({
       persist(doc);
       return { doc, errors: {}, selectedId: null };
     });
+  },
+
+  importDoc: (doc) => {
+    persist(doc);
+    set({ doc, errors: {}, selectedId: null });
   },
 
   addRelation: (fromId, toId, typeId, note) => {

@@ -1,6 +1,6 @@
 # Aeon Clone
 
-**Status:** Planlagt | **Startet:** 2026-10-23 | **Sidst rørt:** 2026-10-23
+**Status:** I gang | **Startet:** 2026-10-23 | **Sidst rørt:** 2026-10-23
 
 ## Hvorfor
 Aeon Timeline (https://www.aeontimeline.com/) er en flot, men dyr/lukket desktop-app til visuelle tidslinjer — forfattere, jurister, projektledere. Jeg vil eje min egen version: web-baseret, local-first, uden licens.projekt. Kan potentielt fuse med life-org (min personlige livs-tidslinje).
@@ -35,11 +35,14 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [x] Milestone 0: dato-motor inkl. f.Kr. + tests — 27/27 grønne (JDN, præcision, usikre, f.Kr., sync, relativ-stilarter)
 - [x] Milestone 1: spreadsheet-view CRUD (CRUD + dato-editorer m. f.Kr.-knap, demo-indhold, localStorage)
 - [x] Milestone 2: timeline-view med zoom (årtusinder ↔ tid; trin-stige-ticks, gradient-usrikkerhed, fortsat-pil, culling — 40/40 tests grønne)
-- [ ] Milestone 3: entiteter/relationer (parentOf, vers-ref) + matrix
+- [x] Milestone 3: entiteter/relationer (parentOf, vers-ref) + matrix — 52/52 tests grønne (relationer, slægtskæder, jw.org-links, inspektør, matrix)
+- [x] Import af .aeon-filer (Aeon Timeline 3): format reverse-engineeret (se `research/AEON-FORMAT.md`), "Importer .aeon"-knap — 59/59 tests grønne inkl. den virkelige fil (361 poster, 77 forælder-relationer)
 - [ ] Milestone 4: dependencies + filtre + bibel-skabeloner
 - [ ] Milestone 5 (v2): slægtstræ-view, subway-spor, profeti→opfyldelse-buer
 
 ## Noter & beslutninger
+- 2026-10-23: **.aeon-format (filVersion 7)** = billeder + rå JSON (`{"definitions":...}`) + binær footer-index. era: 0=f.Kr., 1=e.Kr.; precision: -1=ingen, 2=dag. Relationer: `{subject, reference, object}` = "subjects X er object" (parentRef vendes om i import). Import: `src/core/aeonImport.ts`. Store filer holdes ude af git (`Import/*.aeon`).
+- 2026-10-23: **GitHub: https://github.com/jca1981/Timeline** (deploy key `~/.ssh/github_timeline_deploy`).
 - 2026-10-23: **Bibelkilde = jw.org dansk Studiebibel (NYE VERDEN)** i stedet for bible-api.com (jensa's valg). Tekst kan ikke hentes automatisk (SPA + AWS WAF) → deep links pr. kapitel + manuelt citat-felt. Slug-mapping: `research/jw-books.json`.
 - 2026-10-23: **Web-app i stedet for desktop** (jensa's valg). Primært use-case = **bibel-research** + **slægtstræ** (Jesus' slægtslinje) → featurekatalog i `research/BIBEL-FEATURES.md`.
 - 2026-10-23: REA-metoden (eigent.ai blog) = decompose→understand→recreate med bevis for hver konklusion. Aeon er native app; vi reverse-engineerer via deres egen veldokumenterede datamodel (help.timeline.app) — lovligt og mere præcist end binær-analysis her.

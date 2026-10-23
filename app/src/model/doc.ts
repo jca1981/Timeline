@@ -75,14 +75,14 @@ export function emptyDoc(name = 'Min tidslinje'): TimelineDoc {
 /** Eksempel-indhold der demonstrerer alt motoren kan (bruges til demo + manuel røgtest). */
 export function demoDoc(): TimelineDoc {
   const doc = emptyDoc('Bibel-kronologi (demo)');
-  const mk = (id: string, typeId: string, label: string, span: Span): Item => ({ id, typeId, label, span });
+  const mk = (id: string, typeId: string, label: string, span: Span, extra?: Partial<Item>): Item => ({ id, typeId, label, span, ...extra });
   doc.items = [
     mk('i0', 't-person', 'Maria (Jesus’ mor)', { start: { y: -20, precision: 'year' }, uncertain: { latestStart: { y: -15, precision: 'year' } }, end: { y: 40, precision: 'year' } }),
-    mk('i1', 't-person', 'Jesus af Nazaret', { start: { y: -3, precision: 'year' }, duration: { y: 33 }, verseRefs: [{ bookSlug: 'Matthæus', ch: 2, vs: 1, vsEnd: 12, quote: '… vise mænd kom fra Øst til Jerusalem' }] }),
-    mk('i2', 't-event', 'Barnemord i Betlehem', { start: { y: -3, precision: 'year' }, uncertain: { latestStart: Y0(-2) }, verseRefs: [{ bookSlug: 'Matthæus', ch: 2, vs: 16 }] }),
-    mk('i3', 't-event', 'Tempelrenselser', { start: { y: 29, mo: 4, d: 3, precision: 'day' }, duration: { d: 1 }, verseRefs: [{ bookSlug: 'Matthæus', ch: 21, vs: 12, vsEnd: 13 }] }),
+    mk('i1', 't-person', 'Jesus af Nazaret', { start: { y: -3, precision: 'year' }, duration: { y: 33 } }, { verseRefs: [{ bookSlug: 'Matthæus', ch: 2, vs: 1, vsEnd: 12, quote: '… vise mænd kom fra Øst til Jerusalem' }] }),
+    mk('i2', 't-event', 'Barnemord i Betlehem', { start: { y: -3, precision: 'year' }, uncertain: { latestStart: Y0(-2) } }, { verseRefs: [{ bookSlug: 'Matthæus', ch: 2, vs: 16 }] }),
+    mk('i3', 't-event', 'Tempelrenselser', { start: { y: 29, mo: 4, d: 3, precision: 'day' }, duration: { d: 1 } }, { verseRefs: [{ bookSlug: 'Matthæus', ch: 21, vs: 12, vsEnd: 13 }] }),
     mk('i4', 't-nation', 'Romerveldet (kejsertid)', { start: { y: -27, precision: 'year' }, end: { y: 476, precision: 'year' } }),
-    mk('i5', 't-prophecy', 'Daniel 9:70 uger', { start: { y: -454, precision: 'year' }, duration: { y: 483 }, uncertain: { earliestEnd: { y: 26, precision: 'year' } }, verseRefs: [{ bookSlug: 'daniel', ch: 9, vs: 24, vsEnd: 27 }] }),
+    mk('i5', 't-prophecy', 'Daniel 9:70 uger', { start: { y: -454, precision: 'year' }, duration: { y: 483 }, uncertain: { earliestEnd: { y: 26, precision: 'year' } } }, { verseRefs: [{ bookSlug: 'daniel', ch: 9, vs: 24, vsEnd: 27 }] }),
     mk('i6', 't-event', 'Mine fortsatte studier', { start: { y: 2026, mo: 10, precision: 'month' }, ongoing: true }),
   ];
   doc.relations = [
