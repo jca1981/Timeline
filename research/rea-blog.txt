@@ -1,0 +1,144 @@
+REA: Reverse Engineer Anything With AI Agents
+Product
+Environments
+Enterprise
+Pricing
+Resources
+15.0K
+Login
+Download
+Features
+Use Cases
+Solutions
+Skills
+Plugins
+Roadmap
+Blogs
+Support
+Docs
+CAMEL-AI
+About
+Career
+Contact
+Discord
+GitHub
+Industry
+|
+Oct 12, 2026
+REA (Reverse Engineer Anything): How Agents Decompile and Rebuild Apps
+The open-source MCP server that gives AI coding agents real reverse-engineering tools
+Eigent
+Share to
+What is REA?
+How REA works
+What you can analyze
+How to set it up
+Is it legal to use?
+Why this matters for AI workflows
+Do this with your own AI workforce
+Automate Everything with
+AI Workforce on Desktop
+Download Eigent
+REA (short for Reverse Engineer Anything) is an open-source MCP server and CLI that gives AI coding agents real reverse-engineering tools. Instead of guessing how a feature works, your agent can decompile a binary, trace the relevant code, and show the evidence behind every conclusion — then write and test a version for your own project. This guide covers what REA is, how it works, what you can analyze, and how to set it up.
+REA
+connects your AI agent to tools for inspecting native binaries, JavaScript and Electron apps, .NET assemblies, and websites. It uses the Model Context Protocol (MCP) so an agent can request analysis through a local server, follow relevant code, and get findings back with their evidence and stated limits.
+The core pitch: see a feature you like in an app, understand how it works down to the binary level, and rebuild it.
+You ask your agent to investigate a feature with REA, and it can inspect the app without its source code, explain how the feature works, show the evidence, and build a version for your project.
+A few facts to anchor on:
+License and language:
+It's MIT-licensed and written in TypeScript, shipped as
+rea-agents
+on npm.
+Local by default:
+Analysis runs locally, and results include the evidence and limitations behind each conclusion.
+Momentum:
+Third-party coverage describes it as an active project
+trending #1 on GitHub in October 2026
+, and the repository lists 125k+ stars at the time of writing.
+REA sits between your agent and a suite of established analysis tools.
+It uses the Model Context Protocol to let agents request analysis through a local server.
+The agent asks REA to inspect a target, follows the code that matters, and receives structured findings.
+The workflow reduces to three steps:
+decompile, understand, recreate.
+You point your agent at an app, ask how a feature works, and REA lets it decompile the binary, follow the code between functions, and show the evidence behind its explanation.
+Under the hood, REA routes requests to the right tool.
+When you ask your agent to reverse engineer an app, the REA MCP routes it to tools like Ghidra, Hopper, or IDA for decompilation, and can also pull in things like Chrome DevTools for inspecting web-based or Electron-style apps.
+The library handles the translation layer so the agent doesn't need to know how to operate each tool individually.
+That matters because reverse engineering normally means juggling several specialized tools.
+Ghidra for decompilation, Hopper for disassembly, dynamic tracers for runtime behavior — each tool has its own CLI, API surface, and session management, and REA exposes all of them through a single MCP server so agents can coordinate without managing tool-specific state.
+The same workflows are available from your terminal, so researchers who prefer scripting aren't locked into an agent.
+REA's coverage is broad. Based on the project's own capability table, you can point it at:
+Native binaries
+— pseudocode, assembly, strings, symbols, calls and references (via Hopper, Ghidra or IDA).
+JavaScript / Electron apps
+— modules, imports, source maps, routes, IPC and native add-on relationships, inspected statically without running the app.
+.NET assemblies
+— metadata, CIL instructions and declared native dependencies (static only, no extra engine needed).
+Android APKs
+— manifest declarations, classes, decompiled methods and references (via headless JADX and a JDK).
+Websites
+— page structure, scripts, network observations and screenshots (via a Chrome-family browser).
+WASM, EVM bytecode, Go binaries, firmware, saved network captures, and recorded Linux crashes
+— each with its own requirements and guide.
+A key design choice: static JavaScript and .NET inspection read the files without executing them, while runtime capture actually runs or interacts with the target using your permissions. Native analysis depends on a provider —
+it drives Ghidra, IDA Pro or Hopper for native binaries
+— so formats and host support vary by which one you have installed.
+Setup is a single command. With a supported Node.js version and npm installed, run:
+npx rea-agents setup
+Copy
+You choose your agents, review the proposed changes, and approve them; setup adds REA's MCP server and matching workflow instructions, with backups of existing configuration, then you restart your agent.
+The setup covers the major coding agents.
+Supported options include Claude Code, Cursor, Codex, Gemini CLI, and Grok Build, and other clients that support local MCP servers can use manual registration.
+For deep native work you'll need a provider.
+Native analysis can use an existing Hopper, Ghidra, or IDA installation
+, while static JavaScript analysis needs no native engine — according to the repository, setup can optionally install Hopper after your approval.
+Once it's wired up, you ask in plain language — for example, "understand how search works in the Notes app, show me the evidence, and build a similar feature for my project" — and the agent runs the whole loop.
+Reverse engineering sits in a nuanced legal space, and REA is explicit that it's a tool for lawful use. The project frames it as being for research, education, interoperability, software preservation, and analysis of software you own or are authorized to examine. It also notes that commercial engines like IDA Pro, Hopper, and JEB must be legally obtained under their own licenses — REA grants no tool license or activation. Treat those terms as your first stop before pointing an agent at anything you don't own.
+REA is part of a broader pattern: giving agents real tools and evidence instead of asking a model to reason from memory. It's the same shift behind agent runtimes like
+DeepSeek Harness
+and purpose-built developer surfaces like
+Cursor Origin
+— the value is in the structured tool access and the verifiable output, not just the model.
+The "show the evidence" design is the interesting part. An agent that can cite the exact function, byte offset, or IPC call behind a claim is far more trustworthy than one that summarizes a binary from vibes.
+REA shows what agents can do when you hand them real tools and ask for verifiable results.
+applies the same idea to everyday work: an open-source, local multi-agent "Cowork" workforce that runs real tasks —
+reviewing code and pull requests
+, researching, and automating multi-step workflows — on your own machine. If you want agents that act with tools rather than guess,
+download Eigent
+and build your own.
+Recent Posts
+Oct 22, 2026
+Claude Duet: What Anthropic's Proactive AI Agent Actually Does
+Claude Duet is Anthropic's proactive agent app that briefs you each morning, works in the background, and asks before it acts. Here's how it works and who gets it.
+Meta Muse vs Instinct: Which Personal AI Agent Should You Trust?
+Meta Muse vs Instinct compared: how each personal AI agent works, pricing, approvals, privacy, and who each one fits. Plus the control tradeoff both share.
+Oct 21, 2026
+What Is Instinct? The Personal AI Assistant You Text or Call
+Instinct is an invite-only personal AI assistant you text or call. Here's what it does, who built it, how much it raised, and the privacy tradeoffs to know.
+Automate everything with AI workforce on desktop
+Try Eigent today
+Download the open-source desktop app. Your AI workforce, running on your machine.
+Subscribe
+Get the latest updates, tutorials, and releases on AI workforce automation.
+Thank you for subscribing!
+Subscribe another email
+Explore
+Developers
+Open Source Fund
+Partner
+For Mac M chip
+For Mac Intel chip
+For Windows
+For Linux
+For open source
+Company
+About Us
+Brand
+Careers
+Terms of Use
+Privacy Policy
+Security & Trust
+Cookie Policy
+Refund & Trial Policy
+All rights reserved © 2026 EIGENT UK LTD
+English

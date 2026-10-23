@@ -1,0 +1,559 @@
+
+
+<!DOCTYPE html>
+<html>
+    
+<head>
+    <meta charset="utf-8"/>
+    <title>Dependencies and Constraints - Aeon Timeline 3 Knowledge Base</title>
+    <meta name="viewport" content="width=device-width, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no">
+    <meta name="description" content="What Are Dependencies? Dependencies ensure items in your timeline are placed in a logical and consistent order, by specifying items that rely on other items to "/>
+    <meta name="author" content="Aeon Timeline"/>
+    <link rel="canonical" href="https://help.timeline.app/article/142-dependencies-and-constraints"/>
+    
+        
+   
+            <meta name="twitter:card" content="summary"/>
+            <meta name="twitter:title" content="Dependencies and Constraints" />
+            <meta name="twitter:description" content="What Are Dependencies? Dependencies ensure items in your timeline are placed in a logical and consistent order, by specifying items that rely on other items to "/>
+
+
+    
+
+    
+        <link rel="stylesheet" href="//d3eto7onm69fcz.cloudfront.net/assets/stylesheets/launch-1792685451570.css">
+    
+    <style>
+        body { background: #ffffff; }
+        .navbar .navbar-inner { background: #1f2d44; }
+        .navbar .nav li a, 
+        .navbar .icon-private-w  { color: #8499d2; }
+        .navbar .brand, 
+        .navbar .nav li a:hover, 
+        .navbar .nav li a:focus, 
+        .navbar .nav .active a, 
+        .navbar .nav .active a:hover, 
+        .navbar .nav .active a:focus  { color: #ffffff; }
+        .navbar a:hover .icon-private-w, 
+        .navbar a:focus .icon-private-w, 
+        .navbar .active a .icon-private-w, 
+        .navbar .active a:hover .icon-private-w, 
+        .navbar .active a:focus .icon-private-w { color: #ffffff; }
+        #serp-dd .result a:hover,
+        #serp-dd .result > li.active,
+        #fullArticle strong a,
+        #fullArticle a strong,
+        .collection a,
+        .contentWrapper a,
+        .most-pop-articles .popArticles a,
+        .most-pop-articles .popArticles a:hover span,
+        .category-list .category .article-count,
+        .category-list .category:hover .article-count { color: #386af9; }
+        #fullArticle, 
+        #fullArticle p, 
+        #fullArticle ul, 
+        #fullArticle ol, 
+        #fullArticle li, 
+        #fullArticle div, 
+        #fullArticle blockquote, 
+        #fullArticle dd, 
+        #fullArticle table { color:#2d3239; }
+    </style>
+    
+        <link rel="stylesheet" href="//s3.amazonaws.com/helpscout.net/docs/assets/58e6b1f72c7d3a52b42f46ce/attachments/5ffd0d09b5efec03af3f20aa/v3_helpstyle.css">
+    
+    <link rel="apple-touch-icon-precomposed" href="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/60ee58039e87cb3d0124d2aa/512_rounded.png">
+    <link rel="shortcut icon" type="image/png" href="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/60ee58038556b07a2884f810/512_rounded.png">
+    <!--[if lt IE 9]>
+    
+        <script src="//d3eto7onm69fcz.cloudfront.net/assets/javascripts/html5shiv.min.js"></script>
+    
+    <![endif]-->
+    
+        <script type="application/ld+json">
+        {"@context":"https://schema.org","@type":"WebSite","url":"https://help.timeline.app","potentialAction":{"@type":"SearchAction","target":"https://help.timeline.app/search?query={query}","query-input":"required name=query"}}
+        </script>
+    
+        <script type="application/ld+json">
+        {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Aeon Timeline 3 Knowledge Base","item":"https://help.timeline.app"},{"@type":"ListItem","position":2,"name":"Help","item":"https://help.timeline.app/collection/134-help"},{"@type":"ListItem","position":3,"name":"Dependencies and Constraints","item":"https://help.timeline.app/article/142-dependencies-and-constraints"}]}
+        </script>
+    
+    
+        <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700" rel="stylesheet"><style>
+.container-fluid {
+max-width: 1140px;
+}
+body, input, #searchBar button, .articleFoot p, .articleFoot time {
+font-family: Ubuntu, Arial, sans-serif;
+}
+body {
+font-size: 14px;
+}
+body.article {
+background: #f1f2f4;
+}
+a, a span {
+color: #386AF9;
+}
+#docsSearch {
+    height: 100px;
+    background: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/6633928ddef6ab759220e0d2_book.gif) no-repeat center 25px / 584px 252px transparent;
+    border-bottom: none;
+    padding-top: 75px;
+    position: relative;
+    top: 0;
+    margin-top: 0;
+    padding: 285px 0 0;
+}
+#docsSearch #searchBar {
+padding: 25px 0 !important;
+}
+#docsSearch #searchBar .search-query {
+	border: 1px solid #738a94;
+	background: #FFFFFF;
+	box-shadow: none;
+	color: #15171A;
+}
+#docsSearch #searchBar button {
+	top: 25px;
+	background: #386AF9;
+	border-color: transparent;
+	color: #FFFFFF;
+}
+#docsSearch #searchBar button:hover {
+	background: #1F2D44;
+	border-color: transparent;
+	color: #FFFFFF;
+}
+.category-list .category::before {
+display: none;
+}
+.category-list .category {
+padding-top: 90px;
+}
+#category-137.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cfd957a5ed594fd7b9_bullseye.png);
+}
+#category-139.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf633388ddf01fa544_interface.png);
+}
+#category-166.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf07da30c6d2fd82bc_clock.png);
+}
+#category-156.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce7365ca69759d2fd3_tag.png);
+}
+#category-159.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cef6122b68aff055d1_book.png);
+}
+#category-199.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cef6365dc6fa0dc473_device.png);
+}
+#category-138.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf84e5a594abe7aa37_check.png);
+}
+#category-185.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ceff52488595ad5033_lightbulb.png);
+}
+#category-168.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce9d2aac7708c847d0_settings.png);
+}
+#category-228.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf77d9251515ce1114_settings-1.png);
+}
+#category-229.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce52dd2af4ddcba1d7_importExport.png);
+}
+#category-232.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce6bb14d4a10dec2f5_licensing.png);
+} 
+#fullArticle, #fullArticle p, #fullArticle ul, #fullArticle ol, #fullArticle li, #fullArticle div, #fullArticle blockquote, #fullArticle dd, #fullArticle table {
+font-size: 16px;
+}
+.homeLink {
+    float: right;
+    color: #FFF;
+    top:  10%;
+    position: absolute;
+    right: 0;
+    line-height: 20px;
+}
+.homeLink:hover {
+color: #FFF;
+}
+footer p {
+margin-bottom: 1em;
+}
+footer p:last-child {
+margin-bottom: 3em;
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+var pathname = window.location.pathname;
+if(pathname && pathname != "/") {
+document.body.classList.add('article');
+}
+
+
+const homeLink = document.createElement("a");
+homeLink.href = "https://timeline.app";
+const linkLabel = document.createTextNode("Back to Aeon Timeline");
+homeLink.appendChild(linkLabel);
+homeLink.classList.add("homeLink");
+const mainNav = document.getElementById("mainNav");
+const mainNavContainers = mainNav.getElementsByClassName("container-fluid");
+if(mainNavContainers.length) {
+mainNavContainers[0].appendChild(homeLink);
+}
+
+const footerText = document.createElement("p");
+const footerTextLabel = document.createTextNode("Material from Murder on the Orient Express by Agatha Christie incorporated under license from Agatha Christie Ltd.");
+footerText.appendChild(footerTextLabel);
+const contentArea = document.getElementById("contentArea");
+if(contentArea) {
+const contentAreaFooters = contentArea.getElementsByTagName("footer");
+if(contentAreaFooters.length) {
+const footerIndex = contentAreaFooters.length - 1;
+contentAreaFooters[footerIndex].prepend(footerText);
+}
+}
+
+if(pathname === "/category/137-getting-started") {
+  const videoHeader = document.createElement("h2");
+  const videoHeaderLabel = document.createTextNode("Video Tutorial");
+  videoHeader.appendChild(videoHeaderLabel);
+
+  const articlesHeader = document.createElement("h2");
+  const articlesHeaderLabel = document.createTextNode("Articles");
+  articlesHeader.appendChild(articlesHeaderLabel);
+
+  const videoFrame = document.createElement("iframe");
+  videoFrame.src = "https://www.youtube.com/embed/RSAiIwhLw9k?si=7SLBiQW_bdUdtjiN";
+  videoFrame.width = "800";
+  videoFrame.height = "450";
+  videoFrame.frameBorder ="0";
+  videoFrame.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+  videoFrame.allowfullscreen= "";
+  videoFrame.style.margin = "1em 0";
+  videoFrame.style.maxWidth = "100%";
+
+  const categoryHeader = document.getElementById("categoryHead");
+  categoryHeader.after(articlesHeader);
+  categoryHeader.after(videoFrame);
+  categoryHeader.after(videoHeader);
+}
+
+});
+
+
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    const docsSearchDom = document.getElementById("docsSearch");
+    const contentAreaDom = document.getElementById("contentArea");
+
+    var messageElement = document.createElement("div");
+    messageElement.style.background = "#F6F6A0";
+    messageElement.style.color = "#000000";
+    messageElement.style.padding = "20px";
+    messageElement.style.fontSize = "1em";
+
+    var linkElement = document.createElement('a');
+    var linkText = document.createTextNode("See our guides for the most up-to-date information >");
+    linkElement.appendChild(linkText);
+    linkElement.href = "https://www.aeontimeline.com/guides";
+
+    var messageText = document.createTextNode("You're viewing the knowledge base for a previous version of Aeon Timeline. Some information may be outdated. ");
+    messageElement.appendChild(messageText);
+    messageElement.appendChild(linkElement);
+    
+    if(docsSearchDom) {
+      messageElement.style.margin = "0.5em 0.8% 2em";
+    } else {
+      messageElement.style.margin = "2em 0 0";
+    }
+
+
+    if(contentAreaDom) {
+        contentAreaDom.prepend(messageElement);
+    }
+});
+</script>
+    
+</head>
+    
+    <body>
+        
+<header id="mainNav" class="navbar">
+    <div class="navbar-inner">
+        <div class="container-fluid">
+            <a class="brand" href="/">
+            
+                
+                    <img src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/60ee80e261c60c534bd6f6b6/kblogo.png" alt="Aeon Timeline 3 Knowledge Base" width="428" height="75">
+                
+
+            
+            </a>
+            
+            <div class="nav-collapse collapse">
+                <nav role="navigation"><!-- added for accessibility -->
+                <ul class="nav">
+                    
+                    
+                    
+                    
+                </ul>
+                </nav>
+            </div><!--/.nav-collapse -->
+        </div><!--/container-->
+    </div><!--/navbar-inner-->
+</header>
+        <section id="contentArea" class="container-fluid">
+            <div class="row-fluid">
+                <section id="main-content" class="span9">
+                    <div class="contentWrapper">
+                        
+    
+    <article id="fullArticle">
+        <h1 class="title">Dependencies and Constraints</h1>
+    
+        <a href="javascript:window.print()" class="printArticle" title="Print this article" aria-label="Print this Article"><i class="icon-print"></i></a>
+        <h2 id="dependencies">What Are Dependencies?</h2>
+<p>Dependencies ensure items in your timeline are placed in a logical and consistent order, by specifying items that rely on other items to be completed. This is most commonly associated with Project Management, where such prerequisites are commonplace (e.g. the electrical wiring cannot commence until the house is made watertight), but they can be applied to many different scenarios across project management, fiction, and legal industries. Dependencies can also be shown in item cards.&nbsp;</p>
+<p>We use the terms <strong><em>Blocks</em></strong> and <strong><em>Blocked by </em></strong>to designate the relationship between two dependent events: when “Event B” is <em>blocked </em>by “Event A”, this means that Event B cannot start until Event A has finished (see dependency types below for slight variations on this). In this scenario, we also say that “Event A” <em>blocks</em> “Event B”, and when you look at the Item Inspector, you will see lists for both <em>Blocks </em>and<em> Blocked by</em> dependencies.</p>
+<p>Importantly, dependencies specify an order of events, but they do not specify an exact timing: when Event B is blocked by Event A, we know that&nbsp; B should follow A, but that does not mean that B should immediately follow A. For more advanced scenarios, including those that specify an exact timing, you should use Constraints instead.</p>
+<h2 id="constraints">What are Constraints?</h2>
+<p>Constraints are a more advanced option that provides more flexibility in specifying time-based constraints for items. These include constraints that directly affect the allowed timing of items by tying them to a specific date or offset from another event.</p>
+<p>With constraints, the user is able to specify combinations of options, including whether:&nbsp;</p>
+<ul>
+ <li>the start or end date of the item is affected;</li>
+ <li>the comparison is against a fixed date (e.g. A &gt; 2012), relative to another item (e.g. A &gt; B), or matches only part of a date (e.g. A occurs on a Monday);</li>
+ <li>an exact or relational comparison is used (e.g. A=B, A&gt;B, A&gt;=B, A&lt;B, A&lt;=B, etc.);</li>
+ <li>an offset should be applied to the calculation (e.g. A = B + 9 months)</li>
+</ul>
+<p>Note that this offers more flexibility than Aeon Timeline version 2.x, where this differentiation between simple dependencies and flexible constraints didn’t exist, and all dependencies implied an exact date (i.e. an <em>equals </em>comparison).</p>
+<h2>Configuring Dependencies</h2>
+<p>Creating Dependencies</p>
+<p>To configure dependencies for an item, switch to the&nbsp;<em>Dependencies and Constraints</em>&nbsp;tab in the Inspector, and modify the&nbsp;<em>Blocks and Blocked by</em>&nbsp;lists under the&nbsp;<em>Timeline Dependencies</em>&nbsp;heading.</p>
+<p><img src="https://lh5.googleusercontent.com/MdNJGRuIMlvyobW3s0REag1vyVmnzRKQvJMQrT8SDFreyiJgVWCwZ9wf57-qk_LxVqrilgQXTt_0wGo2NGvPu-yeLADNw0eYUTv3L-7nY09n1u8oHUR8rdjQ2qD5djG6572DjsA6" width="257" height="387" style="margin-top: 0px;"></p>
+<p>To make the selected item dependent on another, click on the add icon ( <img class="inline transformDown" src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/5ffd2177bb5c6f7434e0fda5/file-n8EJETWrVR.png">) alongside the<em> Blocked by </em>list and choose the second item from the ensuing dropdown. Likewise, to make another item depend on the currently selected item, click on the + icon alongside the Blocks list instead.</p>
+<p><strong>Make Dependent Shortcut</strong></p>
+<p>You can quickly add dependencies between multiple selected events by choosing&nbsp; <em>Make Dependent</em>&nbsp;underneath the Timeline menu.This menu will only be enabled when&nbsp; multiple events are selected.&nbsp;</p>
+<p>With two events selected, a new dependency will be created so that the later event is Blocked by the earlier event. If more than two events are selected, a chain of dependencies will be created such that the second event is dependent on the first, the third is dependent on the second, and so on.&nbsp;</p>
+<h3>Editing&nbsp;Dependency Type</h3>
+<p><img src="https://lh5.googleusercontent.com/QerQTrY0KQqAKjKsWj_dq28eVlaPAGbY4cpEi2aph4b5GxWLmHp2bsiXLhrqXC_BU_7-eMaOOC6D9fXDR6HIZOBZnu2Cw6cqeIrQZ0NcFSJJx6ulljKa_wbXpiTXQRHfaxqJHxez" width="245" height="375" style="margin-top: 0px;"></p>
+<p>Newly created dependencies will default to the <em>Finish to Start</em> dependency type as this will be appropriate in most circumstances.</p>
+<p>To select a different dependency type, click on the down arrow ( <img class="inline transformDown" src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/5ffd211db5efec03af3f20cb/file-xIRezwl90V.png">) next to the dependency. This allows you to choose between the following four dependency types:&nbsp;</p>
+<ul>
+ <li>Finish to Start: Event B’s start date must be later than or equal to Event A’s end date.</li>
+ <li>Finish to Finish: Event B’s end date must be later than or equal to Event A’s end date.</li>
+ <li>Start to Start: Event B’s start date must be later than or equal to Event A’s start date.</li>
+ <li>Start to Finish: Event B’s end date must be later than or equal to Event A’s start date.</li>
+</ul>
+<h3>Deleting Dependencies</h3>
+<p>To delete an existing dependency, click on the delete icon ( <img class="inline transformDown" src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/5ffd212efd168b7773533b6c/file-USF5atzQ4c.png">) alongside the item in the inspector. Alternatively, you can choose <em>Remove Dependencies</em> from the <em>Item menu</em> to remove all dependencies associated with the selected items.</p>
+<h2>Configuring Constraints</h2>
+<p><img src="https://lh3.googleusercontent.com/t02mnEfZyToAGy5seKrM-57f223VPCUzeWkz1FUKM12texYDigUHVe5bip1Lc4f0CasAy6KbuoIT_RUbCqL05NFbkxH_HQJLYkZ7l3AOJfzY0Ali62oMCbnI_-qcfJSl-nSFSZJM" width="210" height="353" style="margin-top: 0px;"></p>
+<p>You can also create constraints in the <em> Dependencies and Constraints </em>tab in the inspector. Under the heading ‘Date Constraints’, click the add icon ( <img class="inline transformDown" src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/5ffd2177bb5c6f7434e0fda5/file-n8EJETWrVR.png">) to create a new constraint.&nbsp;</p>
+<p>There are a number of different configuration options to choose from when creating a constraint for a particular item in your timeline. These are as follows:</p>
+<table>
+ <tbody>
+  <tr>
+   <td>
+    <p><strong>Date-based constraints</strong></p>
+    <ul>
+     <li>Start is after date</li>
+     <li>Start is before date</li>
+     <li>Start equals date</li>
+     <li>End is after date</li>
+     <li>End is before date</li>
+     <li>End equals date</li>
+    </ul>
+   </td>
+   <td>
+    <p><strong>Item-based constraints</strong></p>
+    <ul>
+     <li>Start is after start of an item</li>
+     <li>Start is before start of an item</li>
+     <li>Start equals start of an item</li>
+     <li>Start is after end of an item</li>
+     <li>Start is before end of an item</li>
+     <li>Start equals end of an item</li>
+     <li>End is after start of an item</li>
+     <li>End is before start of an item</li>
+     <li>End equals start of an item</li>
+     <li>End is after end of an item</li>
+     <li>End is before end of an item</li>
+     <li>End equals end of an item</li>
+    </ul>
+   </td>
+  </tr>
+ </tbody>
+</table>
+<p>You can specify additional offsets for item-based constraints to add additional time between the affected items. This can be used when two events must occur with a fixed interval between them (e.g. a contract expires 12 months after it is initially signed).&nbsp;&nbsp;</p>
+<h2>Violated Constraints and Dependencies</h2>
+<p>A dependency or a constraint is violated when the dates of the relevant items do not match the specified criteria. These violations can occur when you first configure a constraint or dependency (if the conditions are not already met when first created), or any time you make a change that affects an item’s dates. How violations are handled depends on whether you choose for constraints to be resolved manually or automatically (see below).&nbsp;&nbsp;</p>
+<p>If violations are not resolved automatically, they are collated into the dependency panel that is accessible via the Sidebar. This panel shows all of the items with violated dependencies in a single location. The number of violated dependencies and constraints are shown in a badge on the sidebar icon ( <img class="inline" src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/5ffd0f7666df373cab708513/file-hJs9ZyaTLY.png">).</p>
+<p>Violated items are also visible on both the Timeline View and Spreadsheet View. The inspector will also highlight any violated dependencies or constraints for the selected item.&nbsp;</p>
+<h3>Resolving Violations</h3>
+<p>You can choose whether Aeon Timeline attempts to automatically resolve violated dependencies and constraints by changing the Automatic Date Adjustment setting in the Settings Modal (see Settings Modal link).</p>
+<p>With this value set to Resolve constraints and adjust children, any time a constraint has been violated, Aeon Timeline will attempt to move the affected items until all dependencies and constraints are satisfied once more. Alternatively, any other setting will allow you to manually control how and when violated constraints are resolved.</p>
+<p>Constraints will always be resolved by moving dates, never by adjusting durations.&nbsp;</p>
+<h4><strong>Manual Resolution</strong></h4>
+<p>Manual resolution provides you with the most control over how a violation will be resolved. When you notice a violated dependency or constraint, you can resolve it manually by modifying the dates of affected items, or alternatively, modifying or removing the constraint if it should no longer apply. There may be certain violations where it is impossible to satisfy all criteria, such as when dependency loops have been formed (e.g. A &lt; B and B &lt; A).&nbsp;</p>
+<p>When there is a violation, a red status icon ( <img class="inline transformDown" src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/5ffd239866df373cab70853f/file-8ESSURzWSm.png">) will appear next to the constraint. Clicking on the ‘Resolve’ button below the constraint will provide available options to resolve the constraint, including moving an affected item or removing the constraint altogether.&nbsp;</p>
+<p><img src="https://lh3.googleusercontent.com/k0Mzna-1H6rDt2oTK_s1xknJqGLJ9wJtgmzDmRGpQXXkx_mQRCb7WsPKpH-sLFZSSnCg_ENYVrzZGLdQaN2SkWPM8E-Dp0Y_-vMFwgZ39Ce_X-6vt4y08kf63Zt6aQYVZd4TE2tp" width="492" height="227" style="margin-top: 0px;"></p>
+<h4><strong>Semi-manual Resolution</strong></h4>
+<p>As violations grow in number and complexity, it may become difficult to resolve them all manually, as each item you move may in turn violate another dependency.</p>
+<p>The Resolve All button at the top of the Constraints Panel is useful when there are a lot of violations in your timeline, as this will attempt to resolve all constraints at once. This is a semi-manual process as you are able to choose exactly when you want to perform an action, and can immediately undo the action if you do not like the result.&nbsp;</p>
+<p>Depending on the volume of constraints and their complexity, this may lead to significant changes to items throughout your timeline. It is better to resolve constraints frequently, as this will lead to fewer changes and make it easier to see which items have been moved.</p>
+<p>As described in more detail below under Automatic Live Resolution, a further setting called Dependency and Constraint Adjustment Limits can be used to set any limits on when items can be moved backwards in time. This setting applies to both automatic and manual resolution.</p>
+<p>Note: as constraint resolution is a complicated process, there may be certain constraint combinations that the system is unable to resolve, and which you will need to resolve manually.&nbsp;</p>
+<h5>Automatic Live Resolution</h5>
+<p>With Automatic Date Adjustment set to include Resolve constraints, the system will attempt to automatically resolve violations created by your actions as soon as they occur. This option is turned on by default in certain templates such as Project Management, but it can be adjusted in the Settings at any time.&nbsp;</p>
+<p>Where possible, automatic resolution will always try to retain the most recent change you have made, and instead move other items to satisfy the constraints.&nbsp;</p>
+<p>Using the example of A blocks B:</p>
+<ul>
+ <li>If A takes than expected and you add another 6 months to A’s duration, B will have its start date adjusted to occur after the new end date for Item A.</li>
+ <li>Conversely, if you instead moved B forward to start before A ends, the system would compensate by moving the start date for A backwards in time to allow this change to occur.&nbsp;</li>
+</ul>
+<p>In real-world project management situations, it will not be suitable to automatically move items back in time to historic or near-term dates (no matter how much you may sometimes wish you could!) To guard against this, an additional setting is provided in the Settings modal that allows you to determine when items are allowed to be moved backwards in time.</p>
+<p>This setting is Dependency and Constraint Adjustment Limits, and can be set to have either no limit (the default value for fiction templates, where anything goes), or to prevent shifting items earlier than today, tomorrow, next week, or next month.</p>
+<p>With these values set, you will still be able to manually move items to earlier dates, but the built-in Resolve options will not move an item backwards if its final start date will occur before the limit you have selected.</p>
+    </article>
+    
+
+    <section class="articleFoot">
+    
+
+    <time class="lu" datetime=2021-07-15 >Last updated on July 15, 2021</time>
+    </section>
+
+                    </div><!--/contentWrapper-->
+                    
+                </section><!--/content-->
+                <aside id="sidebar" class="span3">
+                 
+
+<form action="/search" method="GET" id="searchBar" class="sm" autocomplete="off">
+    
+                    <input type="hidden" name="collectionId" value="5fb73690cff47e00160bbe14"/>
+                    <input type="text" name="query" title="search-query" class="search-query" placeholder="Search" value="" aria-label="Search" />
+                    <button type="submit">
+                        <span class="sr-only">Toggle Search</span>
+                        <i class="icon-search"></i>
+                    </button>
+                    <div id="serp-dd" style="display: none;" class="sb">
+                        <ul class="result">
+                        </ul>
+                    </div>
+                
+</form>
+
+                
+                    <h3>Categories</h3>
+                    <ul class="nav nav-list">
+                    
+                        
+                            <li ><a href="/category/137-getting-started">Getting Started  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/139-user-interface">Desktop User Interface  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/199-ios-articles">iOS User Interface  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/166-calendars-and-dates">Calendars and Dates  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li  class="active" ><a href="/category/156-data-management">Data Management  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/159-scrivener-and-ulysses">Scrivener and Ulysses  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/228-settings-and-preferences">Settings and Preferences  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/229-import-export-printing">Import, Export &amp; Printing  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/138-migrating-from-version-2">Migrating from Version 2  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/185-how-to">How To Guides  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/168-troubleshooting">Troubleshooting  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/232-licensing">Accounts &amp; Licensing  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                    </ul>
+                
+                </aside><!--/span-->
+            </div><!--/row-->
+            <div id="noResults" style="display:none;">No results found</div>
+            <footer>
+                
+
+<p>&copy;
+    
+        <a href="http://timeline.app">Aeon Timeline</a>
+    
+    2026. <span>Powered by <a rel="nofollow noopener noreferrer" href="https://www.helpscout.com/docs-refer/?co=Aeon+Timeline&utm_source=docs&utm_medium=footerlink&utm_campaign=Docs+Branding" target="_blank">Help Scout</a></span>
+    
+        
+    
+    
+</p>
+
+            </footer>
+        </section><!--/.fluid-container-->
+        
+        
+    <script src="//d3eto7onm69fcz.cloudfront.net/assets/javascripts/app4.min.js"></script>
+
+<script>
+// keep iOS links from opening safari
+if(("standalone" in window.navigator) && window.navigator.standalone){
+// If you want to prevent remote links in standalone web apps opening Mobile Safari, change 'remotes' to true
+var noddy, remotes = false;
+document.addEventListener('click', function(event) {
+noddy = event.target;
+while(noddy.nodeName !== "A" && noddy.nodeName !== "HTML") {
+noddy = noddy.parentNode;
+}
+
+if('href' in noddy && noddy.href.indexOf('http') !== -1 && (noddy.href.indexOf(document.location.host) !== -1 || remotes)){
+event.preventDefault();
+document.location.href = noddy.href;
+}
+
+},false);
+}
+</script>
+        
+    </body>
+</html>
+
+

@@ -1,0 +1,602 @@
+
+
+<!DOCTYPE html>
+<html>
+    
+<head>
+    <meta charset="utf-8"/>
+    <title>Dates and Durations - Aeon Timeline 3 Knowledge Base</title>
+    <meta name="viewport" content="width=device-width, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no">
+    <meta name="description" content="Unsurprisingly, dates form an intrinsic part of the data you will enter into your timeline. This article outlines the way dates are stored and represented insid"/>
+    <meta name="author" content="Aeon Timeline"/>
+    <link rel="canonical" href="https://help.timeline.app/article/165-dates-and-durations"/>
+    
+        
+   
+            <meta name="twitter:card" content="summary"/>
+            <meta name="twitter:title" content="Dates and Durations" />
+            <meta name="twitter:description" content="Unsurprisingly, dates form an intrinsic part of the data you will enter into your timeline. This article outlines the way dates are stored and represented insid"/>
+
+
+    
+
+    
+        <link rel="stylesheet" href="//d3eto7onm69fcz.cloudfront.net/assets/stylesheets/launch-1792685451570.css">
+    
+    <style>
+        body { background: #ffffff; }
+        .navbar .navbar-inner { background: #1f2d44; }
+        .navbar .nav li a, 
+        .navbar .icon-private-w  { color: #8499d2; }
+        .navbar .brand, 
+        .navbar .nav li a:hover, 
+        .navbar .nav li a:focus, 
+        .navbar .nav .active a, 
+        .navbar .nav .active a:hover, 
+        .navbar .nav .active a:focus  { color: #ffffff; }
+        .navbar a:hover .icon-private-w, 
+        .navbar a:focus .icon-private-w, 
+        .navbar .active a .icon-private-w, 
+        .navbar .active a:hover .icon-private-w, 
+        .navbar .active a:focus .icon-private-w { color: #ffffff; }
+        #serp-dd .result a:hover,
+        #serp-dd .result > li.active,
+        #fullArticle strong a,
+        #fullArticle a strong,
+        .collection a,
+        .contentWrapper a,
+        .most-pop-articles .popArticles a,
+        .most-pop-articles .popArticles a:hover span,
+        .category-list .category .article-count,
+        .category-list .category:hover .article-count { color: #386af9; }
+        #fullArticle, 
+        #fullArticle p, 
+        #fullArticle ul, 
+        #fullArticle ol, 
+        #fullArticle li, 
+        #fullArticle div, 
+        #fullArticle blockquote, 
+        #fullArticle dd, 
+        #fullArticle table { color:#2d3239; }
+    </style>
+    
+        <link rel="stylesheet" href="//s3.amazonaws.com/helpscout.net/docs/assets/58e6b1f72c7d3a52b42f46ce/attachments/5ffd0d09b5efec03af3f20aa/v3_helpstyle.css">
+    
+    <link rel="apple-touch-icon-precomposed" href="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/60ee58039e87cb3d0124d2aa/512_rounded.png">
+    <link rel="shortcut icon" type="image/png" href="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/60ee58038556b07a2884f810/512_rounded.png">
+    <!--[if lt IE 9]>
+    
+        <script src="//d3eto7onm69fcz.cloudfront.net/assets/javascripts/html5shiv.min.js"></script>
+    
+    <![endif]-->
+    
+        <script type="application/ld+json">
+        {"@context":"https://schema.org","@type":"WebSite","url":"https://help.timeline.app","potentialAction":{"@type":"SearchAction","target":"https://help.timeline.app/search?query={query}","query-input":"required name=query"}}
+        </script>
+    
+        <script type="application/ld+json">
+        {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Aeon Timeline 3 Knowledge Base","item":"https://help.timeline.app"},{"@type":"ListItem","position":2,"name":"Help","item":"https://help.timeline.app/collection/134-help"},{"@type":"ListItem","position":3,"name":"Dates and Durations","item":"https://help.timeline.app/article/165-dates-and-durations"}]}
+        </script>
+    
+    
+        <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700" rel="stylesheet"><style>
+.container-fluid {
+max-width: 1140px;
+}
+body, input, #searchBar button, .articleFoot p, .articleFoot time {
+font-family: Ubuntu, Arial, sans-serif;
+}
+body {
+font-size: 14px;
+}
+body.article {
+background: #f1f2f4;
+}
+a, a span {
+color: #386AF9;
+}
+#docsSearch {
+    height: 100px;
+    background: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/6633928ddef6ab759220e0d2_book.gif) no-repeat center 25px / 584px 252px transparent;
+    border-bottom: none;
+    padding-top: 75px;
+    position: relative;
+    top: 0;
+    margin-top: 0;
+    padding: 285px 0 0;
+}
+#docsSearch #searchBar {
+padding: 25px 0 !important;
+}
+#docsSearch #searchBar .search-query {
+	border: 1px solid #738a94;
+	background: #FFFFFF;
+	box-shadow: none;
+	color: #15171A;
+}
+#docsSearch #searchBar button {
+	top: 25px;
+	background: #386AF9;
+	border-color: transparent;
+	color: #FFFFFF;
+}
+#docsSearch #searchBar button:hover {
+	background: #1F2D44;
+	border-color: transparent;
+	color: #FFFFFF;
+}
+.category-list .category::before {
+display: none;
+}
+.category-list .category {
+padding-top: 90px;
+}
+#category-137.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cfd957a5ed594fd7b9_bullseye.png);
+}
+#category-139.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf633388ddf01fa544_interface.png);
+}
+#category-166.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf07da30c6d2fd82bc_clock.png);
+}
+#category-156.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce7365ca69759d2fd3_tag.png);
+}
+#category-159.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cef6122b68aff055d1_book.png);
+}
+#category-199.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cef6365dc6fa0dc473_device.png);
+}
+#category-138.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf84e5a594abe7aa37_check.png);
+}
+#category-185.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ceff52488595ad5033_lightbulb.png);
+}
+#category-168.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce9d2aac7708c847d0_settings.png);
+}
+#category-228.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396cf77d9251515ce1114_settings-1.png);
+}
+#category-229.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce52dd2af4ddcba1d7_importExport.png);
+}
+#category-232.category {
+background-image: url(https://uploads-ssl.webflow.com/64f54a4070fc318bbf49e31d/663396ce6bb14d4a10dec2f5_licensing.png);
+} 
+#fullArticle, #fullArticle p, #fullArticle ul, #fullArticle ol, #fullArticle li, #fullArticle div, #fullArticle blockquote, #fullArticle dd, #fullArticle table {
+font-size: 16px;
+}
+.homeLink {
+    float: right;
+    color: #FFF;
+    top:  10%;
+    position: absolute;
+    right: 0;
+    line-height: 20px;
+}
+.homeLink:hover {
+color: #FFF;
+}
+footer p {
+margin-bottom: 1em;
+}
+footer p:last-child {
+margin-bottom: 3em;
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+var pathname = window.location.pathname;
+if(pathname && pathname != "/") {
+document.body.classList.add('article');
+}
+
+
+const homeLink = document.createElement("a");
+homeLink.href = "https://timeline.app";
+const linkLabel = document.createTextNode("Back to Aeon Timeline");
+homeLink.appendChild(linkLabel);
+homeLink.classList.add("homeLink");
+const mainNav = document.getElementById("mainNav");
+const mainNavContainers = mainNav.getElementsByClassName("container-fluid");
+if(mainNavContainers.length) {
+mainNavContainers[0].appendChild(homeLink);
+}
+
+const footerText = document.createElement("p");
+const footerTextLabel = document.createTextNode("Material from Murder on the Orient Express by Agatha Christie incorporated under license from Agatha Christie Ltd.");
+footerText.appendChild(footerTextLabel);
+const contentArea = document.getElementById("contentArea");
+if(contentArea) {
+const contentAreaFooters = contentArea.getElementsByTagName("footer");
+if(contentAreaFooters.length) {
+const footerIndex = contentAreaFooters.length - 1;
+contentAreaFooters[footerIndex].prepend(footerText);
+}
+}
+
+if(pathname === "/category/137-getting-started") {
+  const videoHeader = document.createElement("h2");
+  const videoHeaderLabel = document.createTextNode("Video Tutorial");
+  videoHeader.appendChild(videoHeaderLabel);
+
+  const articlesHeader = document.createElement("h2");
+  const articlesHeaderLabel = document.createTextNode("Articles");
+  articlesHeader.appendChild(articlesHeaderLabel);
+
+  const videoFrame = document.createElement("iframe");
+  videoFrame.src = "https://www.youtube.com/embed/RSAiIwhLw9k?si=7SLBiQW_bdUdtjiN";
+  videoFrame.width = "800";
+  videoFrame.height = "450";
+  videoFrame.frameBorder ="0";
+  videoFrame.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+  videoFrame.allowfullscreen= "";
+  videoFrame.style.margin = "1em 0";
+  videoFrame.style.maxWidth = "100%";
+
+  const categoryHeader = document.getElementById("categoryHead");
+  categoryHeader.after(articlesHeader);
+  categoryHeader.after(videoFrame);
+  categoryHeader.after(videoHeader);
+}
+
+});
+
+
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    const docsSearchDom = document.getElementById("docsSearch");
+    const contentAreaDom = document.getElementById("contentArea");
+
+    var messageElement = document.createElement("div");
+    messageElement.style.background = "#F6F6A0";
+    messageElement.style.color = "#000000";
+    messageElement.style.padding = "20px";
+    messageElement.style.fontSize = "1em";
+
+    var linkElement = document.createElement('a');
+    var linkText = document.createTextNode("See our guides for the most up-to-date information >");
+    linkElement.appendChild(linkText);
+    linkElement.href = "https://www.aeontimeline.com/guides";
+
+    var messageText = document.createTextNode("You're viewing the knowledge base for a previous version of Aeon Timeline. Some information may be outdated. ");
+    messageElement.appendChild(messageText);
+    messageElement.appendChild(linkElement);
+    
+    if(docsSearchDom) {
+      messageElement.style.margin = "0.5em 0.8% 2em";
+    } else {
+      messageElement.style.margin = "2em 0 0";
+    }
+
+
+    if(contentAreaDom) {
+        contentAreaDom.prepend(messageElement);
+    }
+});
+</script>
+    
+</head>
+    
+    <body>
+        
+<header id="mainNav" class="navbar">
+    <div class="navbar-inner">
+        <div class="container-fluid">
+            <a class="brand" href="/">
+            
+                
+                    <img src="//d33v4339jhl8k0.cloudfront.net/docs/assets/58e6b1f72c7d3a52b42f46ce/images/60ee80e261c60c534bd6f6b6/kblogo.png" alt="Aeon Timeline 3 Knowledge Base" width="428" height="75">
+                
+
+            
+            </a>
+            
+            <div class="nav-collapse collapse">
+                <nav role="navigation"><!-- added for accessibility -->
+                <ul class="nav">
+                    
+                    
+                    
+                    
+                </ul>
+                </nav>
+            </div><!--/.nav-collapse -->
+        </div><!--/container-->
+    </div><!--/navbar-inner-->
+</header>
+        <section id="contentArea" class="container-fluid">
+            <div class="row-fluid">
+                <section id="main-content" class="span9">
+                    <div class="contentWrapper">
+                        
+    
+    <article id="fullArticle">
+        <h1 class="title">Dates and Durations</h1>
+    
+        <a href="javascript:window.print()" class="printArticle" title="Print this article" aria-label="Print this Article"><i class="icon-print"></i></a>
+        <p>Unsurprisingly, dates form an intrinsic part of the data you will enter into your timeline. This article outlines the way dates are stored and represented inside Aeon Timeline, and the various options available to represent events in your timeline as accurately as possible.</p>
+<p>In the simplest cases, Aeon Timeline tracks three key properties for events:</p>
+<table>
+ <tbody>
+  <tr>
+   <td>Start Date</td>
+   <td>This represents the date or time when an event started (or is scheduled to start). Depending on your settings, it will be represented as either an absolute date (e.g. 23 June 2021), or a relative date (e.g. Monday, Week 3).
+    <br></td>
+  </tr>
+  <tr>
+   <td>Duration</td>
+   <td>This represents how long an event will last, recorded as a number of years, months, days, etc. (e.g. 5 days, 4 hours). If a duration is not specified, it will default to an instantaneous event (i.e. a duration of 0 seconds).</td>
+  </tr>
+  <tr>
+   <td>End Date</td>
+   <td>This represents the date or time when an event ended (or is scheduled to end). Again, this will be represented as either an absolute or relative date, depending on settings.</td>
+  </tr>
+ </tbody>
+</table>
+<p>You do not need to commit to dates for your items until you are ready:</p>
+<ul>
+ <li>When you are first starting with your timeline, you may wish to brainstorm a series of events or tasks without allocating them specific dates.</li>
+ <li>It is even possible for an item to have a duration without yet having any associated dates (e.g. if you are estimating the length of time a task will take, but don't yet know when it will fit into your schedule)</li>
+</ul>
+<p>Once an item has both a date and duration, the three fields (start date, duration, and end date) are always kept in sync to ensure they are mathematically correct. Under default settings:</p>
+<ul>
+ <li>Item duration will be preserved when changing the start date, which means the end date will be recalculated (thus ensuring an item retains the same duration as it is dragged around the timeline).</li>
+ <li>An item start date is preserved when changing the duration or end date, meaning the end date or duration will be recalculated respectively.</li>
+ <li>An item's end date can never be before its start date (i.e. an item cannot have negative duration). If you modify an end date to occur before its start date, the change will be rejected.</li>
+</ul>
+<h2 id="precision">Date precision</h2>
+<p>Aeon Timeline handles time down to the second precision. However, it is not always necessary or practical to enter dates to such exacting measurements, so you can instead choose to enter dates with less precision as is appropriate for your data. There are several reasons you may wish to do this:</p>
+<ul>
+ <li>An event may be a historic event where the exact date or time is unknown, only an approximate value such as a year (see also, Uncertain dates below)</li>
+ <li>An event may take place over an entire day, week, month, or year, so specifying more precise time doesn’t make sense.&nbsp;</li>
+ <li>A fiction writer may not need precision down to exact dates/times, in which case making up these values is an unnecessary distraction and clutters up the timeline with unnecessary information.&nbsp;</li>
+</ul>
+<p>Aeon Timeline allows you to specify varying levels of precision for each item, so you can mix and match events that are specified to the second with events that only contain a year.&nbsp;</p>
+<h4>How precision is calculated</h4>
+<p>The precision for an item will be determined by the maximum precision of the start date and duration that you enter.&nbsp;</p>
+<p>For instance, if you enter a start date of 2012, and a duration of 3 years, Aeon Timeline will only display year information on the timeline.&nbsp; (ie. 2012 - 2014).&nbsp;</p>
+<p>Conversely, if you enter 2012 and 2 months, the event precision is now months, and a date value of January - February 2012 will be shown instead.&nbsp;</p>
+<h4>How imprecise events are displayed&nbsp;</h4>
+<p>Although more precise date information is not usually displayed on the timeline, the item still needs to be positioned on the timeline relative to other items. Aeon Timeline treats start and end dates as inclusive, and thus uses the following rules to determine where an item should be displayed when the information is uncertain:&nbsp;</p>
+<p>Start Dates</p>
+<ul>
+ <li>If time is not specified, it will default to the beginning of the specified day (represented as 00:00:00).&nbsp;</li>
+ <li>If the day of the month is not specified, it will default to the beginning of the month.</li>
+ <li>If the month is not specified, it will default to the beginning of the year.&nbsp;</li>
+</ul>
+<p>End Date</p>
+<ul>
+ <li>If the time is not specified, it will default to the end of the day (represented as 24:00:00).</li>
+ <li>If the day of the month is not specified, it will default to the end of the month.</li>
+ <li>If the month is not specified, it will default to the end of the year.</li>
+</ul>
+<h4>Representing end dates and midnight</h4>
+<p>There is an ambiguity in the way we naturally talk about dates, and a precise mathematical representation of the date themselves.&nbsp;</p>
+<p>To provide an example, consider an event that begins on 1 January 2021 and lasts for three months. For most people, the natural interpretation of this is that the end runs from January - March 2021, and so concludes at the end of 31 March 2021. Mathematically, however, this event would be considered to start at midnight on 1 January 2021 (that is, the start of January 1), and its end date would be midnight on April 1, 2021 (that is, 1 April 2021 at 00:00:00).</p>
+<p>Aeon Timeline's date reasoning attempts to keep more in line with the former, natural interpretation of events, which is achieved using the inclusive interpretation of events listed above.</p>
+<p>This means that:</p>
+<ul>
+ <li>An item with start date 2021 and duration 2 years will be represented as 2021-2022 (or, more precisely, 1 January 2021 to 31 December 2022).</li>
+ <li>An item with start date of January 2021 and duration 2 months will be represented as January 2021 to February 2021 (or 1 January 2021 to 28 February 2021)</li>
+ <li>An item with a start date of 1 January 2021 and a duration of 3 days will be represented as 1 January 2021 to 3 January 2021</li>
+</ul>
+<p>In order to remain consistent with this approach, we apply this same philosophy even when time is specified as part of a date, which leads to one additional rule:</p>
+<ul>
+ <li>When an item's end date is at midnight, we choose to represent this as 24:00 of the day before, rather than 00:00 of the day after (that is, the end of the previous day, rather than the start of the next).</li>
+</ul>
+<p>Although referring to a time of 24:00 is less common than the 0:00 alternative, it is a widely accepted alternative representation of midnight, and one we feel provides great benefit in ensuring consistency of date handling across the application.</p>
+<h2 id="ongoing">Ongoing Items</h2>
+<p>Sometimes, it is necessary to represent items on your timeline that have not yet ended, and whose end date is therefore undetermined:</p>
+<ul>
+ <li>A person still living, who does not yet have a date of death</li>
+ <li>An event that is still in progress and with an unknown end (e.g. in 1942, World War 2 was ongoing and its end date was unknown).</li>
+</ul>
+<p>For these events, Aeon Timeline allows you to specify an item is <em>Ongoing </em>(this is done using a checkbox in the Item Inspector). When an item is marked as ongoing, its end date and duration fields are disabled, and the timespan of the item is listed as "XX - Present".</p>
+<p>On the timeline, ongoing events are drawn up to today's current date, but with a faded arrow ending to show the event will continue into the future.</p>
+<h2 id="uncertain">Uncertain Dates</h2>
+<p>For some items, it is not possible to express item dates with absolute certainty. This can be for a variety of reasons, such as:</p>
+<ul>
+ <li>In historical contexts, some information was destroyed or simply not recorded, and so exact information is unknown;</li>
+ <li>In project management contexts, it is not always possible to predict exactly how much time a task will take, and it is therefore not possible to know exactly when the next task will start</li>
+ <li>The boundaries of a more abstract item may be fuzzy and unclear: the beginning of an Art Movement, or a growing relationship between two people</li>
+</ul>
+<p>We have already mentioned one way to handle this uncertainty: by specifying item dates using a lower precision, such as just a month or year, rather than an exact day.</p>
+<p>Aeon Timeline also offers a further, more advanced approach, which allows you to enter four dates instead of the usual two:</p>
+<table>
+ <tbody>
+  <tr>
+   <td>Start Date</td>
+   <td>The Start Date is reinterpreted as meaning the <strong>earliest possible start date</strong> for the item. That is, the item may start later, but it definitely did not start before this date.
+    <br></td>
+  </tr>
+  <tr>
+   <td>Latest Start (new)</td>
+   <td>The <strong>latest possible start date</strong>&nbsp;for an item. That is, the item must definitely have started by this date.</td>
+  </tr>
+  <tr>
+   <td>Earliest End (new)</td>
+   <td>The <strong>earliest possible end date</strong>&nbsp;for an item. That is, the item may end later than this date, but it definitely did not end before this date.</td>
+  </tr>
+  <tr>
+   <td>End Date</td>
+   <td>The End Date is reinterpreted as meaning the <strong>latest possible end date.</strong></td>
+  </tr>
+ </tbody>
+</table>
+<p>In other words, the event is known to have started somewhere between its start date and its latest start date; and the event is known to have ended somewhere between its earliest end date and its end date.</p>
+<p>As these are advanced fields that will not be necessary for most users, you will need to click on the disclosure arrows next to the original date fields in the Inspector (or calendar date picker) in order to access them.</p>
+<p>You may choose to use just one or both of the advanced fields:</p>
+<ul>
+ <li>It may often be the case that the date of death for a famous historical figure may be well known, but their date of birth is a mystery; in that case,&nbsp;you&nbsp;can specify both an earliest and latest possible start date, but use a precise end date.</li>
+</ul>
+<h4>Uncertain dates in text</h4>
+<p>Aeon Timeline uses the tilde (~) character to represent these approximate date ranges when showing them in text associated with an item (e.g. when item dates are shown underneath an item in one of the views).&nbsp;</p>
+<h4>Uncertain dates on the Timeline</h4>
+<p>In the Timeline View, uncertain dates are represented with a fuzzy gradient stretching between the earliest and possible dates.</p>
+<h2 id="dateStyles">Date Styles</h2>
+<p>Most Timelines will use absolute dates, meaning that you specify an exact date or year for each event on your timeline.&nbsp;</p>
+<p>Aeon Timeline also allows for several other timelines ‘styles’ that allow you to specify times relative to a theoretical ‘zero’. Uses for these relative timelines include:&nbsp;</p>
+<ul>
+ <li>Planning a fiction story without needing to think about specific dates and times.&nbsp;</li>
+ <li>Planning a project or development schedule based on weeks before you know a definite kick off date.</li>
+ <li>Planning a seminar or training workshop that you will repeat many different times.&nbsp;</li>
+ <li>Planning screen or stage time in a movie, where you want to map out scene times over a period of several hours.&nbsp;</li>
+</ul>
+<h4>Setting the Date Style</h4>
+<p>The timeline style can be set and adjusted in the ‘Date &amp; Narrative’ section of Timelines Settings.&nbsp;</p>
+<ul>
+ <li>Regular dates: Dates are represented in the normal way as absolute values (a specific day/month/year).&nbsp;</li>
+ <li>Weekly: Weeks count forward from zero, ie. Week 0, Week 1, Week 2. Events can be specified as occurring on a specific day or time during that week. For example, ‘10:00 Monday Week 6’.&nbsp;</li>
+ <li>Daily: Days count forward from zero, ie. Day 0, Day 1, Day 2. Events can be specified as occurring at a specific time during that day. For example, ‘10:00 Day 3’.&nbsp;</li>
+ <li>Time: Time counting forwards or backwards from zero, eg. 02:32:34 or -12:45:00.&nbsp;</li>
+</ul>
+<h4>Setting the ‘Zero Date’&nbsp;</h4>
+<p>When you change from regular dates to any of the weekly formats, or vice versa, you will be asked to specify the date to be used as ‘zero’ in your conversion. All existing dates in your timeline will be converted based on their relative offset from this zero date.&nbsp;</p>
+<p>For instance, if you convert from Regular Dates to Daily using a zero date of ‘1 Jan 2020’, existing dates would be converted as follows.&nbsp;&nbsp;</p>
+<ul>
+ <li>January 1 2020 becomes ‘Day 0’.</li>
+ <li>January 3 2020 becomes ‘Day 2’.</li>
+ <li>January 5 2020 12:00pm becomes ‘Day 4, 12pm’</li>
+ <li>January 3 2020 - January 7 2020 becomes ‘Day 2-6’</li>
+</ul>
+    </article>
+    
+
+    <section class="articleFoot">
+    
+
+    <time class="lu" datetime=2021-05-25 >Last updated on May 25, 2021</time>
+    </section>
+
+                    </div><!--/contentWrapper-->
+                    
+                </section><!--/content-->
+                <aside id="sidebar" class="span3">
+                 
+
+<form action="/search" method="GET" id="searchBar" class="sm" autocomplete="off">
+    
+                    <input type="hidden" name="collectionId" value="5fb73690cff47e00160bbe14"/>
+                    <input type="text" name="query" title="search-query" class="search-query" placeholder="Search" value="" aria-label="Search" />
+                    <button type="submit">
+                        <span class="sr-only">Toggle Search</span>
+                        <i class="icon-search"></i>
+                    </button>
+                    <div id="serp-dd" style="display: none;" class="sb">
+                        <ul class="result">
+                        </ul>
+                    </div>
+                
+</form>
+
+                
+                    <h3>Categories</h3>
+                    <ul class="nav nav-list">
+                    
+                        
+                            <li ><a href="/category/137-getting-started">Getting Started  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/139-user-interface">Desktop User Interface  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/199-ios-articles">iOS User Interface  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/166-calendars-and-dates">Calendars and Dates  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li  class="active" ><a href="/category/156-data-management">Data Management  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/159-scrivener-and-ulysses">Scrivener and Ulysses  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/228-settings-and-preferences">Settings and Preferences  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/229-import-export-printing">Import, Export &amp; Printing  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/138-migrating-from-version-2">Migrating from Version 2  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/185-how-to">How To Guides  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/168-troubleshooting">Troubleshooting  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                        
+                            <li ><a href="/category/232-licensing">Accounts &amp; Licensing  <i class="icon-arrow"></i></a></li>
+                        
+                    
+                    </ul>
+                
+                </aside><!--/span-->
+            </div><!--/row-->
+            <div id="noResults" style="display:none;">No results found</div>
+            <footer>
+                
+
+<p>&copy;
+    
+        <a href="http://timeline.app">Aeon Timeline</a>
+    
+    2026. <span>Powered by <a rel="nofollow noopener noreferrer" href="https://www.helpscout.com/docs-refer/?co=Aeon+Timeline&utm_source=docs&utm_medium=footerlink&utm_campaign=Docs+Branding" target="_blank">Help Scout</a></span>
+    
+        
+    
+    
+</p>
+
+            </footer>
+        </section><!--/.fluid-container-->
+        
+        
+    <script src="//d3eto7onm69fcz.cloudfront.net/assets/javascripts/app4.min.js"></script>
+
+<script>
+// keep iOS links from opening safari
+if(("standalone" in window.navigator) && window.navigator.standalone){
+// If you want to prevent remote links in standalone web apps opening Mobile Safari, change 'remotes' to true
+var noddy, remotes = false;
+document.addEventListener('click', function(event) {
+noddy = event.target;
+while(noddy.nodeName !== "A" && noddy.nodeName !== "HTML") {
+noddy = noddy.parentNode;
+}
+
+if('href' in noddy && noddy.href.indexOf('http') !== -1 && (noddy.href.indexOf(document.location.host) !== -1 || remotes)){
+event.preventDefault();
+document.location.href = noddy.href;
+}
+
+},false);
+}
+</script>
+        
+    </body>
+</html>
+
+
