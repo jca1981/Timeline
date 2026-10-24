@@ -44,9 +44,12 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [x] Milestone 8: matrix drill-down + tag-filtre + GitHub Pages deploy – 91/91 tests grønne
 - [x] Milestone 9: Narrativ/outline-visning + multi-doc profiler – 91/91 tests grønne
 - [x] Milestone 10: Undo/Redo + PWA offline – 97/97 tests grønne
-- [ ] Milestone 11 (v2): collab editing (CRDT/WebSocket), preset-profiler, version snapshots
+- [x] Milestone 11: Billeder fra .aeon + IndexedDB billedbutik + upload – 97/97 tests grønne
+- [x] Milestone 12: Overskuelighed (entity-sidebar, fold hierarki, søg & centrér, klynge-tælling) – 100/100 tests grønne
+- [ ] Milestone 13: collab editing (CRDT/WebSocket), preset-profiler, version snapshots
 
 ## Noter & beslutninger
+- 2026-07-10: **M12 færdig**: Entity-sidebar (grupperet pr. type, klik→jump+select, tag-chips). Fold hierarki i tidslinjen (+/− knap på parent-bars, skjul descendants). Søgefelt (Enter/klik → zoom til post). Klynge-tælling (cluster-bubbles ved lav zoom). `Filter.parentId` for subtree-filtrering. 100 tests. Nye filer: `ui/EntitySidebar.tsx`.
 - 2026-07-10: **M11 færdig**: Billeder fra .aeon (binær image-index parser: [idLen|fnameLen|id|filename|offset|size]), IndexedDB billedbutik (DB v3), upload/fjern i Inspector, 🖼-indikatorer i timeline/ark/fortælling. Bedre tidslinje-count (daterede vs. dato-løse). Nye filer: `core/images.ts`, `ui/ItemImage.tsx`.
 - 2026-07-10: **M10 færdig**: Undo/Redo (snapshot-stack, max 50, Ctrl+Z/Shift+Z). PWA: manifest.json + service worker (cache-first). 97 tests. Nye filer: `core/history.ts`, `public/sw.js`, `public/manifest.json`, `public/icon.svg`.
 - 2026-07-10: **M9 færdig**: NarrativView (læsevenlig outline med erasektioner, opfyldelses-annotater, tags, vers-referencer, noter). Multi-doc: DocumentBar (Gem som / Nyt / Skift / Slet) via IndexedDB multi-store. Nye filer: `NarrativeView.tsx`, `DocumentBar.tsx`.
