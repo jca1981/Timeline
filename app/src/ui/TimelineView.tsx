@@ -117,6 +117,22 @@ export function TimelineView() {
 
   const left = vp.center - width / 2 / vp.px;
   const right = vp.center + width / 2 / vp.px;
+
+  // M26: Auto-scroll when selection changes to off-screen item
+  const prevSelRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedId || selectedId === prevSelRef.current) return;
+    prevSelRef.current = selectedId;
+    const item = doc.items.find((i) => i.id === selectedId);
+    if (!item) return;
+    const bd = spanBounds(item.span);
+    if (!bd) return;
+    const xa = bd.a - left;
+    const xb = bd.b - left;
+    if (xa < 0 || xb > width) {
+      setVp((v) => ({ ...v, center: (bd.a + bd.b) / 2 }));
+    }
+  }, [selectedId, doc.items, left, width]);
   const x = useCallback((jd: number) => (jd - left) * vp.px, [left, vp.px]);
 
   // Search handler
@@ -815,6 +831,7 @@ export function TimelineView() {
             )}
             <hr />
             <label className="ctx-color">🎨 Farve: <input type="color" value={doc.items.find((x) => x.id === ctxMenu.itemId)?.color ?? '#888888'} onChange={(e) => setItemColor(ctxMenu.itemId, e.target.value)} /></label>
+            <label className="ctx-type">📂 Type: <select value={doc.items.find((x) => x.id === ctxMenu.itemId)?.typeId ?? ''} onChange={(e) => updateItem(ctxMenu.itemId, { typeId: e.target.value })}>{doc.itemTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
             <button className="ctx-danger" onClick={() => { if (confirm('Slet item?')) removeItem(ctxMenu.itemId); }}>🗑 Slet</button>
           </div>
         )}

@@ -397,3 +397,15 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 /* M25: Sort selector */
 .tl-sort { font-size: 10px; background: var(--panel); border: 1px solid var(--line); color: var(--fg); border-radius: 3px; padding: 1px 4px; cursor: pointer; }
 .tl-sort:focus { outline: none; border-color: var(--accent); }
+
+/* M26: Context menu type selector + print */
+.ctx-menu .ctx-type { display: flex; align-items: center; gap: 4px; padding: 4px 12px; font-size: 11px; color: var(--fg); }
+.ctx-menu .ctx-type select { background: var(--bg); border: 1px solid var(--line); color: var(--fg); border-radius: 3px; font-size: 10px; padding: 1px 4px; }
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .toolbar, .entity-sidebar, .filter-bar, .inspector, .save-indicator, .ctx-menu, .tl-popup, .bulk-bar, .minimap, .dateless-section, .pinned-strip, .era-breadcrumb { display: none !important; }
+  .tl-main { width: 100% !important; }
+  .bar { border: 1px solid #333 !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .era-band { border: 1px dashed #999 !important; opacity: 0.05 !important; }
+}
