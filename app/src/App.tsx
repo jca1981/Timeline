@@ -22,8 +22,26 @@ export default function App() {
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
 
+  const undoAction = useApp((s) => s.undoAction);
+  const redoAction = useApp((s) => s.redoAction);
+
   // Hydrate fra IndexedDB ved opstart
   useEffect(() => { hydrateStore(); }, []);
+
+  // M10: Undo/Redo keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undoAction();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redoAction();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undoAction, redoAction]);
 
   // JSON export
   function exportJson() {
@@ -84,6 +102,8 @@ Nuværende indhold erstattes.`)) {
           onChange={(e) => useApp.setState((s) => ({ doc: { ...s.doc, name: e.target.value } }))}
         />
         <DocumentBar />
+        <button className="tab undo-btn" onClick={undoAction} title="Fortryd (Ctrl+Z)">↩</button>
+        <button className="tab undo-btn" onClick={redoAction} title="Gentag (Ctrl+Shift+Z)">↪</button>
         <nav>
           <button className={view === 'ark' ? 'tab on' : 'tab'} onClick={() => setView('ark')}>Ark</button>
           <button className={view === 'tidslinje' ? 'tab on' : 'tab'} onClick={() => setView('tidslinje')}>

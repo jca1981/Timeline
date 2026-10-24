@@ -1,0 +1,17 @@
+{
+  "name": "Timeline",
+  "short_name": "Timeline",
+  "description": "Bibel-research tidslinje — local-first, offline-ready",
+  "start_url": "/Timeline/",
+  "scope": "/Timeline/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "/Timeline/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

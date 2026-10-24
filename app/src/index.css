@@ -158,6 +158,8 @@ table.matrix { border-collapse: collapse; font-size: 12px; }
 .depth-1 { padding-left: 20px; }
 .depth-2 { padding-left: 40px; }
 .depth-3 { padding-left: 60px; }
+.undo-btn { font-size: 16px; padding: 2px 8px; min-width: 28px; }
+.undo-btn:hover { color: var(--accent); }
 
 /* ---- M5: Slægtstræ-view ---- */
 .ft-view { border: 1px solid var(--line); border-radius: 8px; background: #14161b; touch-action: none; user-select: none; }

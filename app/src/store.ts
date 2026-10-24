@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import type { Span } from './core/types';
 import { syncSpan } from './core/sync';
 import { saveDoc, loadDoc as idbLoad, saveDocById, loadDocById, deleteDocById, listDocs, type DocMeta } from './core/persist';
+import { pushSnapshot, undo as histUndo, redo as histRedo, clearHistory } from './core/history';
 import {
   DEFAULT_RELATION_TYPES,
   emptyDoc,
@@ -105,6 +106,9 @@ interface AppState {
   deleteDoc(id: string): Promise<void>;
   saveAsDoc(name: string): Promise<void>;
   refreshDocList(): Promise<void>;
+  // M10: Undo/Redo
+  undoAction(): void;
+  redoAction(): void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -118,6 +122,7 @@ export const useApp = create<AppState>((set, get) => ({
     const type = get().doc.itemTypes[0];
     const item: Item = { id, typeId: type.id, label: 'Ny post', span: { start: { y: new Date().getFullYear(), precision: 'year' } }, ...partial };
     set((s) => {
+      pushSnapshot(s.doc);
       const doc = { ...s.doc, items: [...s.doc.items, item] };
       persist(doc);
       return { doc };
@@ -127,6 +132,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   updateItem: (id, patch) => {
     set((s) => {
+      pushSnapshot(s.doc);
       const doc = { ...s.doc, items: s.doc.items.map((it) => (it.id === id ? { ...it, ...patch } : it)) };
       persist(doc);
       return { doc };
@@ -152,6 +158,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   removeItem: (id) => {
     set((s) => {
+      pushSnapshot(s.doc);
       const doc = {
         ...s.doc,
         items: s.doc.items.filter((it) => it.id !== id).map((it) => (it.parentId === id ? { ...it, parentId: undefined } : it)),
@@ -172,13 +179,17 @@ export const useApp = create<AppState>((set, get) => ({
 
   clearAll: () => {
     set(() => {
+      pushSnapshot(get().doc);
       const doc = emptyDoc();
       persist(doc);
+      clearHistory(); // fresh start for new doc
       return { doc, errors: {}, selectedId: null };
     });
   },
 
   importDoc: (doc) => {
+    pushSnapshot(get().doc);
+    clearHistory();
     persist(doc);
     set({ doc, errors: {}, selectedId: null });
   },
@@ -188,6 +199,7 @@ export const useApp = create<AppState>((set, get) => ({
     const dup = (get().doc.relations ?? []).find((r) => r.typeId === typeId && r.fromId === fromId && r.toId === toId);
     if (dup) return;
     set((s) => {
+      pushSnapshot(s.doc);
       const rel: Relation = { id: newId(), fromId, toId, typeId, note };
       const doc = { ...s.doc, relations: [...(s.doc.relations ?? []), rel] };
       persist(doc);
@@ -197,6 +209,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   removeRelation: (id) => {
     set((s) => {
+      pushSnapshot(s.doc);
       const doc = { ...s.doc, relations: (s.doc.relations ?? []).filter((r) => r.id !== id) };
       persist(doc);
       return { doc };
@@ -224,6 +237,7 @@ export const useApp = create<AppState>((set, get) => ({
     if (dup) return null;
     const id = newId();
     set((s) => {
+      pushSnapshot(s.doc);
       const dep: Dependency = { id, blockerId, blockedId, kind };
       const doc = { ...s.doc, dependencies: [...(s.doc.dependencies ?? []), dep] };
       persist(doc);
@@ -234,6 +248,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   removeDependency: (id) => {
     set((s) => {
+      pushSnapshot(s.doc);
       const doc = { ...s.doc, dependencies: (s.doc.dependencies ?? []).filter((d) => d.id !== id) };
       persist(doc);
       return { doc };
@@ -246,6 +261,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   saveFilter: (name, f) => {
     set((s) => {
+      pushSnapshot(s.doc);
       const doc = { ...s.doc, savedFilters: { ...(s.doc.savedFilters ?? {}), [name]: f } };
       persist(doc);
       return { doc };
@@ -254,6 +270,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   removeSavedFilter: (name) => {
     set((s) => {
+      pushSnapshot(s.doc);
       const sf = { ...(s.doc.savedFilters ?? {}) };
       delete sf[name];
       const doc = { ...s.doc, savedFilters: sf };
@@ -266,6 +283,7 @@ export const useApp = create<AppState>((set, get) => ({
   docList: [],
 
   newDoc: (name) => {
+    pushSnapshot(get().doc);
     const doc = emptyDoc(name || 'Nyt tidslinje');
     persist(doc);
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
@@ -275,6 +293,7 @@ export const useApp = create<AppState>((set, get) => ({
     // Save current first
     const cur = get().doc;
     persist(cur);
+    clearHistory();
     // Load the target
     const doc = await loadDocById<TimelineDoc>(id);
     if (!doc) return;
@@ -309,5 +328,22 @@ export const useApp = create<AppState>((set, get) => ({
   refreshDocList: async () => {
     const list = await listDocs();
     set({ docList: list });
+  },
+
+  // ---- M10: Undo/Redo ----
+  undoAction: () => {
+    const cur = get().doc;
+    const prev = histUndo(cur);
+    if (!prev) return;
+    persist(prev);
+    set({ doc: prev, errors: {}, selectedId: null });
+  },
+
+  redoAction: () => {
+    const cur = get().doc;
+    const next = histRedo(cur);
+    if (!next) return;
+    persist(next);
+    set({ doc: next, errors: {}, selectedId: null });
   },
 }));

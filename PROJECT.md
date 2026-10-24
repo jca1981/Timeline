@@ -9,7 +9,7 @@ Aeon Timeline (https://www.aeontimeline.com/) er en flot, men dyr/lukket desktop
 Web-app (ikke desktop-app!) med visuelle tidslinjer til alle formål — men min primære use-case er **bibel-research** (begivenheder, personer, profetier→opfyldelser, parallelle kongerækker) og **slægtstræer** (fx Jesus' slægtslinje fra Matt 1 / Luk 3, automatisk afledt af person-items). Local-first i browseren, ingen konto/backend i v1.
 
 ## Nøglefeatures (ønsket)
-- [ ] Item-model med konfigurerbare typer (events + entiteter), farver, noter, tags
+- [x] Item-model med konfigurerbare typer (events + entiteter), farver, noter, tags
 - [x] Dato-motor: start/duration/end always-in-sync, præcision (år→sekund), ongoing, usikre datoer (tidligste/seneste-start/slut), **f.Kr./e.Kr. + årtusinder (JDN-internt)**
 - [x] Timeline-view med zoom (sekunder ↔ årtusinder)
 - [x] Spreadsheet-view (hurtig entry, drag-reorder)
