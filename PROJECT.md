@@ -49,6 +49,7 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [ ] Milestone 13: collab editing (CRDT/WebSocket), preset-profiler, version snapshots
 
 ## Noter & beslutninger
+- 2026-07-10: **M13 færdig**: Minimap (oversigtsbjælke med viewport-indikator, klik/træk = jump). Type-lanes (spor pr. type med labels). Merge-import (OK=Erstat, Cancel=Merge). Tastatur: Ctrl+←/→ navigér, +/− zoom. Entity-sidebar: ⊙ filtrér pr. type, højreklik parent = subtree. `mergeDoc()` action i store. 100 tests.
 - 2026-07-10: **M12 færdig**: Entity-sidebar (grupperet pr. type, klik→jump+select, tag-chips). Fold hierarki i tidslinjen (+/− knap på parent-bars, skjul descendants). Søgefelt (Enter/klik → zoom til post). Klynge-tælling (cluster-bubbles ved lav zoom). `Filter.parentId` for subtree-filtrering. 100 tests. Nye filer: `ui/EntitySidebar.tsx`.
 - 2026-07-10: **M11 færdig**: Billeder fra .aeon (binær image-index parser: [idLen|fnameLen|id|filename|offset|size]), IndexedDB billedbutik (DB v3), upload/fjern i Inspector, 🖼-indikatorer i timeline/ark/fortælling. Bedre tidslinje-count (daterede vs. dato-løse). Nye filer: `core/images.ts`, `ui/ItemImage.tsx`.
 - 2026-07-10: **M10 færdig**: Undo/Redo (snapshot-stack, max 50, Ctrl+Z/Shift+Z). PWA: manifest.json + service worker (cache-first). 97 tests. Nye filer: `core/history.ts`, `public/sw.js`, `public/manifest.json`, `public/icon.svg`.
