@@ -85,6 +85,7 @@ interface AppState {
   addItem(partial?: Partial<Item>): string;
   updateItem(id: string, patch: Partial<Item>): void;
   setSpan(id: string, next: Span): void;
+  setItemColor(id: string, color: string): void;
   removeItem(id: string): void;
   duplicateItem(id: string): void;
   clearAll(): void;
@@ -166,6 +167,15 @@ export const useApp = create<AppState>((set, get) => ({
       const doc = { ...s.doc, items: s.doc.items.map((it) => (it.id === id ? { ...it, span: r.span! } : it)) };
       persist(doc);
       return { doc, errors };
+    });
+  },
+
+  setItemColor: (id, color) => {
+    set((s) => {
+      pushSnapshot(s.doc);
+      const doc = { ...s.doc, items: s.doc.items.map((it) => (it.id === id ? { ...it, color } : it)) };
+      persist(doc);
+      return { doc };
     });
   },
 

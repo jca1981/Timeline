@@ -13,6 +13,7 @@ import { FilterBar } from './ui/FilterBar';
 import { importAeon } from './core/aeonImport';
 import { putImages } from './core/images';
 import { downloadHtml } from './core/exportHtml';
+import { downloadSvg } from './core/exportSvg';
 import { TEMPLATES } from './model/templates';
 
 type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling' | 'sammenlign';
@@ -23,6 +24,9 @@ export default function App() {
   const mergeDoc = useApp((s) => s.mergeDoc);
   const [view, setView] = useState<View>('ark');
   const [importing, setImporting] = useState(false);
+  // M20: Theme toggle
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('tl-theme') as 'dark' | 'light') || 'dark');
+  useEffect(() => { document.body.classList.toggle('light', theme === 'light'); localStorage.setItem('tl-theme', theme); }, [theme]);
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
 
@@ -138,6 +142,8 @@ export default function App() {
         </label>
         <button className="tab" onClick={exportJson} title="Eksportér som JSON">💾 JSON</button>
         <button className="tab" onClick={() => downloadHtml(doc)} title="Eksportér statisk HTML-tidslinje">🌐 HTML</button>
+        <button className="tab" onClick={() => downloadSvg(doc)} title="Eksportér SVG-billede">🖼 SVG</button>
+        <button className="tab" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Skift tema">{theme === 'dark' ? '☀️' : '🌙'} Tema</button>
         <label className="tab" title="Importér JSON-fil">
           📂 JSON
           <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />

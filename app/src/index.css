@@ -9,6 +9,18 @@
   --danger: #d9534f;
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
 }
+
+/* M20: Light theme */
+.light {
+  color-scheme: light;
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --line: #d1d5db;
+  --fg: #1f2937;
+  --dim: #6b7280;
+  --accent: #2563eb;
+  --danger: #dc2626;
+}
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); }
 .app { max-width: 1200px; margin: 0 auto; padding: 16px; }
@@ -336,6 +348,8 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .ctx-menu button:hover { background: var(--bg2); }
 .ctx-menu hr { border: none; border-top: 1px solid var(--line); margin: 4px 0; }
 .ctx-menu .ctx-danger { color: #e55; }
+.ctx-menu .ctx-color { display: flex; align-items: center; gap: 6px; padding: 6px 12px; cursor: pointer; }
+.ctx-menu .ctx-color input[type=color] { width: 28px; height: 20px; border: none; padding: 0; cursor: pointer; }
 
 /* M18: Entity sidebar search */
 .sb-search { width: calc(100% - 16px); margin: 4px 8px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg2); color: var(--fg); font-size: 11px; }

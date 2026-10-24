@@ -55,6 +55,7 @@ export function TimelineView() {
   // M18: Context menu
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: string } | null>(null);
   const removeItem = useApp((s) => s.removeItem);
+  const setItemColor = useApp((s) => s.setItemColor);
   const activeFilter = useApp((s) => s.activeFilter);
   const setFilter = useApp((s) => s.setFilter);
 
@@ -727,6 +728,7 @@ export function TimelineView() {
               <button onClick={() => jumpTo(doc.items.find((x) => x.id === ctxMenu.itemId)!.parentId!)}>⬆ Gå til forælder</button>
             )}
             <hr />
+            <label className="ctx-color">🎨 Farve: <input type="color" value={doc.items.find((x) => x.id === ctxMenu.itemId)?.color ?? '#888888'} onChange={(e) => setItemColor(ctxMenu.itemId, e.target.value)} /></label>
             <button className="ctx-danger" onClick={() => { if (confirm('Slet item?')) removeItem(ctxMenu.itemId); }}>🗑 Slet</button>
           </div>
         )}
