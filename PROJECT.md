@@ -42,9 +42,11 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [x] Milestone 6: subway-view + drag-reorder – 89/89 tests grønne (metro-linjer pr. forælder/tag/type, zoom/pan, stationer som cirkler, træk-og-slip i spreadsheet "Manuel"-tilstand)
 - [x] Milestone 7: profeti→opfyldelse-buer – 91/91 tests grønne (gyldne SVG-buer i timeline, tværspor-buer i subway, `fulfillmentArcs()`-helper, berigede skabeloner med tags+parentId+fulfillment-relationer)
 - [x] Milestone 8: matrix drill-down + tag-filtre + GitHub Pages deploy – 91/91 tests grønne
-- [ ] Milestone 9 (v2): collab editing, narrativ/outline-view, preset-profiler
+- [x] Milestone 9: Narrativ/outline-visning + multi-doc profiler – 91/91 tests grønne
+- [ ] Milestone 10 (v2): collab editing (CRDT/WebSocket), preset-profiler, offline sync
 
 ## Noter & beslutninger
+- 2026-07-10: **M9 færdig**: NarrativView (læsevenlig outline med erasektioner, opfyldelses-annotater, tags, vers-referencer, noter). Multi-doc: DocumentBar (Gem som / Nyt / Skift / Slet) via IndexedDB multi-store. Nye filer: `NarrativeView.tsx`, `DocumentBar.tsx`.
 - 2026-07-10: **M8 færdig**: MatrixView drill-down (klik på ● → detaljekort med note, “fjern relation”, alle rel. for paret). FilterBar tag-chips. Deploy: GitHub Actions → Pages (`base: '/Timeline/'`). URL: https://jca1981.github.io/Timeline/. `npm run deploy` bygger + pusher.
 - 2026-07-10: **M7 færdig**: Profeti→Opfyldelse-buer (gyldne buer i timeline SVG, tværspor-buer i subway). `fulfillmentArcs()`-core-helper. Berigede skabeloner: tags, parentId-hierarki, `rt-fulfillment`-relationer i begge skabeloner.
 - 2026-07-10: **M6 færdig**: SubwayView (metro-kort: X=tid, Y=spor, gruppering pr. forælder/tag/type, farvet palet, zoom/pan). Drag-reorder i spreadsheet (sortMode "Manuel", HTML5 drag/drop, ≡-håndtag). Nye filer: `ui/SubwayView.tsx`.
