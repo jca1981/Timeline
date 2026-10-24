@@ -43,9 +43,11 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [x] Milestone 7: profeti→opfyldelse-buer – 91/91 tests grønne (gyldne SVG-buer i timeline, tværspor-buer i subway, `fulfillmentArcs()`-helper, berigede skabeloner med tags+parentId+fulfillment-relationer)
 - [x] Milestone 8: matrix drill-down + tag-filtre + GitHub Pages deploy – 91/91 tests grønne
 - [x] Milestone 9: Narrativ/outline-visning + multi-doc profiler – 91/91 tests grønne
-- [ ] Milestone 10 (v2): collab editing (CRDT/WebSocket), preset-profiler, offline sync
+- [x] Milestone 10: Undo/Redo + PWA offline – 97/97 tests grønne
+- [ ] Milestone 11 (v2): collab editing (CRDT/WebSocket), preset-profiler, version snapshots
 
 ## Noter & beslutninger
+- 2026-07-10: **M10 færdig**: Undo/Redo (snapshot-stack, max 50, Ctrl+Z/Shift+Z). PWA: manifest.json + service worker (cache-first). 97 tests. Nye filer: `core/history.ts`, `public/sw.js`, `public/manifest.json`, `public/icon.svg`.
 - 2026-07-10: **M9 færdig**: NarrativView (læsevenlig outline med erasektioner, opfyldelses-annotater, tags, vers-referencer, noter). Multi-doc: DocumentBar (Gem som / Nyt / Skift / Slet) via IndexedDB multi-store. Nye filer: `NarrativeView.tsx`, `DocumentBar.tsx`.
 - 2026-07-10: **M8 færdig**: MatrixView drill-down (klik på ● → detaljekort med note, “fjern relation”, alle rel. for paret). FilterBar tag-chips. Deploy: GitHub Actions → Pages (`base: '/Timeline/'`). URL: https://jca1981.github.io/Timeline/. `npm run deploy` bygger + pusher.
 - 2026-07-10: **M7 færdig**: Profeti→Opfyldelse-buer (gyldne buer i timeline SVG, tværspor-buer i subway). `fulfillmentArcs()`-core-helper. Berigede skabeloner: tags, parentId-hierarki, `rt-fulfillment`-relationer i begge skabeloner.
