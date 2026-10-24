@@ -49,6 +49,7 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [ ] Milestone 13: collab editing (CRDT/WebSocket), preset-profiler, version snapshots
 
 ## Noter & beslutninger
+- 2026-07-10: **M15 færdig**: Zoom-presets (årh./10år/3år-knapper). Farve-arv (børn nedarver forældres farve uden egen farve). Sammenligningsvisning (to uafhængige tidslinjer side om side med type-filtre). 105 tests.
 - 2026-07-10: **M14 færdig**: Æra-bånd (halvtransparente baggrundsbånd for forældre > 50 år + ≥ 3 børn). Dato-løs sektion (collapsible chips nederst i tidslinjen). HTML-eksport (🌐-knap → standalone SVG/HTML-fil). Nye filer: `core/exportHtml.ts` + tests (105 total).
 - 2026-07-10: **M13 færdig**: Minimap (oversigtsbjælke med viewport-indikator, klik/træk = jump). Type-lanes (spor pr. type med labels). Merge-import (OK=Erstat, Cancel=Merge). Tastatur: Ctrl+←/→ navigér, +/− zoom. Entity-sidebar: ⊙ filtrér pr. type, højreklik parent = subtree. `mergeDoc()` action i store. 100 tests.
 - 2026-07-10: **M12 færdig**: Entity-sidebar (grupperet pr. type, klik→jump+select, tag-chips). Fold hierarki i tidslinjen (+/− knap på parent-bars, skjul descendants). Søgefelt (Enter/klik → zoom til post). Klynge-tælling (cluster-bubbles ved lav zoom). `Filter.parentId` for subtree-filtrering. 100 tests. Nye filer: `ui/EntitySidebar.tsx`.
