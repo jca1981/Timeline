@@ -58,6 +58,8 @@ export function TimelineView() {
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: string } | null>(null);
   // M22: Inline editing
   const [editLabelId, setEditLabelId] = useState<string | null>(null);
+  // M25: Sort mode for timeline rows
+  const [sortMode, setSortMode] = useState<'chrono' | 'end' | 'duration' | 'alpha'>('chrono');
   const updateItem = useApp((s) => s.updateItem);
   const removeItem = useApp((s) => s.removeItem);
   const setItemColor = useApp((s) => s.setItemColor);
@@ -306,7 +308,12 @@ export function TimelineView() {
     const list = [...filtered]
       .map((it) => ({ it, bd: spanBounds(it.span) }))
       .filter((r): r is { it: Item; bd: NonNullable<ReturnType<typeof spanBounds>> } => !!r.bd)
-      .sort((a, b) => a.bd.a - b.bd.a || a.it.label.localeCompare(b.it.label));
+      .sort((a, b) => {
+        if (sortMode === 'chrono') return a.bd.a - b.bd.a || a.it.label.localeCompare(b.it.label);
+        if (sortMode === 'end') return a.bd.b - b.bd.b || a.it.label.localeCompare(b.it.label);
+        if (sortMode === 'duration') return (a.bd.b - a.bd.a) - (b.bd.b - b.bd.a) || a.it.label.localeCompare(b.it.label);
+        return a.it.label.localeCompare(b.it.label);
+      });
 
     // Cluster detection
     const clustered = new Set<string>();
@@ -414,7 +421,7 @@ export function TimelineView() {
     const dless = applyFilter(doc.items, activeFilter).filter((it) => !hiddenByCollapse.has(it.id) && !spanBounds(it.span));
 
     return { rows: positioned, clusters: clusterList, laneGroups: laneInfo, eraBands: eras, datelessItems: dless };
-  }, [doc.items, doc.itemTypes, activeFilter, hiddenByCollapse, vp.px, laneMode]);
+  }, [doc.items, doc.itemTypes, activeFilter, hiddenByCollapse, vp.px, laneMode, sortMode]);
 
   const visible = rows.filter((r) => x(r.bd.b) > -200 && x(r.bd.a) < width + 200);
   const hidden = rows.length - visible.length;
@@ -504,8 +511,13 @@ export function TimelineView() {
               select(id); setEditLabelId(id);
             }} title="Tilføj item ved viewport-center">＋</button>
           </span>
+          <select className="tl-sort" value={sortMode} onChange={(e) => setSortMode(e.target.value as typeof sortMode)} title="Sortér rækker">
+            <option value="chrono">📅 Start</option>
+            <option value="end">📅 Slut</option>
+            <option value="duration">📏 Varighed</option>
+            <option value="alpha">🔤 Alfa</option>
+          </select>
           <button
-            className={laneMode === 'type' ? 'on' : ''}
             onClick={() => setLaneMode((m) => m === 'chrono' ? 'type' : 'chrono')}
             title="Skift mellem kronologisk rækkefølge og spor pr. type"
           >

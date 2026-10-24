@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { hydrateStore, useApp } from './store';
+import { historyInfo } from './core/history';
 import { SpreadsheetView } from './ui/SpreadsheetView';
 import { TimelineView } from './ui/TimelineView';
 import { MatrixView } from './ui/MatrixView';
@@ -118,8 +119,8 @@ export default function App() {
           onChange={(e) => useApp.setState((s) => ({ doc: { ...s.doc, name: e.target.value } }))}
         />
         <DocumentBar />
-        <button className="tab undo-btn" onClick={undoAction} title="Fortryd (Ctrl+Z)">↩</button>
-        <button className="tab undo-btn" onClick={redoAction} title="Gentag (Ctrl+Shift+Z)">↪</button>
+        <button className="tab undo-btn" onClick={undoAction} title={`Fortryd (Ctrl+Z) [${historyInfo().undoCount}]`}>↩</button>
+        <button className="tab undo-btn" onClick={redoAction} title={`Gentag (Ctrl+Shift+Z) [${historyInfo().redoCount}]`}>↪</button>
         <nav>
           <button className={view === 'ark' ? 'tab on' : 'tab'} onClick={() => setView('ark')}>Ark</button>
           <button className={view === 'tidslinje' ? 'tab on' : 'tab'} onClick={() => setView('tidslinje')}>

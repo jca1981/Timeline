@@ -393,3 +393,7 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .tm-del { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 10px; padding: 0 2px; }
 .tm-del:hover { color: var(--danger); }
 .tag-manager input { width: 80%; font-size: 11px; background: var(--bg); border: 1px solid var(--accent); color: var(--fg); padding: 1px 4px; }
+
+/* M25: Sort selector */
+.tl-sort { font-size: 10px; background: var(--panel); border: 1px solid var(--line); color: var(--fg); border-radius: 3px; padding: 1px 4px; cursor: pointer; }
+.tl-sort:focus { outline: none; border-color: var(--accent); }
