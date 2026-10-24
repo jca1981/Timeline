@@ -372,3 +372,12 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .save-indicator { position: fixed; bottom: 8px; right: 12px; font-size: 10px; color: var(--dim); z-index: 999; transition: opacity 0.3s; }
 .save-indicator.saving { color: var(--accent); }
 .save-indicator.saved { opacity: 0.6; }
+
+/* M22: Inline editing + popup children + bulk color */
+.bar-edit { position: absolute; left: 2px; top: 2px; width: calc(100% - 4px); height: calc(100% - 4px); background: var(--bg); border: 1px solid var(--accent); border-radius: 3px; color: var(--fg); font-size: 10px; padding: 0 4px; z-index: 10; }
+.tl-popup-children { margin-top: 6px; font-size: 11px; }
+.tl-popup-children ul { margin: 2px 0 0; padding-left: 16px; list-style: none; }
+.tl-popup-children li { cursor: pointer; padding: 2px 0; }
+.tl-popup-children li:hover { color: var(--accent); }
+.bulk-color { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
+.bulk-color input[type=color] { width: 22px; height: 16px; border: none; padding: 0; cursor: pointer; }

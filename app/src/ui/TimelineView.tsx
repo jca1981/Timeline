@@ -55,6 +55,9 @@ export function TimelineView() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   // M18: Context menu
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: string } | null>(null);
+  // M22: Inline editing
+  const [editLabelId, setEditLabelId] = useState<string | null>(null);
+  const updateItem = useApp((s) => s.updateItem);
   const removeItem = useApp((s) => s.removeItem);
   const setItemColor = useApp((s) => s.setItemColor);
   const activeFilter = useApp((s) => s.activeFilter);
@@ -461,6 +464,14 @@ export function TimelineView() {
             <button onClick={() => setVp((v) => ({ ...v, px: clampPx(1 / 365.25) }))} title="Zoom til århundrede-overblik">årh.</button>
             <button onClick={() => setVp((v) => ({ ...v, px: clampPx(1 / 30) }))} title="Zoom til årtier">10 år</button>
             <button onClick={() => setVp((v) => ({ ...v, px: clampPx(1 / 3) }))} title="Zoom til enkeltår">3 år</button>
+            <button onClick={() => {
+              const allBds = rows.map((r) => r.bd);
+              if (!allBds.length) return;
+              const minA = Math.min(...allBds.map((b) => b.a));
+              const maxB = Math.max(...allBds.map((b) => b.b));
+              const newPx = clampPx((width - 40) / (maxB - minA));
+              setVp({ center: (minA + maxB) / 2, px: newPx });
+            }} title="Zoom til at passe alt på skærmen">⊞</button>
           </span>
           <button
             className={laneMode === 'type' ? 'on' : ''}
@@ -599,7 +610,7 @@ export function TimelineView() {
               const isCollapsed = collapsedIds.has(it.id);
               const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
               return (
-                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''} ${multiSelected.has(it.id) ? 'multi-sel' : ''}`} title={tip} onClick={(e) => { if (e.ctrlKey || e.metaKey) { toggleMulti(it.id); } else { select(it.id); setPopupId(popupId === it.id ? null : it.id); } }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
+                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''} ${multiSelected.has(it.id) ? 'multi-sel' : ''}`} title={tip} onClick={(e) => { if (e.ctrlKey || e.metaKey) { toggleMulti(it.id); } else { select(it.id); setPopupId(popupId === it.id ? null : it.id); } }} onDoubleClick={(e) => { e.stopPropagation(); setEditLabelId(it.id); }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
                   {bd.ua !== undefined && bd.ua > bd.a && (
                     <span className="halo" style={{ left: x(bd.a) - xa, width: x(bd.ua) - x(bd.a), background: `linear-gradient(90deg, ${color}55, ${color}22)` }} />
                   )}
@@ -614,11 +625,15 @@ export function TimelineView() {
                   )}
                   {pinnedIds.has(it.id) && <button className="bar-pin pinned" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fjern pin">📌</button>}
                   {!pinnedIds.has(it.id) && w > 100 && <button className="bar-pin" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fastgør i bunden">📍</button>}
-                  <span className="barlabel" style={{ color: w > 140 ? '#fff' : color }}>
-                    {it.imageId ? '🖼 ' : ''}{w > 26 ? it.label : ''}
-                    {isCollapsed && (childrenMap.get(it.id)?.length ?? 0) > 0 && ` (+${childrenMap.get(it.id)!.length})`}
-                    {!isCollapsed && (descCount.get(it.id) ?? 0) > 0 && <span className="desc-badge">{descCount.get(it.id)}</span>}
-                  </span>
+                  {editLabelId === it.id ? (
+                    <input className="bar-edit" autoFocus defaultValue={it.label} onBlur={(e) => { updateItem(it.id, { label: e.target.value || it.label }); setEditLabelId(null); }} onKeyDown={(e) => { if (e.key === 'Enter') { updateItem(it.id, { label: (e.target as HTMLInputElement).value || it.label }); setEditLabelId(null); } if (e.key === 'Escape') setEditLabelId(null); }} />
+                  ) : (
+                    <span className="barlabel" style={{ color: w > 140 ? '#fff' : color }}>
+                      {it.imageId ? '🖼 ' : ''}{w > 26 ? it.label : ''}
+                      {isCollapsed && (childrenMap.get(it.id)?.length ?? 0) > 0 && ` (+${childrenMap.get(it.id)!.length})`}
+                      {!isCollapsed && (descCount.get(it.id) ?? 0) > 0 && <span className="desc-badge">{descCount.get(it.id)}</span>}
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -730,6 +745,8 @@ export function TimelineView() {
             <span>{multiSelected.size} valgt</span>
             <button onClick={() => { multiSelected.forEach((id) => togglePin(id)); }}>📍 Pin alle</button>
             <button onClick={() => { multiSelected.forEach((id) => duplicateItem(id)); clearMulti(); }}>📋 Duplikér</button>
+            <label className="bulk-color" title="Sæt farve på alle valgte">🎨 <input type="color" onChange={(e) => { multiSelected.forEach((id) => setItemColor(id, e.target.value)); }} /></label>
+            <button onClick={() => { const tag = prompt('Nyt tag:'); if (tag) multiSelected.forEach((id) => { const it = doc.items.find((x) => x.id === id); if (it) updateItem(id, { tags: [...(it.tags ?? []), tag] }); }); }}>🏷 Tag</button>
             <button onClick={() => { const ids = [...multiSelected]; ids.forEach((id) => removeItem(id)); clearMulti(); }} className="ctx-danger">🗑 Slet alle</button>
             <button onClick={clearMulti}>✕ Ryd</button>
           </div>
@@ -776,6 +793,15 @@ export function TimelineView() {
               {it.verseRefs?.length ? <div className="tl-popup-verses">📖 {it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</div> : null}
               {it.tags?.length ? <div className="tl-popup-tags">{it.tags.map((t) => <span key={t} className="tag-chip">{t}</span>)}</div> : null}
               {it.notes && <p className="tl-popup-notes">{it.notes}</p>}
+              {(childrenMap.get(it.id)?.length ?? 0) > 0 && (
+                <div className="tl-popup-children">
+                  <strong>Børn ({childrenMap.get(it.id)!.length}):</strong>
+                  <ul>{childrenMap.get(it.id)!.map((cid) => {
+                    const child = doc.items.find((c) => c.id === cid);
+                    return child ? <li key={cid} onClick={() => { select(cid); jumpTo(cid); }}>{child.label}</li> : null;
+                  })}</ul>
+                </div>
+              )}
             </div>
           );
         })()}
