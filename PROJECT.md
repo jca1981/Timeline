@@ -41,9 +41,11 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [x] Milestone 5: hierarki + persistence + tags – 89/89 tests grønne (parent-range advarsler, træ-sortering, IndexedDB, JSON import/export, tags-editor, forælder-vælger i inspektør)
 - [x] Milestone 6: subway-view + drag-reorder – 89/89 tests grønne (metro-linjer pr. forælder/tag/type, zoom/pan, stationer som cirkler, træk-og-slip i spreadsheet "Manuel"-tilstand)
 - [x] Milestone 7: profeti→opfyldelse-buer – 91/91 tests grønne (gyldne SVG-buer i timeline, tværspor-buer i subway, `fulfillmentArcs()`-helper, berigede skabeloner med tags+parentId+fulfillment-relationer)
-- [ ] Milestone 8 (v2): matrix-cell drill-down, collab (valgfrit), narrativ/outline-view
+- [x] Milestone 8: matrix drill-down + tag-filtre + GitHub Pages deploy – 91/91 tests grønne
+- [ ] Milestone 9 (v2): collab editing, narrativ/outline-view, preset-profiler
 
 ## Noter & beslutninger
+- 2026-07-10: **M8 færdig**: MatrixView drill-down (klik på ● → detaljekort med note, “fjern relation”, alle rel. for paret). FilterBar tag-chips. Deploy: GitHub Actions → Pages (`base: '/Timeline/'`). URL: https://jca1981.github.io/Timeline/. `npm run deploy` bygger + pusher.
 - 2026-07-10: **M7 færdig**: Profeti→Opfyldelse-buer (gyldne buer i timeline SVG, tværspor-buer i subway). `fulfillmentArcs()`-core-helper. Berigede skabeloner: tags, parentId-hierarki, `rt-fulfillment`-relationer i begge skabeloner.
 - 2026-07-10: **M6 færdig**: SubwayView (metro-kort: X=tid, Y=spor, gruppering pr. forælder/tag/type, farvet palet, zoom/pan). Drag-reorder i spreadsheet (sortMode "Manuel", HTML5 drag/drop, ≡-håndtag). Nye filer: `ui/SubwayView.tsx`.
 - 2026-07-10: **M5 færdig**: Parent/child-hierarki med range-advarsler (barn starter/slutter før/efter forælder), træ-sortering i spreadsheet (🌲-knap), IndexedDB-persistence (med localStorage fallback), JSON import/export-knap, tags-editor i inspektør, forælder-dropdown. Nye filer: `core/hierarchy.ts`, `core/persist.ts`.
