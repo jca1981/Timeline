@@ -1,9 +1,11 @@
-// **** Timeline-view (M2): vandret zoombar tidslinje — årtusinder ↔ timer ****
+// **** Timeline-view (M2+M4): vandret zoombar tidslinje — årtusinder ↔ timer + deps-pile ****
 // Zoom: musehjul (eller +/−), pan: træk. Usikker = gradient-halo, fortsat = pil.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../store';
 import { formatSpan, formatUncertainty } from '../core/format';
 import { clampPx, contentBounds, pickStep, spanBounds, stepLabel, ticksFor } from '../core/scale';
+import { applyFilter } from '../core/filters';
+import { isDependencyViolated } from '../core/dependencies';
 import type { Item } from '../model/doc';
 
 interface Viewport {
@@ -104,14 +106,16 @@ export function TimelineView() {
   const step = pickStep(vp.px);
   const ticks = useMemo(() => ticksFor(left, right, vp.px), [left, right, vp.px]);
 
-  // rækker: sortér kronologisk, cull til viewporten
+  // rækker: sortér kronologisk, filtrér, cull til viewporten
+  const activeFilter = useApp((s) => s.activeFilter);
   const rows = useMemo(() => {
-    const list = [...doc.items]
+    const filtered = applyFilter(doc.items, activeFilter);
+    const list = [...filtered]
       .map((it) => ({ it, bd: spanBounds(it.span) }))
       .filter((r): r is { it: Item; bd: NonNullable<ReturnType<typeof spanBounds>> } => !!r.bd)
       .sort((a, b) => a.bd.a - b.bd.a || a.it.label.localeCompare(b.it.label));
     return list.map((r, i) => ({ ...r, y: i * ROW_H }));
-  }, [doc.items]);
+  }, [doc.items, activeFilter]);
 
   const visible = rows.filter((r) => x(r.bd.b) > -200 && x(r.bd.a) < width + 200);
   const hidden = rows.length - visible.length;
@@ -150,7 +154,7 @@ export function TimelineView() {
             const xa = x(bd.a);
             const xb = x(bd.b);
             const w = Math.max(3, xb - xa);
-            const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}`;
+            const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
             return (
               <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''}`} title={tip} onClick={() => select(it.id)} style={{ left: xa, top: y + 5, width: w, background: color }}>
                 {bd.ua !== undefined && bd.ua > bd.a && (
@@ -172,6 +176,60 @@ export function TimelineView() {
               </div>
             );
           })}
+
+          {/* M4: Dependency-pile (SVG overlay) */}
+          <svg className="dep-overlay" width={width} height={Math.max(rows.length, 1) * ROW_H}>
+            {(doc.dependencies ?? []).map((dep) => {
+              const blockerRow = rows.find((r) => r.it.id === dep.blockerId);
+              const blockedRow = rows.find((r) => r.it.id === dep.blockedId);
+              if (!blockerRow || !blockedRow) return null;
+              const violated = isDependencyViolated(dep, doc);
+              const x1 = x(blockerRow.bd.b); // end of blocker
+              const y1 = blockerRow.y + ROW_H / 2;
+              const x2 = x(blockedRow.bd.a); // start of blocked
+              const y2 = blockedRow.y + ROW_H / 2;
+              if (x1 < -200 || x1 > width + 200 || x2 < -200 || x2 > width + 200) return null;
+              const midY = (y1 + y2) / 2;
+              const path = `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`;
+              return (
+                <g key={dep.id}>
+                  <path d={path} fill="none" stroke={violated ? '#e74c3c' : '#888'} strokeWidth={violated ? 2 : 1} strokeDasharray={violated ? '' : '4 2'} markerEnd="url(#arrowhead)" />
+                  <text x={(x1 + x2) / 2} y={midY - 4} textAnchor="middle" fontSize={9} fill={violated ? '#e74c3c' : '#666'}>{dep.kind}</text>
+                </g>
+              );
+            })}
+
+            {/* M7: Profeti→Opfyldelse-buer (gyldne buer) */}
+            {(doc.relations ?? []).filter((r) => r.typeId === 'rt-fulfillment').map((rel) => {
+              const prophecyRow = rows.find((r) => r.it.id === rel.fromId);
+              const fulfillRow = rows.find((r) => r.it.id === rel.toId);
+              if (!prophecyRow || !fulfillRow) return null;
+              const x1 = x((prophecyRow.bd.a + prophecyRow.bd.b) / 2);
+              const y1 = prophecyRow.y + ROW_H / 2;
+              const x2 = x((fulfillRow.bd.a + fulfillRow.bd.b) / 2);
+              const y2 = fulfillRow.y + ROW_H / 2;
+              if (x1 < -200 || x1 > width + 200 || x2 < -200 || x2 > width + 200) return null;
+              const arcH = Math.abs(y2 - y1) * 0.4 + 20;
+              const midX = (x1 + x2) / 2;
+              const path = `M${x1},${y1} Q${midX},${Math.min(y1, y2) - arcH} ${x2},${y2}`;
+              return (
+                <g key={rel.id} className="fulfill-arc">
+                  <path d={path} fill="none" stroke="#d4a017" strokeWidth={2} strokeLinecap="round" opacity={0.8} markerEnd="url(#arrow-gold)" />
+                  <circle cx={x1} cy={y1} r={4} fill="#d4a017" opacity={0.9} />
+                  <text x={midX} y={Math.min(y1, y2) - arcH + 2} textAnchor="middle" fontSize={10} fill="#d4a017">📜</text>
+                </g>
+              );
+            })}
+
+            <defs>
+              <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#888" />
+              </marker>
+              <marker id="arrow-gold" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+                <polygon points="0 0, 7 2.5, 0 5" fill="#d4a017" />
+              </marker>
+            </defs>
+          </svg>
         </div>
       </div>
       <p className="hint">Træk for at panore · hjul for at zoome (årtusinder ↔ timer) · hold mus over en bjælke for detaljer</p>

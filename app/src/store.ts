@@ -1,11 +1,15 @@
-// **** Zustand-store: lokal-first persistence (localStorage nu, IndexedDB senere) + sync-regler ****
+// **** Zustand-store: lokal-first persistence (IndexedDB + localStorage-fallback) ****
 import { create } from 'zustand';
 import type { Span } from './core/types';
 import { syncSpan } from './core/sync';
+import { saveDoc, loadDoc as idbLoad } from './core/persist';
 import {
   DEFAULT_RELATION_TYPES,
   emptyDoc,
   newId,
+  type Dependency,
+  type DepKind,
+  type Filter,
   type Item,
   type Relation,
   type TimelineDoc,
@@ -14,27 +18,39 @@ import {
 
 const LS_KEY = 'aeon-clone:doc:v1';
 
-function loadDoc(): TimelineDoc {
+/** Sync initial load (localStorage som lynhurtig cache; IndexedDB hydrates senere). */
+function loadDocSync(): TimelineDoc {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const doc = JSON.parse(raw) as TimelineDoc;
-      // migration: ældre M1-dokumenter får relations-felter
       doc.relationTypes ??= DEFAULT_RELATION_TYPES;
       doc.relations ??= [];
+      doc.dependencies ??= [];
+      doc.savedFilters ??= {};
       return doc;
     }
-  } catch {
-    /*_corrupt → start ny */
-  }
+  } catch { /* corrupt → start ny */ }
   return emptyDoc();
 }
 
+/** Async persist (IndexedDB + localStorage cache). Fire-and-forget. */
 function persist(doc: TimelineDoc) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(doc));
-  } catch {
-    /* fyldt op — ignorerer i M1 */
+  // localStorage som sync cache (instant genindlæsning næste gang)
+  try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch { /* ignorer */ }
+  // IndexedDB som primær lager (større dokumenter)
+  saveDoc(doc).catch(() => {});
+}
+
+/** Hydrate fra IndexedDB (kaldes én gang efter mount). */
+export async function hydrateStore() {
+  const doc = await idbLoad<TimelineDoc>();
+  if (doc) {
+    doc.relationTypes ??= DEFAULT_RELATION_TYPES;
+    doc.relations ??= [];
+    doc.dependencies ??= [];
+    doc.savedFilters ??= {};
+    useApp.setState({ doc, errors: {}, selectedId: null });
   }
 }
 
@@ -42,6 +58,7 @@ interface AppState {
   doc: TimelineDoc;
   errors: Record<string, string>; // itemId -> sync-fejl (rød kant)
   selectedId: string | null; // inspektør-valgt post
+  activeFilter: Filter | null; // M4 aktivt filter
   select(id: string | null): void;
   addItem(partial?: Partial<Item>): string;
   updateItem(id: string, patch: Partial<Item>): void;
@@ -54,10 +71,17 @@ interface AppState {
   removeRelation(id: string): void;
   toggleRelation(fromId: string, toId: string, typeId: string): void;
   setVerseRefs(id: string, refs: VerseRef[]): void;
+  // M4: Dependencies
+  addDependency(blockerId: string, blockedId: string, kind: DepKind): string | null;
+  removeDependency(id: string): void;
+  // M4: Filtre
+  setFilter(f: Filter | null): void;
+  saveFilter(name: string, f: Filter): void;
+  removeSavedFilter(name: string): void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
-  doc: loadDoc(),
+  doc: loadDocSync(),
   errors: {},
   selectedId: null,
   select: (id) => set({ selectedId: id }),
@@ -105,6 +129,7 @@ export const useApp = create<AppState>((set, get) => ({
         ...s.doc,
         items: s.doc.items.filter((it) => it.id !== id).map((it) => (it.parentId === id ? { ...it, parentId: undefined } : it)),
         relations: (s.doc.relations ?? []).filter((r) => r.fromId !== id && r.toId !== id),
+        dependencies: (s.doc.dependencies ?? []).filter((d) => d.blockerId !== id && d.blockedId !== id),
       };
       persist(doc);
       return { doc, selectedId: s.selectedId === id ? null : s.selectedId };
@@ -159,5 +184,54 @@ export const useApp = create<AppState>((set, get) => ({
 
   setVerseRefs: (id, refs) => {
     get().updateItem(id, { verseRefs: refs.length ? refs : undefined });
+  },
+
+  // ---- M4: Dependencies ----
+  addDependency: (blockerId, blockedId, kind) => {
+    const doc = get().doc;
+    const err = doc.items.find((it) => it.id === blockerId) && doc.items.find((it) => it.id === blockedId)
+      ? (blockerId === blockedId ? 'selv' : null)
+      : 'mangler';
+    if (err) return null;
+    const dup = (doc.dependencies ?? []).find((d) => d.blockerId === blockerId && d.blockedId === blockedId && d.kind === kind);
+    if (dup) return null;
+    const id = newId();
+    set((s) => {
+      const dep: Dependency = { id, blockerId, blockedId, kind };
+      const doc = { ...s.doc, dependencies: [...(s.doc.dependencies ?? []), dep] };
+      persist(doc);
+      return { doc };
+    });
+    return id;
+  },
+
+  removeDependency: (id) => {
+    set((s) => {
+      const doc = { ...s.doc, dependencies: (s.doc.dependencies ?? []).filter((d) => d.id !== id) };
+      persist(doc);
+      return { doc };
+    });
+  },
+
+  // ---- M4: Filtre ----
+  activeFilter: null,
+  setFilter: (f) => set({ activeFilter: f }),
+
+  saveFilter: (name, f) => {
+    set((s) => {
+      const doc = { ...s.doc, savedFilters: { ...(s.doc.savedFilters ?? {}), [name]: f } };
+      persist(doc);
+      return { doc };
+    });
+  },
+
+  removeSavedFilter: (name) => {
+    set((s) => {
+      const sf = { ...(s.doc.savedFilters ?? {}) };
+      delete sf[name];
+      const doc = { ...s.doc, savedFilters: sf };
+      persist(doc);
+      return { doc };
+    });
   },
 }));

@@ -53,3 +53,16 @@ export function generations(doc: TimelineDoc, ancestorId: string, descendantId: 
   }
   return -1;
 }
+
+export interface FulfillmentArc {
+  prophecyId: string;
+  fulfillmentId: string;
+  note?: string;
+}
+
+/** Alle profeti→opfyldelse-relationer i doc (rt-fulfillment). */
+export function fulfillmentArcs(doc: TimelineDoc): FulfillmentArc[] {
+  return (doc.relations ?? [])
+    .filter((r) => r.typeId === 'rt-fulfillment')
+    .map((r) => ({ prophecyId: r.fromId, fulfillmentId: r.toId, note: r.note }));
+}

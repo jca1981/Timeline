@@ -1,7 +1,7 @@
 // **** Tests: relationer — retning, matrix-opslag, generationer (M3) ****
 import { describe, expect, it } from 'vitest';
 import { demoDoc, emptyDoc, DEFAULT_RELATION_TYPES } from '../model/doc';
-import { findRelation, generations, linksOf, relationTypes } from './relations';
+import { findRelation, fulfillmentArcs, generations, linksOf, relationTypes } from './relations';
 
 describe('relationer', () => {
   const doc = demoDoc();
@@ -64,5 +64,17 @@ describe('relationer', () => {
       expect(t.name.length).toBeGreaterThan(0);
       expect(t.reverseName.length).toBeGreaterThan(0);
     }
+  });
+
+  it('fulfillmentArcs: demodok har en profeti→opfyldelse-relation', () => {
+    const arcs = fulfillmentArcs(demoDoc());
+    expect(arcs.length).toBeGreaterThanOrEqual(1);
+    expect(arcs[0]).toHaveProperty('prophecyId');
+    expect(arcs[0]).toHaveProperty('fulfillmentId');
+  });
+
+  it('fulfillmentArcs returnerer tom for doc uden relationer', () => {
+    const arcs = fulfillmentArcs(emptyDoc('tom'));
+    expect(arcs).toEqual([]);
   });
 });

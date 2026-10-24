@@ -1,12 +1,16 @@
-import { useRef, useState } from 'react';
-import { useApp } from './store';
+import { useEffect, useRef, useState } from 'react';
+import { hydrateStore, useApp } from './store';
 import { SpreadsheetView } from './ui/SpreadsheetView';
 import { TimelineView } from './ui/TimelineView';
 import { MatrixView } from './ui/MatrixView';
+import { FamilyTreeView } from './ui/FamilyTreeView';
+import { SubwayView } from './ui/SubwayView';
 import { Inspector } from './ui/Inspector';
+import { FilterBar } from './ui/FilterBar';
 import { importAeon } from './core/aeonImport';
+import { TEMPLATES } from './model/templates';
 
-type View = 'ark' | 'tidslinje' | 'matrix';
+type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway';
 
 export default function App() {
   const doc = useApp((s) => s.doc);
@@ -14,6 +18,40 @@ export default function App() {
   const [view, setView] = useState<View>('ark');
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const jsonRef = useRef<HTMLInputElement>(null);
+
+  // Hydrate fra IndexedDB ved opstart
+  useEffect(() => { hydrateStore(); }, []);
+
+  // JSON export
+  function exportJson() {
+    const json = JSON.stringify(doc, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${doc.name || 'timeline'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // JSON import
+  async function onJsonFile(file: File) {
+    try {
+      const json = JSON.parse(await file.text());
+      if (!json.items || !Array.isArray(json.items)) throw new Error('Ugyldigt JSON: mangler items[]');
+      if (window.confirm(`Importer “${json.name || file.name}” (${json.items.length} poster)?
+
+Nuværende indhold erstattes.`)) {
+        importDoc(json);
+        setView('ark');
+      }
+    } catch (e) {
+      alert('JSON-import fejlede: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      if (jsonRef.current) jsonRef.current.value = '';
+    }
+  }
 
   async function onFile(file: File) {
     setImporting(true);
@@ -51,6 +89,12 @@ Nuværende indhold erstattes.`)) {
           <button className={view === 'matrix' ? 'tab on' : 'tab'} onClick={() => setView('matrix')}>
             Matrix
           </button>
+          <button className={view === 'slægtstræ' ? 'tab on' : 'tab'} onClick={() => setView('slægtstræ')}>
+            Slægtstræ
+          </button>
+          <button className={view === 'subway' ? 'tab on' : 'tab'} onClick={() => setView('subway')}>
+            Subway
+          </button>
         </nav>
         <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
           {importing ? 'Importer…' : 'Importer .aeon'}
@@ -62,9 +106,32 @@ Nuværende indhold erstattes.`)) {
             onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
           />
         </label>
+        <button className="tab" onClick={exportJson} title="Eksportér som JSON">💾 JSON</button>
+        <label className="tab" title="Importér JSON-fil">
+          📂 JSON
+          <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
+        </label>
+        <select className="tab" onChange={(e) => {
+          const tpl = TEMPLATES.find((t) => t.name === e.target.value);
+          if (tpl && window.confirm(`Anvend skabelon “${tpl.name}”? Nuværende indhold erstattes.`)) {
+            importDoc(tpl.build());
+            setView('ark');
+          }
+          e.target.value = '';
+        }} defaultValue="">
+          <option value="" disabled>Skabeloner…</option>
+          {TEMPLATES.map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
+        </select>
       </header>
       <div className="body">
-        <main>{view === 'ark' ? <SpreadsheetView /> : view === 'tidslinje' ? <TimelineView /> : <MatrixView />}</main>
+        <FilterBar />
+        <main>
+          {view === 'ark' && <SpreadsheetView />}
+          {view === 'tidslinje' && <TimelineView />}
+          {view === 'matrix' && <MatrixView />}
+          {view === 'slægtstræ' && <FamilyTreeView />}
+          {view === 'subway' && <SubwayView />}
+        </main>
         <Inspector />
       </div>
     </div>

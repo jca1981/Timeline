@@ -1,6 +1,6 @@
 # Aeon Clone
 
-**Status:** I gang | **Startet:** 2026-10-23 | **Sidst rørt:** 2026-10-23
+**Status:** I gang | **Startet:** 2026-10-23 | **Sidst rørt:** 2026-07-10
 
 ## Hvorfor
 Aeon Timeline (https://www.aeontimeline.com/) er en flot, men dyr/lukket desktop-app til visuelle tidslinjer — forfattere, jurister, projektledere. Jeg vil eje min egen version: web-baseret, local-first, uden licens.projekt. Kan potentielt fuse med life-org (min personlige livs-tidslinje).
@@ -10,19 +10,19 @@ Web-app (ikke desktop-app!) med visuelle tidslinjer til alle formål — men min
 
 ## Nøglefeatures (ønsket)
 - [ ] Item-model med konfigurerbare typer (events + entiteter), farver, noter, tags
-- [ ] Dato-motor: start/duration/end always-in-sync, præcision (år→sekund), ongoing, usikre datoer (tidligste/seneste-start/slut), **f.Kr./e.Kr. + årtusinder (JDN-internt)**
-- [ ] Timeline-view med zoom (sekunder ↔ årtusinder)
-- [ ] Spreadsheet-view (hurtig entry, drag-reorder)
-- [ ] Entiteter + typebare relationer (Relationship Matrix-view)
-- [ ] `parentOf` relationstype → alder ved begivenheder automatisk; slægtstræ-view (v2)
-- [ ] Vers-referencer pr. item + deep links til **jw.org dansk Studiebibel** (NYE VERDEN) — Åbn-i-ny-fane pr. kapitel, valgfrit citat-felt
-- [ ] Parent/child-hierarki (parent-range advarsler)
-- [ ] Dependencies (Blocks/Blocked by, FS/FF/SS/SF) + brud-varsel
-- [ ] Filtre (global + per view), gemte filtre
-- [ ] Skabeloner: **Bibel-kronologi**, **Bibelske personer**, Historisk, Projekt
-- [ ] Lokal persistence (JSON i IndexedDB, import/export), statisk webapp (GitHub Pages/Vercel)
+- [x] Dato-motor: start/duration/end always-in-sync, præcision (år→sekund), ongoing, usikre datoer (tidligste/seneste-start/slut), **f.Kr./e.Kr. + årtusinder (JDN-internt)**
+- [x] Timeline-view med zoom (sekunder ↔ årtusinder)
+- [x] Spreadsheet-view (hurtig entry, drag-reorder)
+- [x] Entiteter + typebare relationer (Relationship Matrix-view)
+- [x] `parentOf` relationstype → alder ved begivenheder automatisk; slægtstræ-view (v2)
+- [x] Vers-referencer pr. item + deep links til **jw.org dansk Studiebibel** (NYE VERDEN) — Åbn-i-ny-fane pr. kapitel, valgfrit citat-felt
+- [x] Parent/child-hierarki (parent-range advarsler)
+- [x] Dependencies (Blocks/Blocked by, FS/FF/SS/SF) + brud-varsel
+- [x] Filtre (global + per view), gemte filtre
+- [x] Skabeloner: **Bibel-kronologi**, **Bibelske personer**, Historisk, Projekt
+- [x] Lokal persistence (JSON i IndexedDB, import/export), statisk webapp (GitHub Pages/Vercel)
 
-v2+: narrativ/outline-view, subway-view, mindmap, split-views, constraints med operatorer+offset, auto-resolution af dependency-brud.
+v2+: narrativ/outline-view, mindmap, split-views, constraints med operatorer+offset, auto-resolution af dependency-brud.
 
 ## Teknologi / platform
 Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fil, deployes som statisk webapp. Timeline-rendering: SVG/DOM først (viewport-culling), canvas hvis det kniber. Datoer: eget date-lag (astronomisk årstal, JDN til sammenligning/zoom) — JS Date duer ikke til f.Kr.
@@ -37,10 +37,17 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [x] Milestone 2: timeline-view med zoom (årtusinder ↔ tid; trin-stige-ticks, gradient-usrikkerhed, fortsat-pil, culling — 40/40 tests grønne)
 - [x] Milestone 3: entiteter/relationer (parentOf, vers-ref) + matrix — 52/52 tests grønne (relationer, slægtskæder, jw.org-links, inspektør, matrix)
 - [x] Import af .aeon-filer (Aeon Timeline 3): format reverse-engineeret (se `research/AEON-FORMAT.md`), "Importer .aeon"-knap — 59/59 tests grønne inkl. den virkelige fil (361 poster, 77 forælder-relationer)
-- [ ] Milestone 4: dependencies + filtre + bibel-skabeloner
-- [ ] Milestone 5 (v2): slægtstræ-view, subway-spor, profeti→opfyldelse-buer
+- [x] Milestone 4: dependencies + filtre + bibel-skabeloner – 80/80 tests grønne (deps-konflikt, type/tag/dato/tekst-filtre, gemte filtre, skabelon-dropdown, SVG-pile i timeline)
+- [x] Milestone 5: hierarki + persistence + tags – 89/89 tests grønne (parent-range advarsler, træ-sortering, IndexedDB, JSON import/export, tags-editor, forælder-vælger i inspektør)
+- [x] Milestone 6: subway-view + drag-reorder – 89/89 tests grønne (metro-linjer pr. forælder/tag/type, zoom/pan, stationer som cirkler, træk-og-slip i spreadsheet "Manuel"-tilstand)
+- [x] Milestone 7: profeti→opfyldelse-buer – 91/91 tests grønne (gyldne SVG-buer i timeline, tværspor-buer i subway, `fulfillmentArcs()`-helper, berigede skabeloner med tags+parentId+fulfillment-relationer)
+- [ ] Milestone 8 (v2): matrix-cell drill-down, collab (valgfrit), narrativ/outline-view
 
 ## Noter & beslutninger
+- 2026-07-10: **M7 færdig**: Profeti→Opfyldelse-buer (gyldne buer i timeline SVG, tværspor-buer i subway). `fulfillmentArcs()`-core-helper. Berigede skabeloner: tags, parentId-hierarki, `rt-fulfillment`-relationer i begge skabeloner.
+- 2026-07-10: **M6 færdig**: SubwayView (metro-kort: X=tid, Y=spor, gruppering pr. forælder/tag/type, farvet palet, zoom/pan). Drag-reorder i spreadsheet (sortMode "Manuel", HTML5 drag/drop, ≡-håndtag). Nye filer: `ui/SubwayView.tsx`.
+- 2026-07-10: **M5 færdig**: Parent/child-hierarki med range-advarsler (barn starter/slutter før/efter forælder), træ-sortering i spreadsheet (🌲-knap), IndexedDB-persistence (med localStorage fallback), JSON import/export-knap, tags-editor i inspektør, forælder-dropdown. Nye filer: `core/hierarchy.ts`, `core/persist.ts`.
+- 2026-07-10: **M4 færdig**: Dependencies (FS/FF/SS/SF) med brud-varsel i inspektør + SVG-pile i timeline; filter-bar (type, tag, dato-ramge, tekst, gemte filtre); skabelon-dropdown ("Bibel-kronologi" + "Bibelske personer"). Nye filer: `core/dependencies.ts`, `core/filters.ts`, `ui/FilterBar.tsx`, `model/templates.ts`.
 - 2026-10-23: **.aeon-format (filVersion 7)** = billeder + rå JSON (`{"definitions":...}`) + binær footer-index. era: 0=f.Kr., 1=e.Kr.; precision: -1=ingen, 2=dag. Relationer: `{subject, reference, object}` = "subjects X er object" (parentRef vendes om i import). Import: `src/core/aeonImport.ts`. Store filer holdes ude af git (`Import/*.aeon`).
 - 2026-10-23: **GitHub: https://github.com/jca1981/Timeline** (deploy key `~/.ssh/github_timeline_deploy`).
 - 2026-10-23: **Bibelkilde = jw.org dansk Studiebibel (NYE VERDEN)** i stedet for bible-api.com (jensa's valg). Tekst kan ikke hentes automatisk (SPA + AWS WAF) → deep links pr. kapitel + manuelt citat-felt. Slug-mapping: `research/jw-books.json`.

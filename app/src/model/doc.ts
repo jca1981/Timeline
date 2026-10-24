@@ -46,6 +46,25 @@ export interface VerseRef {
   quote?: string;
 }
 
+/** Dependency: blocker → blocked, med type (FS/FF/SS/SF). */
+export type DepKind = 'FS' | 'FF' | 'SS' | 'SF';
+
+export interface Dependency {
+  id: string;
+  blockerId: string;
+  blockedId: string;
+  kind: DepKind; // FS = Finish-to-Start (blocker slut → blocked start)
+}
+
+/** Filter for at indsnævre哪些 posters visning. */
+export interface Filter {
+  match: 'all' | 'any';
+  types?: string[];   // itemTypeId[]
+  tags?: string[];
+  dateRange?: { from?: number; to?: number }; // JDN integers
+  text?: string;       // fuzzy-label/notes-søgning
+}
+
 export interface TimelineDoc {
   version: 1;
   name: string;
@@ -53,6 +72,8 @@ export interface TimelineDoc {
   relationTypes?: RelationType[]; // M3 (valgfri for baglænes-kompatibilitet)
   items: Item[];
   relations?: Relation[];
+  dependencies?: Dependency[];    // M4
+  savedFilters?: Record<string, Filter>; // M4
 }
 
 export const DEFAULT_TYPES: ItemType[] = [
