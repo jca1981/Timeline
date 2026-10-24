@@ -123,6 +123,10 @@ interface AppState {
   multiSelected: Set<string>;
   toggleMulti(id: string): void;
   clearMulti(): void;
+  // M23: Clipboard
+  clipboard: Item[];
+  copyItems(ids: string[]): void;
+  pasteClipboard(): void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -412,4 +416,22 @@ export const useApp = create<AppState>((set, get) => ({
     return { multiSelected: next };
   }),
   clearMulti: () => set({ multiSelected: new Set<string>() }),
+
+  // M23: Clipboard
+  clipboard: [],
+  copyItems: (ids) => {
+    const items = get().doc.items.filter((it) => ids.includes(it.id));
+    set({ clipboard: JSON.parse(JSON.stringify(items)) });
+  },
+  pasteClipboard: () => {
+    const cbs = get().clipboard;
+    if (!cbs.length) return;
+    set((s) => {
+      pushSnapshot(s.doc);
+      const newItems = cbs.map((it) => ({ ...it, id: newId() }));
+      const doc = { ...s.doc, items: [...s.doc.items, ...newItems] };
+      persist(doc);
+      return { doc };
+    });
+  },
 }));

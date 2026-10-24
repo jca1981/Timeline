@@ -147,6 +147,13 @@ export function TimelineView() {
         } else if (e.key === 'd' && selectedId) {
           e.preventDefault();
           duplicateItem(selectedId);
+        } else if (e.key === 'c' && selectedId) {
+          e.preventDefault();
+          const ids = multiSelected.size > 0 ? [...multiSelected] : [selectedId];
+          useApp.getState().copyItems(ids);
+        } else if (e.key === 'v') {
+          e.preventDefault();
+          useApp.getState().pasteClipboard();
         }
       } else if (e.key === '+' || e.key === '=') {
         setVp((v) => ({ ...v, px: clampPx(v.px * 1.4) }));

@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../store';
 import { buildTree } from '../core/hierarchy';
+import { TagManager } from './TagManager';
 
 export function EntitySidebar() {
   const doc = useApp((s) => s.doc);
@@ -148,6 +149,7 @@ export function EntitySidebar() {
           )}
         </div>
       )}
+      <TagManager />
     </aside>
   );
 }

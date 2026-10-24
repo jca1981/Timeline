@@ -381,3 +381,15 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .tl-popup-children li:hover { color: var(--accent); }
 .bulk-color { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
 .bulk-color input[type=color] { width: 22px; height: 16px; border: none; padding: 0; cursor: pointer; }
+
+/* M23: Tag manager */
+.tag-manager { margin-top: 12px; font-size: 11px; }
+.tag-manager summary { cursor: pointer; color: var(--dim); padding: 4px 0; }
+.tm-list { max-height: 200px; overflow-y: auto; }
+.tm-row { display: flex; align-items: center; gap: 4px; padding: 2px 4px; }
+.tm-tag { flex: 1; cursor: pointer; }
+.tm-tag:hover { color: var(--accent); }
+.tm-count { font-size: 9px; color: var(--dim); }
+.tm-del { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 10px; padding: 0 2px; }
+.tm-del:hover { color: var(--danger); }
+.tag-manager input { width: 80%; font-size: 11px; background: var(--bg); border: 1px solid var(--accent); color: var(--fg); padding: 1px 4px; }
