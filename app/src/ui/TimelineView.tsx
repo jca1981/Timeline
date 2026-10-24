@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useApp } from '../store';
 import { formatSpan, formatUncertainty } from '../core/format';
 import { clampPx, contentBounds, spanBounds, ticksFor } from '../core/scale';
-import { toJD } from '../core/jdn';
+import { toJD, fromJD } from '../core/jdn';
 import { applyFilter } from '../core/filters';
 import { isDependencyViolated } from '../core/dependencies';
 import { EntitySidebar } from './EntitySidebar';
@@ -36,6 +36,7 @@ export function TimelineView() {
   const toggleMulti = useApp((s) => s.toggleMulti);
   const clearMulti = useApp((s) => s.clearMulti);
   const duplicateItem = useApp((s) => s.duplicateItem);
+  const addItemAction = useApp((s) => s.addItem);
   const wrapRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1000);
@@ -372,7 +373,25 @@ export function TimelineView() {
         yPos++; // gap between lanes
       }
     } else {
-      positioned = unclustered.map((r, i) => ({ ...r, y: i * ROW_H }));
+      // M24: Greedy bin-packing — pack non-overlapping items in same row
+      const packed: { it: Item; bd: NonNullable<ReturnType<typeof spanBounds>>; y: number }[] = [];
+      const rowEnds: number[] = []; // end x-jd for each row
+      for (const r of unclustered) {
+        let placed = false;
+        for (let row = 0; row < rowEnds.length; row++) {
+          if (r.bd.a > rowEnds[row]) {
+            packed.push({ ...r, y: row * ROW_H });
+            rowEnds[row] = r.bd.b;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          packed.push({ ...r, y: rowEnds.length * ROW_H });
+          rowEnds.push(r.bd.b);
+        }
+      }
+      positioned = packed;
     }
 
     rowsRef.current = positioned;
@@ -479,6 +498,11 @@ export function TimelineView() {
               const newPx = clampPx((width - 40) / (maxB - minA));
               setVp({ center: (minA + maxB) / 2, px: newPx });
             }} title="Zoom til at passe alt på skærmen">⊞</button>
+            <button onClick={() => {
+              const dv = fromJD(vp.center, 'year');
+              const id = addItemAction({ label: 'Nyt item', span: { start: dv, duration: { y: 1 } } });
+              select(id); setEditLabelId(id);
+            }} title="Tilføj item ved viewport-center">＋</button>
           </span>
           <button
             className={laneMode === 'type' ? 'on' : ''}
@@ -617,7 +641,7 @@ export function TimelineView() {
               const isCollapsed = collapsedIds.has(it.id);
               const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
               return (
-                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''} ${multiSelected.has(it.id) ? 'multi-sel' : ''}`} title={tip} onClick={(e) => { if (e.ctrlKey || e.metaKey) { toggleMulti(it.id); } else { select(it.id); setPopupId(popupId === it.id ? null : it.id); } }} onDoubleClick={(e) => { e.stopPropagation(); setEditLabelId(it.id); }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
+                <div key={it.id} draggable className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''} ${multiSelected.has(it.id) ? 'multi-sel' : ''}`} title={tip} onClick={(e) => { if (e.ctrlKey || e.metaKey) { toggleMulti(it.id); } else { select(it.id); setPopupId(popupId === it.id ? null : it.id); } }} onDoubleClick={(e) => { e.stopPropagation(); setEditLabelId(it.id); }} onDragStart={(e) => { e.dataTransfer.setData('text/tl-item', it.id); }} onDragOver={(e) => { if (e.dataTransfer.types.includes('text/tl-item')) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); const src = e.dataTransfer.getData('text/tl-item'); if (src && src !== it.id) updateItem(src, { parentId: it.id }); }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
                   {bd.ua !== undefined && bd.ua > bd.a && (
                     <span className="halo" style={{ left: x(bd.a) - xa, width: x(bd.ua) - x(bd.a), background: `linear-gradient(90deg, ${color}55, ${color}22)` }} />
                   )}
