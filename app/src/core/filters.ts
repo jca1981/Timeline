@@ -55,8 +55,36 @@ export function matchesFilter(item: Item, filter: Filter | null | undefined): bo
   return filter.match === 'all' ? checks.every(Boolean) : checks.some(Boolean);
 }
 
-/** Filtrér items efter filter. */
+/** Filtrér items efter filter. Ved parentId inkluderes kun post + dens descendants. */
 export function applyFilter(items: Item[], filter: Filter | null | undefined): Item[] {
   if (!filter) return items;
-  return items.filter((it) => matchesFilter(it, filter));
+
+  // M12: ParentDescendants-forfiltering
+  let allowed: Set<string> | null = null;
+  if (filter.parentId) {
+    allowed = new Set<string>();
+    allowed.add(filter.parentId);
+    // BFS descendants
+    const byParent = new Map<string, string[]>();
+    for (const it of items) {
+      if (it.parentId) {
+        const arr = byParent.get(it.parentId) ?? [];
+        arr.push(it.id);
+        byParent.set(it.parentId, arr);
+      }
+    }
+    const queue = [filter.parentId];
+    while (queue.length) {
+      const pid = queue.shift()!;
+      for (const childId of byParent.get(pid) ?? []) {
+        allowed.add(childId);
+        queue.push(childId);
+      }
+    }
+  }
+
+  return items.filter((it) => {
+    if (allowed && !allowed.has(it.id)) return false;
+    return matchesFilter(it, filter);
+  });
 }

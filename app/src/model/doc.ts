@@ -64,6 +64,7 @@ export interface Filter {
   tags?: string[];
   dateRange?: { from?: number; to?: number }; // JDN integers
   text?: string;       // fuzzy-label/notes-søgning
+  parentId?: string;   // M12: kun descendants af denne post (inkl. selv)
 }
 
 export interface TimelineDoc {

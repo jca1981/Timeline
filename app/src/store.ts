@@ -109,6 +109,12 @@ interface AppState {
   // M10: Undo/Redo
   undoAction(): void;
   redoAction(): void;
+  // M12: Overskuelighed
+  collapsedIds: Set<string>;
+  toggleCollapse(id: string): void;
+  jumpTarget: string | null; // itemId at zoome til (forbruges af TimelineView)
+  jumpTo(itemId: string): void;
+  clearJump(): void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -346,4 +352,15 @@ export const useApp = create<AppState>((set, get) => ({
     persist(next);
     set({ doc: next, errors: {}, selectedId: null });
   },
+
+  // M12: Overskuelighed
+  collapsedIds: new Set<string>(),
+  toggleCollapse: (id) => set((s) => {
+    const next = new Set(s.collapsedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return { collapsedIds: next };
+  }),
+  jumpTarget: null,
+  jumpTo: (itemId) => set({ jumpTarget: itemId }),
+  clearJump: () => set({ jumpTarget: null }),
 }));

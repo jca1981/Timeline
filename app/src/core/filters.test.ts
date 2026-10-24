@@ -78,3 +78,31 @@ describe('applyFilter', () => {
     expect(applyFilter(items, f)).toHaveLength(1);
   });
 });
+
+describe('parentId filter (M12)', () => {
+  const tree: Item[] = [
+    { id: 'root', typeId: 'event', label: 'Patriarker', span: { start: { y: -2000, precision: 'year' }, end: { y: -1700, precision: 'year' } } },
+    { id: 'ab', typeId: 'person', label: 'Abraham', span: { start: { y: -1900, precision: 'year' } }, parentId: 'root' },
+    { id: 'isak', typeId: 'person', label: 'Isak', span: { start: { y: -1850, precision: 'year' } }, parentId: 'ab' },
+    { id: 'jakob', typeId: 'person', label: 'Jakob', span: { start: { y: -1800, precision: 'year' } }, parentId: 'ab' },
+    { id: 'moses', typeId: 'person', label: 'Moses', span: { start: { y: -1500, precision: 'year' } } },
+  ];
+
+  it('filters to parent + descendants only', () => {
+    const f: Filter = { match: 'all', parentId: 'ab' };
+    const result = applyFilter(tree, f);
+    expect(result.map((i) => i.id)).toEqual(['ab', 'isak', 'jakob']);
+  });
+
+  it('parent itself matches when no filter excludes it', () => {
+    const f: Filter = { match: 'all', parentId: 'root' };
+    const result = applyFilter(tree, f);
+    expect(result.map((i) => i.id)).toEqual(['root', 'ab', 'isak', 'jakob']);
+  });
+
+  it('parentId + types combined', () => {
+    const f: Filter = { match: 'all', parentId: 'root', types: ['event'] };
+    const result = applyFilter(tree, f);
+    expect(result.map((i) => i.id)).toEqual(['root']);
+  });
+});
