@@ -27,6 +27,7 @@ export function TimelineView() {
   const toggleCollapse = useApp((s) => s.toggleCollapse);
   const jumpTarget = useApp((s) => s.jumpTarget);
   const clearJump = useApp((s) => s.clearJump);
+  const jumpTo = useApp((s) => s.jumpTo);
   const wrapRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1000);
@@ -206,7 +207,7 @@ export function TimelineView() {
     return hidden;
   }, [collapsedIds, childrenMap]);
 
-  const { rows, clusters, laneGroups } = useMemo(() => {
+  const { rows, clusters, laneGroups, eraBands, datelessItems } = useMemo(() => {
     const filtered = applyFilter(doc.items, activeFilter).filter((it) => !hiddenByCollapse.has(it.id));
     const list = [...filtered]
       .map((it) => ({ it, bd: spanBounds(it.span) }))
@@ -282,7 +283,25 @@ export function TimelineView() {
     }
 
     rowsRef.current = positioned;
-    return { rows: positioned, clusters: clusterList, laneGroups: laneInfo };
+
+    // M14: Era bands — parent items with many descendants + long span
+    const ERA_MIN_DESC = 3;
+    const ERA_MIN_SPAN_DAYS = 18250; // 50 years
+    const eras: { id: string; label: string; a: number; b: number; color: string }[] = [];
+    for (const it of doc.items) {
+      const kids = childrenMap.get(it.id);
+      if (!kids || kids.length < ERA_MIN_DESC) continue;
+      const bd = spanBounds(it.span);
+      if (!bd) continue;
+      if (bd.b - bd.a < ERA_MIN_SPAN_DAYS) continue;
+      const type = doc.itemTypes.find((t) => t.id === it.typeId);
+      eras.push({ id: it.id, label: it.label, a: bd.a, b: bd.b, color: it.color ?? type?.color ?? '#888' });
+    }
+
+    // M14: Dateless items (no valid date bounds)
+    const dless = applyFilter(doc.items, activeFilter).filter((it) => !hiddenByCollapse.has(it.id) && !spanBounds(it.span));
+
+    return { rows: positioned, clusters: clusterList, laneGroups: laneInfo, eraBands: eras, datelessItems: dless };
   }, [doc.items, doc.itemTypes, activeFilter, hiddenByCollapse, vp.px, laneMode]);
 
   const visible = rows.filter((r) => x(r.bd.b) > -200 && x(r.bd.a) < width + 200);
@@ -417,6 +436,17 @@ export function TimelineView() {
             ))}
           </div>
           <div className="lanes" style={{ height: Math.max(totalRows, 1) * ROW_H }}>
+            {/* M14: Æra-bånd (baggrundsperioder) */}
+            {eraBands.map((era) => {
+              const ex = x(era.a);
+              const exb = x(era.b);
+              if (exb < -500 || ex > width + 500) return null;
+              return (
+                <div key={era.id} className="era-band" style={{ left: ex, width: exb - ex, background: era.color + '12', borderLeft: `2px solid ${era.color}44`, borderRight: `2px solid ${era.color}44` }} title={era.label}>
+                  <span className="era-label" style={{ color: era.color }}>{era.label}</span>
+                </div>
+              );
+            })}
             {ticks.map((t, i) => (
               <div key={i} className="grid" style={{ left: x(t.jd), height: '100%' }} />
             ))}
@@ -526,6 +556,27 @@ export function TimelineView() {
             </svg>
           </div>
         </div>
+        {/* M14: Dato-løse poster */}
+        {datelessItems.length > 0 && (
+          <div className={`dateless-section ${collapsedIds.has('grp:dateless') ? 'collapsed' : ''}`}>
+            <button className="dateless-toggle" onClick={() => toggleCollapse('grp:dateless')}>
+              {collapsedIds.has('grp:dateless') ? '▶' : '▼'} Uden dato ({datelessItems.length})
+            </button>
+            {!collapsedIds.has('grp:dateless') && (
+              <div className="dateless-chips">
+                {datelessItems.map((it) => {
+                  const type = doc.itemTypes.find((t) => t.id === it.typeId);
+                  const color = it.color ?? type?.color ?? '#888';
+                  return (
+                    <span key={it.id} className={`dateless-chip ${selectedId === it.id ? 'selected' : ''}`} style={{ borderColor: color, background: color + '18' }} onClick={() => { select(it.id); jumpTo(it.id); }}>
+                      {it.imageId ? '🖼 ' : ''}{it.label}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
         <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump</p>
       </div>
     </div>

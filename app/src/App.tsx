@@ -11,6 +11,7 @@ import { Inspector } from './ui/Inspector';
 import { FilterBar } from './ui/FilterBar';
 import { importAeon } from './core/aeonImport';
 import { putImages } from './core/images';
+import { downloadHtml } from './core/exportHtml';
 import { TEMPLATES } from './model/templates';
 
 type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling';
@@ -132,6 +133,7 @@ export default function App() {
           />
         </label>
         <button className="tab" onClick={exportJson} title="Eksportér som JSON">💾 JSON</button>
+        <button className="tab" onClick={() => downloadHtml(doc)} title="Eksportér statisk HTML-tidslinje">🌐 HTML</button>
         <label className="tab" title="Importér JSON-fil">
           📂 JSON
           <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
