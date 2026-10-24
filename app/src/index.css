@@ -282,3 +282,15 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .dateless-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; border: 1px solid; font-size: 11px; cursor: pointer; white-space: nowrap; }
 .dateless-chip:hover { opacity: 0.8; }
 .dateless-chip.selected { box-shadow: 0 0 0 2px var(--accent); }
+
+/* M15: Zoom-presets */
+.zoom-presets { margin-left: 8px; display: inline-flex; gap: 2px; }
+.zoom-presets button { font-size: 10px; padding: 2px 6px; opacity: 0.7; }
+.zoom-presets button:hover { opacity: 1; }
+
+/* M15: Sammenligningsvisning */
+.compare-layout { display: flex; gap: 8px; height: calc(100vh - 120px); }
+.compare-pane { flex: 1; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.compare-header { padding: 6px 8px; font-size: 12px; border-bottom: 1px solid var(--line); }
+.compare-header select { margin-left: 4px; font-size: 11px; }
+.mini-timeline { width: 100%; height: calc(100% - 36px); background: var(--bg2); }

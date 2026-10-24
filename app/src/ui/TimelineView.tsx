@@ -207,6 +207,31 @@ export function TimelineView() {
     return hidden;
   }, [collapsedIds, childrenMap]);
 
+  // M15: Color inheritance — children without own color get parent’s color
+  const effectiveColor = useMemo(() => {
+    const typeMap = new Map(doc.itemTypes.map((t) => [t.id, t.color]));
+    const itemMap = new Map(doc.items.map((it) => [it.id, it]));
+    const cache = new Map<string, string>();
+    function resolve(id: string): string {
+      if (cache.has(id)) return cache.get(id)!;
+      const it = itemMap.get(id);
+      if (!it) return '#888';
+      const own = it.color ?? typeMap.get(it.typeId) ?? '#888';
+      // Use own color if explicitly set (not just type default)
+      if (it.color) { cache.set(id, it.color); return it.color; }
+      // Otherwise inherit from parent
+      if (it.parentId && itemMap.has(it.parentId)) {
+        const pc = resolve(it.parentId);
+        cache.set(id, pc);
+        return pc;
+      }
+      cache.set(id, own);
+      return own;
+    }
+    for (const it of doc.items) resolve(it.id);
+    return cache;
+  }, [doc.items, doc.itemTypes]);
+
   const { rows, clusters, laneGroups, eraBands, datelessItems } = useMemo(() => {
     const filtered = applyFilter(doc.items, activeFilter).filter((it) => !hiddenByCollapse.has(it.id));
     const list = [...filtered]
@@ -362,6 +387,12 @@ export function TimelineView() {
           <button onClick={() => zoom(1.6)} title="Zoom ind (+)">＋</button>
           <button onClick={() => zoom(1 / 1.6)} title="Zoom ud (−)">－</button>
           <button onClick={fit}>Tilpas</button>
+          {/* M15: Zoom-presets */}
+          <span className="zoom-presets">
+            <button onClick={() => setVp((v) => ({ ...v, px: clampPx(1 / 365.25) }))} title="Zoom til århundrede-overblik">årh.</button>
+            <button onClick={() => setVp((v) => ({ ...v, px: clampPx(1 / 30) }))} title="Zoom til årtier">10 år</button>
+            <button onClick={() => setVp((v) => ({ ...v, px: clampPx(1 / 3) }))} title="Zoom til enkeltår">3 år</button>
+          </span>
           <button
             className={laneMode === 'type' ? 'on' : ''}
             onClick={() => setLaneMode((m) => m === 'chrono' ? 'type' : 'chrono')}
@@ -463,8 +494,7 @@ export function TimelineView() {
             ))}
 
             {visible.map(({ it, bd, y }) => {
-              const type = doc.itemTypes.find((t) => t.id === it.typeId);
-              const color = it.color ?? type?.color ?? '#888';
+              const color = effectiveColor.get(it.id) ?? '#888';
               const xa = x(bd.a);
               const xb = x(bd.b);
               const w = Math.max(3, xb - xa);
@@ -565,8 +595,7 @@ export function TimelineView() {
             {!collapsedIds.has('grp:dateless') && (
               <div className="dateless-chips">
                 {datelessItems.map((it) => {
-                  const type = doc.itemTypes.find((t) => t.id === it.typeId);
-                  const color = it.color ?? type?.color ?? '#888';
+                  const color = effectiveColor.get(it.id) ?? '#888';
                   return (
                     <span key={it.id} className={`dateless-chip ${selectedId === it.id ? 'selected' : ''}`} style={{ borderColor: color, background: color + '18' }} onClick={() => { select(it.id); jumpTo(it.id); }}>
                       {it.imageId ? '🖼 ' : ''}{it.label}

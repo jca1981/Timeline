@@ -6,6 +6,7 @@ import { MatrixView } from './ui/MatrixView';
 import { FamilyTreeView } from './ui/FamilyTreeView';
 import { SubwayView } from './ui/SubwayView';
 import { NarrativeView } from './ui/NarrativeView';
+import { CompareView } from './ui/CompareView';
 import { DocumentBar } from './ui/DocumentBar';
 import { Inspector } from './ui/Inspector';
 import { FilterBar } from './ui/FilterBar';
@@ -14,7 +15,7 @@ import { putImages } from './core/images';
 import { downloadHtml } from './core/exportHtml';
 import { TEMPLATES } from './model/templates';
 
-type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling';
+type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling' | 'sammenlign';
 
 export default function App() {
   const doc = useApp((s) => s.doc);
@@ -121,6 +122,9 @@ export default function App() {
           <button className={view === 'fortælling' ? 'tab on' : 'tab'} onClick={() => setView('fortælling')}>
             Fortælling
           </button>
+          <button className={view === 'sammenlign' ? 'tab on' : 'tab'} onClick={() => setView('sammenlign')}>
+            Sammenlign
+          </button>
         </nav>
         <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
           {importing ? 'Importer…' : 'Importer .aeon'}
@@ -159,6 +163,7 @@ export default function App() {
           {view === 'slægtstræ' && <FamilyTreeView />}
           {view === 'subway' && <SubwayView />}
           {view === 'fortælling' && <NarrativeView />}
+          {view === 'sammenlign' && <CompareView />}
         </main>
         <Inspector />
       </div>
