@@ -19,6 +19,7 @@ export interface Item {
   span: Span;
   dateStyle?: DateStyle; // relativ stil pr. item (uger/dage fra zero-date)
   verseRefs?: VerseRef[]; // bibelvers-links (deep links til jw.org + valgfrit citat)
+  imageId?: string; // reference til billed-butik (IndexedDB images store)
 }
 
 /** Relationstype med navn i begge retninger (Aeon-mønster). */

@@ -2,11 +2,14 @@
 // Filformatet (reverse-engineeret, filVersion 7): [billede-blob: PNG/JFIF one-after-another]
 // + rå JSON-document starting med {"definitions":...] + zero-padding + binær footer med index.
 // Vi finder JSON-blobben, parser den og mapper til vores TimelineDoc.
+// Billeder extraheres fra preamble via image-index (idLen/fnameLen/uuid/filename/offset/8+8 records).
 
 import { addDuration } from './jdn';
 import { syncSpan } from './sync';
 import type { DateValue, Duration, Span } from './types';
 import type { Item, Relation, RelationType, TimelineDoc } from '../model/doc';
+
+export interface AeonImage { id: string; blob: ArrayBuffer; mimeType: string; filename?: string; }
 
 // ---- Aeon-rå typer (kun det vi bruger) ----
 interface AeonDate {
@@ -24,7 +27,7 @@ interface AeonItem {
   color?: string; super?: string | null; ongoing?: boolean;
   startDate?: AeonDate | null; duration?: AeonDuration | null;
   latestStartDate?: AeonDate | null; durationToEarliestEnd?: AeonDuration | null;
-  tags?: string[];
+  tags?: string[]; image?: string; attachments?: string[];
 }
 interface AeonRaw {
   definitions: {
@@ -148,9 +151,68 @@ function aeonColor(hexOrName: string | undefined, colors: AeonRaw['definitions']
 
 const TYPE_PALETTE = ['#4a90d9', '#59a14f', '#d9a441', '#a865c8', '#d96a6a', '#5fb3b3', '#b3b35f', '#8a6ad9', '#d98a3d', '#3dd9a4'];
 
-/** Hoved-import: .aeon-buffer → vores TimelineDoc + advarsler. */
-export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineDoc; warnings: string[] } {
+// ---- Billede-index parsing (M11) ----
+/**
+ * Aeon's binære format: [image blobs][JSON][zero-pad][footer-index].
+ * Image-index records: [idLen:4LE][fnameLen:4LE][id:idLen][filename:fnameLen][offset:8LE][size:8LE]...
+ * Scan region umiddelbart før JSON-start for disse records.
+ */
+export function extractAeonImages(buf: ArrayBuffer): AeonImage[] {
+  const bytes = new DataView(buf);
+  const u8 = new Uint8Array(buf);
+  const enc = (s: string) => [...new TextEncoder().encode(s)];
+
+  // find JSON start
+  const jsonPat = enc('{"definitions"');
+  let jsonStart = -1;
+  outer0: for (let i = 0; i <= u8.length - jsonPat.length; i++) {
+    for (let j = 0; j < jsonPat.length; j++) if (u8[i + j] !== jsonPat[j]) continue outer0;
+    jsonStart = i; break;
+  }
+  if (jsonStart < 0) return [];
+
+  // scan last ~10 KB before JSON for image index records
+  const scanStart = Math.max(0, jsonStart - 12000);
+  const images: AeonImage[] = [];
+  const seen = new Set<string>();
+
+  let pos = scanStart;
+  while (pos < jsonStart - 24) {
+    const idLen = bytes.getUint32(pos, true);
+    const fnameLen = bytes.getUint32(pos + 4, true);
+    if (idLen < 8 || idLen > 40 || fnameLen < 1 || fnameLen > 200) { pos++; continue; }
+    // read id
+    const id = new TextDecoder().decode(u8.subarray(pos + 8, pos + 8 + idLen));
+    // basic UUID or short-id check
+    if (!/^[0-9A-Fa-f\-]{8,40}$/.test(id)) { pos++; continue; }
+    const filename = new TextDecoder().decode(u8.subarray(pos + 8 + idLen, pos + 8 + idLen + fnameLen));
+    const dataStart = pos + 8 + idLen + fnameLen;
+    if (dataStart + 16 > jsonStart) { pos++; continue; }
+    // offset + size as big-endian 64-bit? Actually LE.
+    const offset = bytes.getUint32(dataStart, true) + bytes.getUint32(dataStart + 4, true) * 0x100000000;
+    const size = bytes.getUint32(dataStart + 8, true) + bytes.getUint32(dataStart + 12, true) * 0x100000000;
+    // validate: offset+size must fit in preamble
+    if (offset + size > jsonStart || size < 100 || size > 50_000_000) { pos++; continue; }
+    // validate magic bytes at offset
+    const m0 = u8[offset], m1 = u8[offset + 1];
+    let mimeType: string;
+    if (m0 === 0x89 && m1 === 0x50) mimeType = 'image/png';
+    else if (m0 === 0xFF && m1 === 0xD8) mimeType = 'image/jpeg';
+    else if (m0 === 0x47 && m1 === 0x49) mimeType = 'image/gif';
+    else { pos++; continue; }
+    if (seen.has(id)) { pos = dataStart + 16; continue; }
+    seen.add(id);
+    images.push({ id, blob: buf.slice(offset, offset + size), mimeType, filename });
+    pos = dataStart + 16; // skip to next record
+  }
+  return images;
+}
+
+/** Hoved-import: .aeon-buffer → vores TimelineDoc + billeder + advarsler. */
+export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineDoc; images: AeonImage[]; warnings: string[] } {
   const raw = findAeonJson(buf);
+  const images = extractAeonImages(buf);
+  const imageIdSet = new Set(images.map((i) => i.id));
   const warnings: string[] = [];
 
   // item-typer (spring "genericNode"/mindmap-noder fra — de er ikke tidsposter)
@@ -179,6 +241,7 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
     if (ai.super && typeIdSet.has(raw.data.items.byId[ai.super]?.type ?? '')) item.parentId = ai.super;
     const tags = (ai.tags ?? []).map((t) => tagNames[t]).filter(Boolean);
     if (tags.length) item.tags = tags;
+    if (ai.image && imageIdSet.has(ai.image)) item.imageId = ai.image;
     items.push(item);
   }
 
@@ -227,5 +290,5 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
     items: items.map((it) => ({ ...it, span: syncSpan(it.span).span ?? it.span })),
     relations,
   };
-  return { doc, warnings };
+  return { doc, images, warnings };
 }

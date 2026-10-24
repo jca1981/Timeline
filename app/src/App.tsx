@@ -10,6 +10,7 @@ import { DocumentBar } from './ui/DocumentBar';
 import { Inspector } from './ui/Inspector';
 import { FilterBar } from './ui/FilterBar';
 import { importAeon } from './core/aeonImport';
+import { putImages } from './core/images';
 import { TEMPLATES } from './model/templates';
 
 type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling';
@@ -76,10 +77,11 @@ Nuværende indhold erstattes.`)) {
   async function onFile(file: File) {
     setImporting(true);
     try {
-      const { doc: imported, warnings } = importAeon(await file.arrayBuffer(), file.name.replace(/\.aeon$/i, ''));
-      if (window.confirm(`Importer ${imported.items.length} poster og ${imported.relations?.length ?? 0} relationer?
+      const { doc: imported, images, warnings } = importAeon(await file.arrayBuffer(), file.name.replace(/\.aeon$/i, ''));
+      if (window.confirm(`Importer ${imported.items.length} poster, ${imported.relations?.length ?? 0} relationer${images.length ? ` og ${images.length} billeder` : ''}?
 
 Nuværende indhold erstattes.`)) {
+        if (images.length) await putImages(images.map((img) => ({ id: img.id, entry: { blob: img.blob, mimeType: img.mimeType, filename: img.filename } })));
         importDoc(imported);
         setView('ark');
         if (warnings.length) alert('Advarsler:\n' + warnings.join('\n'));

@@ -1,4 +1,4 @@
-// **** Inspektør (M3+M4): detaljer, vers-links (jw.org), relationer, deps, alder ****
+// **** Inspektør (M3+M4): detaljer, vers-links (jw.org), relationer, deps, alder, billeder ****
 import { useState } from 'react';
 import { useApp } from '../store';
 import { ageAt, formatSpan } from '../core/format';
@@ -6,6 +6,8 @@ import { toJD } from '../core/jdn';
 import { formatVerse, jwUrl } from '../core/bible';
 import { generations, linksOf, relationTypes } from '../core/relations';
 import { DEP_KIND_LABELS, DEP_KIND_SHORT, dependenciesOf, isDependencyViolated } from '../core/dependencies';
+import { ItemImage } from './ItemImage';
+import { putImage } from '../core/images';
 import { BOOKS } from '../model/bibleBooks';
 import type { DepKind, VerseRef } from '../model/doc';
 
@@ -49,6 +51,24 @@ export function Inspector() {
       <section>
         <h4>Tags</h4>
         <TagsEditor tags={item.tags ?? []} onChange={(tags) => updateItem(item.id, { tags: tags.length ? tags : undefined })} />
+      </section>
+
+      <section>
+        <h4>Billede</h4>
+        {item.imageId && <ItemImage imageId={item.imageId} size={200} />}
+        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+          <label className="btn small">
+            {item.imageId ? 'Erstat' : 'Tilføj billede'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+              const file = e.target.files?.[0]; if (!file) return;
+              const id = `img-${Date.now()}`;
+              const buf = await file.arrayBuffer();
+              await putImage(id, { blob: buf, mimeType: file.type, filename: file.name });
+              updateItem(item.id, { imageId: id });
+            }} />
+          </label>
+          {item.imageId && <button onClick={() => updateItem(item.id, { imageId: undefined })}>Fjern</button>}
+        </div>
       </section>
 
       <section>

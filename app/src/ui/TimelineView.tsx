@@ -130,7 +130,7 @@ export function TimelineView() {
         <button onClick={() => zoom(1 / 1.6)} title="Zoom ud">－</button>
         <button onClick={fit}>Tilpas efter indhold</button>
         <span className="count">
-          Zoom: 1 streg ≈ {stepLabel(step)} · {doc.items.length} poster{hidden > 0 ? ` (${hidden} uden for view)` : ''}
+          Zoom: 1 streg ≈ {stepLabel(step)} · {rows.length} daterede poster{hidden > 0 ? ` (${hidden} uden for view)` : ''}{doc.items.length > rows.length ? ` · ${doc.items.length - rows.length} uden dato (vises i Ark)` : ''}
         </span>
       </div>
       <div className="tl" ref={wrapRef}>
@@ -171,7 +171,7 @@ export function TimelineView() {
                 )}
                 {it.span.ongoing && <span className="arrow" style={{ borderColor: color }} />}
                 <span className="barlabel" style={{ color: w > 140 ? '#fff' : color }}>
-                  {w > 26 ? it.label : ''}
+                  {it.imageId ? '🖼 ' : ''}{w > 26 ? it.label : ''}
                 </span>
               </div>
             );

@@ -159,6 +159,7 @@ function Row({ item, error, depth, rangeWarn, canDrag, onDragStart, onDragOver, 
         {depth > 0 && <span className="tree-prefix">└ </span>}
         <input className="label" value={item.label} onChange={(e) => updateItem(item.id, { label: e.target.value })} />
         {item.verseRefs?.length ? <span className="versebadge" title={`${item.verseRefs.length} vers-link(s)`}>📖{item.verseRefs.length}</span> : null}
+        {item.imageId ? <span className="versebadge" title="Har billede">🖼</span> : null}
         {rangeWarn && <span className="warn" title={rangeWarn}> ⚠️</span>}
       </td>
       <td>

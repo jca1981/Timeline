@@ -1,8 +1,9 @@
-// **** Narrativ/Outline-visning (M9): læsevenlig kronologisk tekst, hierarkisk outline ****
+// **** Narrativ/Outline-visning (M9+M11): læsevenlig kronologisk tekst, hierarkisk outline, billeder ****
 import { useMemo } from 'react';
 import { useApp } from '../store';
 import { buildTree, flattenTree } from '../core/hierarchy';
 import { formatUncertainty } from '../core/format';
+import { ItemImage } from './ItemImage';
 import type { Item } from '../model/doc';
 
 function sortItems(items: Item[]): Item[] {
@@ -108,6 +109,7 @@ export function NarrativeView() {
           <span className="narr-tags"> {it.tags.map((t) => `#${t}`).join(' ')}</span>
         )}
         {it.notes && <div className="narr-notes">{it.notes}</div>}
+        {it.imageId && <ItemImage imageId={it.imageId} size={180} />}
       </div>
     );
   }

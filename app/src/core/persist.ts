@@ -6,14 +6,17 @@ const LIST_KEY = '_doclist';
 
 let dbReady: Promise<IDBDatabase> | null = null;
 
-function openDB(): Promise<IDBDatabase> {
+export function openDB(): Promise<IDBDatabase> {
   if (dbReady) return dbReady;
   dbReady = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 2); // v2: multi-doc support
+    const req = indexedDB.open(DB_NAME, 3); // v3: images store
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME);
+      }
+      if (!db.objectStoreNames.contains('images')) {
+        db.createObjectStore('images');
       }
     };
     req.onsuccess = () => resolve(req.result);

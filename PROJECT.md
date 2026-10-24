@@ -47,6 +47,7 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [ ] Milestone 11 (v2): collab editing (CRDT/WebSocket), preset-profiler, version snapshots
 
 ## Noter & beslutninger
+- 2026-07-10: **M11 færdig**: Billeder fra .aeon (binær image-index parser: [idLen|fnameLen|id|filename|offset|size]), IndexedDB billedbutik (DB v3), upload/fjern i Inspector, 🖼-indikatorer i timeline/ark/fortælling. Bedre tidslinje-count (daterede vs. dato-løse). Nye filer: `core/images.ts`, `ui/ItemImage.tsx`.
 - 2026-07-10: **M10 færdig**: Undo/Redo (snapshot-stack, max 50, Ctrl+Z/Shift+Z). PWA: manifest.json + service worker (cache-first). 97 tests. Nye filer: `core/history.ts`, `public/sw.js`, `public/manifest.json`, `public/icon.svg`.
 - 2026-07-10: **M9 færdig**: NarrativView (læsevenlig outline med erasektioner, opfyldelses-annotater, tags, vers-referencer, noter). Multi-doc: DocumentBar (Gem som / Nyt / Skift / Slet) via IndexedDB multi-store. Nye filer: `NarrativeView.tsx`, `DocumentBar.tsx`.
 - 2026-07-10: **M8 færdig**: MatrixView drill-down (klik på ● → detaljekort med note, “fjern relation”, alle rel. for paret). FilterBar tag-chips. Deploy: GitHub Actions → Pages (`base: '/Timeline/'`). URL: https://jca1981.github.io/Timeline/. `npm run deploy` bygger + pusher.
