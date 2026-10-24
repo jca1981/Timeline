@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useApp } from '../store';
 import { formatSpan, formatUncertainty } from '../core/format';
 import { clampPx, contentBounds, spanBounds, ticksFor } from '../core/scale';
+import { toJD } from '../core/jdn';
 import { applyFilter } from '../core/filters';
 import { isDependencyViolated } from '../core/dependencies';
 import { EntitySidebar } from './EntitySidebar';
@@ -216,6 +217,21 @@ export function TimelineView() {
     }
     return map;
   }, [doc.items]);
+
+  // M21: Descendant count per item (recursive)
+  const descCount = useMemo(() => {
+    const map = new Map<string, number>();
+    const count = (id: string): number => {
+      if (map.has(id)) return map.get(id)!;
+      const kids = childrenMap.get(id) ?? [];
+      let total = kids.length;
+      for (const k of kids) total += count(k);
+      map.set(id, total);
+      return total;
+    };
+    for (const [pid] of childrenMap) count(pid);
+    return map;
+  }, [childrenMap]);
 
   const hiddenByCollapse = useMemo(() => {
     const hidden = new Set<string>();
@@ -565,6 +581,15 @@ export function TimelineView() {
               })}
             </svg>
 
+            {/* M21: "Nu"-linje */}
+            {(() => {
+              const now = new Date();
+              const nowJD = toJD({ y: now.getFullYear(), mo: now.getMonth() + 1, d: now.getDate(), precision: 'day' });
+              const nx = x(nowJD);
+              if (nx < 0 || nx > width) return null;
+              return <div className="now-line" style={{ left: nx }} title="I dag" />;
+            })()}
+
             {visible.map(({ it, bd, y }) => {
               const color = effectiveColor.get(it.id) ?? '#888';
               const xa = x(bd.a);
@@ -592,6 +617,7 @@ export function TimelineView() {
                   <span className="barlabel" style={{ color: w > 140 ? '#fff' : color }}>
                     {it.imageId ? '🖼 ' : ''}{w > 26 ? it.label : ''}
                     {isCollapsed && (childrenMap.get(it.id)?.length ?? 0) > 0 && ` (+${childrenMap.get(it.id)!.length})`}
+                    {!isCollapsed && (descCount.get(it.id) ?? 0) > 0 && <span className="desc-badge">{descCount.get(it.id)}</span>}
                   </span>
                 </div>
               );

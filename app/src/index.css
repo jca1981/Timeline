@@ -362,3 +362,13 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .bulk-bar button { background: none; border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; cursor: pointer; color: var(--fg); font-size: 11px; }
 .bulk-bar button:hover { background: var(--bg2); }
 .bulk-bar .ctx-danger { color: #e55; border-color: #e554; }
+
+/* M21: Now-line + desc badge */
+.now-line { position: absolute; top: 0; bottom: 0; width: 1px; background: #e53935; z-index: 5; pointer-events: none; }
+.now-line::after { content: 'nu'; position: absolute; top: -14px; left: -8px; font-size: 9px; color: #e53935; font-weight: 700; }
+.desc-badge { display: inline-block; background: #fff3; border-radius: 3px; padding: 0 4px; margin-left: 4px; font-size: 9px; opacity: 0.8; }
+
+/* M21: Auto-save indicator */
+.save-indicator { position: fixed; bottom: 8px; right: 12px; font-size: 10px; color: var(--dim); z-index: 999; transition: opacity 0.3s; }
+.save-indicator.saving { color: var(--accent); }
+.save-indicator.saved { opacity: 0.6; }

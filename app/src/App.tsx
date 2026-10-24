@@ -27,6 +27,17 @@ export default function App() {
   // M20: Theme toggle
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('tl-theme') as 'dark' | 'light') || 'dark');
   useEffect(() => { document.body.classList.toggle('light', theme === 'light'); localStorage.setItem('tl-theme', theme); }, [theme]);
+  // M21: Auto-save indicator
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const prevDocRef = useRef(doc);
+  useEffect(() => {
+    if (doc === prevDocRef.current) return;
+    prevDocRef.current = doc;
+    setSaveStatus('saving');
+    const t = setTimeout(() => setSaveStatus('saved'), 600);
+    return () => clearTimeout(t);
+  }, [doc]);
+
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
 
@@ -173,6 +184,9 @@ export default function App() {
         </main>
         <Inspector />
       </div>
+      {saveStatus !== 'idle' && (
+        <span className={`save-indicator ${saveStatus}`}>{saveStatus === 'saving' ? 'Gemmer…' : '✓ Gemt'}</span>
+      )}
     </div>
   );
 }
