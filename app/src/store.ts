@@ -118,6 +118,10 @@ interface AppState {
   clearJump(): void;
   pinnedIds: Set<string>;
   togglePin(id: string): void;
+  // M19: Multi-select
+  multiSelected: Set<string>;
+  toggleMulti(id: string): void;
+  clearMulti(): void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -391,4 +395,11 @@ export const useApp = create<AppState>((set, get) => ({
     if (next.has(id)) next.delete(id); else next.add(id);
     return { pinnedIds: next };
   }),
+  multiSelected: new Set<string>(),
+  toggleMulti: (id) => set((s) => {
+    const next = new Set(s.multiSelected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return { multiSelected: next };
+  }),
+  clearMulti: () => set({ multiSelected: new Set<string>() }),
 }));

@@ -31,6 +31,10 @@ export function TimelineView() {
   const jumpTo = useApp((s) => s.jumpTo);
   const pinnedIds = useApp((s) => s.pinnedIds);
   const togglePin = useApp((s) => s.togglePin);
+  const multiSelected = useApp((s) => s.multiSelected);
+  const toggleMulti = useApp((s) => s.toggleMulti);
+  const clearMulti = useApp((s) => s.clearMulti);
+  const duplicateItem = useApp((s) => s.duplicateItem);
   const wrapRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1000);
@@ -135,6 +139,9 @@ export function TimelineView() {
             setVp((v) => ({ center: (bd.a + bd.b) / 2, px: Math.max(v.px, 0.01) }));
             select(rows[nextIdx].it.id);
           }
+        } else if (e.key === 'd' && selectedId) {
+          e.preventDefault();
+          duplicateItem(selectedId);
         }
       } else if (e.key === '+' || e.key === '=') {
         setVp((v) => ({ ...v, px: clampPx(v.px * 1.4) }));
@@ -144,7 +151,7 @@ export function TimelineView() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedId, select]);
+  }, [selectedId, select, duplicateItem]);
 
   // hjul-zoom
   useEffect(() => {
@@ -566,7 +573,7 @@ export function TimelineView() {
               const isCollapsed = collapsedIds.has(it.id);
               const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
               return (
-                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''}`} title={tip} onClick={() => { select(it.id); setPopupId(popupId === it.id ? null : it.id); }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
+                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''} ${multiSelected.has(it.id) ? 'multi-sel' : ''}`} title={tip} onClick={(e) => { if (e.ctrlKey || e.metaKey) { toggleMulti(it.id); } else { select(it.id); setPopupId(popupId === it.id ? null : it.id); } }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
                   {bd.ua !== undefined && bd.ua > bd.a && (
                     <span className="halo" style={{ left: x(bd.a) - xa, width: x(bd.ua) - x(bd.a), background: `linear-gradient(90deg, ${color}55, ${color}22)` }} />
                   )}
@@ -688,7 +695,18 @@ export function TimelineView() {
             })}
           </div>
         )}
-        <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump · 📍 pin</p>
+        <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump · 📍 pin · Ctrl+klik = multivælg</p>
+
+        {/* M19: Multi-select bulk actions */}
+        {multiSelected.size > 0 && (
+          <div className="bulk-bar">
+            <span>{multiSelected.size} valgt</span>
+            <button onClick={() => { multiSelected.forEach((id) => togglePin(id)); }}>📍 Pin alle</button>
+            <button onClick={() => { multiSelected.forEach((id) => duplicateItem(id)); clearMulti(); }}>📋 Duplikér</button>
+            <button onClick={() => { const ids = [...multiSelected]; ids.forEach((id) => removeItem(id)); clearMulti(); }} className="ctx-danger">🗑 Slet alle</button>
+            <button onClick={clearMulti}>✕ Ryd</button>
+          </div>
+        )}
 
         {/* M18: Context menu */}
         {ctxMenu && (
