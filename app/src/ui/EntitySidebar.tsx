@@ -1,5 +1,5 @@
 // **** Entity-sidebar (M12): hurtigfiltrering via typer, forældre, tags ****
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useApp } from '../store';
 import { buildTree } from '../core/hierarchy';
 
@@ -11,6 +11,8 @@ export function EntitySidebar() {
   const jumpTo = useApp((s) => s.jumpTo);
   const collapsedIds = useApp((s) => s.collapsedIds);
   const toggleCollapse = useApp((s) => s.toggleCollapse);
+  // M18: Sidebar search
+  const [sbQuery, setSbQuery] = useState('');
 
   // Build hierarchy-aware list
   const tree = useMemo(() => buildTree(doc.items), [doc.items]);
@@ -54,14 +56,27 @@ export function EntitySidebar() {
     setFilter(null);
   }
 
+  // M18: Filter grouped by search query
+  const filteredGrouped = useMemo(() => {
+    if (!sbQuery.trim()) return grouped;
+    const q = sbQuery.toLowerCase();
+    const result: typeof grouped = {};
+    for (const [typeName, nodes] of Object.entries(grouped)) {
+      const matched = nodes.filter((n) => n.item.label.toLowerCase().includes(q) || n.children?.some((c) => c.item.label.toLowerCase().includes(q)));
+      if (matched.length) result[typeName] = matched;
+    }
+    return result;
+  }, [grouped, sbQuery]);
+
   return (
     <aside className="entity-sidebar">
       <div className="entity-header">
         <strong>Entity-liste</strong>
         {(activeFilter) && <button className="btn-link" onClick={clearFilter}>Ryd filter ✕</button>}
       </div>
+      <input className="sb-search" placeholder="🔎 Søg i liste..." value={sbQuery} onChange={(e) => setSbQuery(e.target.value)} />
 
-      {Object.entries(grouped).map(([typeName, nodes]) => {
+      {Object.entries(filteredGrouped).map(([typeName, nodes]) => {
         const collapsed = collapsedIds.has('grp:' + typeName);
         return (
           <div key={typeName} className="entity-group">

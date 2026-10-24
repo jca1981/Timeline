@@ -48,6 +48,19 @@ export function TimelineView() {
   // M16: Detail-popup + hover-relateret
   const [popupId, setPopupId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // M18: Context menu
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: string } | null>(null);
+  const removeItem = useApp((s) => s.removeItem);
+  const activeFilter = useApp((s) => s.activeFilter);
+  const setFilter = useApp((s) => s.setFilter);
+
+  // M18: Close ctx menu on outside click
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const close = () => setCtxMenu(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [ctxMenu]);
 
   // mål bredde
   useLayoutEffect(() => {
@@ -183,7 +196,6 @@ export function TimelineView() {
   const ticks = useMemo(() => ticksFor(left, right, vp.px), [left, right, vp.px]);
 
   // ---- Rows med collapse + klynger + lanes ----
-  const activeFilter = useApp((s) => s.activeFilter);
 
   const childrenMap = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -554,7 +566,7 @@ export function TimelineView() {
               const isCollapsed = collapsedIds.has(it.id);
               const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
               return (
-                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''}`} title={tip} onClick={() => { select(it.id); setPopupId(popupId === it.id ? null : it.id); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
+                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''}`} title={tip} onClick={() => { select(it.id); setPopupId(popupId === it.id ? null : it.id); }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
                   {bd.ua !== undefined && bd.ua > bd.a && (
                     <span className="halo" style={{ left: x(bd.a) - xa, width: x(bd.ua) - x(bd.a), background: `linear-gradient(90deg, ${color}55, ${color}22)` }} />
                   )}
@@ -677,6 +689,30 @@ export function TimelineView() {
           </div>
         )}
         <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump · 📍 pin</p>
+
+        {/* M18: Context menu */}
+        {ctxMenu && (
+          <div className="ctx-menu" style={{ left: ctxMenu.x, top: ctxMenu.y }} onClick={() => setCtxMenu(null)}>
+            <button onClick={() => { select(ctxMenu.itemId); setPopupId(ctxMenu.itemId); }}>ℹ️ Vis detaljer</button>
+            <button onClick={() => {
+              const it = doc.items.find((x) => x.id === ctxMenu.itemId);
+              if (it) setFilter({ ...(activeFilter ?? { match: 'all' as const }), types: [it.typeId] });
+            }}>🔍 Filtrér på type</button>
+            <button onClick={() => {
+              const it = doc.items.find((x) => x.id === ctxMenu.itemId);
+              if (it?.parentId) setFilter({ ...(activeFilter ?? { match: 'all' as const }), parentId: it.parentId });
+            }}>🌲 Vis søskende</button>
+            <button onClick={() => togglePin(ctxMenu.itemId)}>
+              {pinnedIds.has(ctxMenu.itemId) ? '📌 Fjern pin' : '📍 Fastgør'}
+            </button>
+            {doc.items.find((x) => x.id === ctxMenu.itemId)?.parentId && (
+              <button onClick={() => jumpTo(doc.items.find((x) => x.id === ctxMenu.itemId)!.parentId!)}>⬆ Gå til forælder</button>
+            )}
+            <hr />
+            <button className="ctx-danger" onClick={() => { if (confirm('Slet item?')) removeItem(ctxMenu.itemId); }}>🗑 Slet</button>
+          </div>
+        )}
+
         {/* M16: Detail-popup */}
         {popupId && (() => {
           const it = doc.items.find((x) => x.id === popupId);

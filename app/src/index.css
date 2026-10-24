@@ -329,3 +329,14 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .pinned-chip { padding: 2px 8px; border-radius: 10px; border: 1px solid; cursor: pointer; font-size: 10px; }
 .pinned-chip.selected { box-shadow: 0 0 0 2px var(--accent); }
 .pinned-chip:hover { opacity: 0.8; }
+
+/* M18: Context menu */
+.ctx-menu { position: fixed; z-index: 999; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 0; min-width: 180px; box-shadow: 0 4px 20px #000a; font-size: 12px; }
+.ctx-menu button { display: block; width: 100%; text-align: left; padding: 6px 12px; background: none; border: none; cursor: pointer; color: var(--fg); }
+.ctx-menu button:hover { background: var(--bg2); }
+.ctx-menu hr { border: none; border-top: 1px solid var(--line); margin: 4px 0; }
+.ctx-menu .ctx-danger { color: #e55; }
+
+/* M18: Entity sidebar search */
+.sb-search { width: calc(100% - 16px); margin: 4px 8px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg2); color: var(--fg); font-size: 11px; }
+.sb-search:focus { outline: none; border-color: var(--accent); }
