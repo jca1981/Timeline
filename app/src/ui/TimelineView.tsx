@@ -6,6 +6,7 @@ import { clampPx, contentBounds, spanBounds, ticksFor } from '../core/scale';
 import { applyFilter } from '../core/filters';
 import { isDependencyViolated } from '../core/dependencies';
 import { EntitySidebar } from './EntitySidebar';
+import { ItemImage } from './ItemImage';
 import type { Item } from '../model/doc';
 
 interface Viewport {
@@ -41,6 +42,10 @@ export function TimelineView() {
 
   // M13: type-lane mode
   const [laneMode, setLaneMode] = useState<LaneMode>('chrono');
+
+  // M16: Detail-popup + hover-relateret
+  const [popupId, setPopupId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // mål bredde
   useLayoutEffect(() => {
@@ -231,6 +236,21 @@ export function TimelineView() {
     for (const it of doc.items) resolve(it.id);
     return cache;
   }, [doc.items, doc.itemTypes]);
+
+  // M16: Related items (parent + children + siblings) for hover highlight
+  const relatedIds = useMemo(() => {
+    if (!hoveredId) return new Set<string>();
+    const set = new Set<string>();
+    const itemMap = new Map(doc.items.map((it) => [it.id, it]));
+    const h = itemMap.get(hoveredId);
+    if (!h) return set;
+    if (h.parentId) set.add(h.parentId);
+    for (const cid of childrenMap.get(hoveredId) ?? []) set.add(cid);
+    if (h.parentId) {
+      for (const sibId of childrenMap.get(h.parentId) ?? []) { if (sibId !== hoveredId) set.add(sibId); }
+    }
+    return set;
+  }, [hoveredId, doc.items, childrenMap]);
 
   const { rows, clusters, laneGroups, eraBands, datelessItems } = useMemo(() => {
     const filtered = applyFilter(doc.items, activeFilter).filter((it) => !hiddenByCollapse.has(it.id));
@@ -502,7 +522,7 @@ export function TimelineView() {
               const isCollapsed = collapsedIds.has(it.id);
               const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
               return (
-                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''}`} title={tip} onClick={() => select(it.id)} style={{ left: xa, top: y + 5, width: w, background: color }}>
+                <div key={it.id} className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''}`} title={tip} onClick={() => { select(it.id); setPopupId(popupId === it.id ? null : it.id); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
                   {bd.ua !== undefined && bd.ua > bd.a && (
                     <span className="halo" style={{ left: x(bd.a) - xa, width: x(bd.ua) - x(bd.a), background: `linear-gradient(90deg, ${color}55, ${color}22)` }} />
                   )}
@@ -607,6 +627,26 @@ export function TimelineView() {
           </div>
         )}
         <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump</p>
+        {/* M16: Detail-popup */}
+        {popupId && (() => {
+          const it = doc.items.find((x) => x.id === popupId);
+          if (!it) return null;
+          const bd = spanBounds(it.span);
+          const px = bd ? x(bd.a) : width / 2;
+          const type = doc.itemTypes.find((t) => t.id === it.typeId);
+          return (
+            <div className="tl-popup" style={{ left: Math.max(10, Math.min(px, width - 260)) }}>
+              <button className="tl-popup-close" onClick={() => setPopupId(null)}>✕</button>
+              {it.imageId && <ItemImage imageId={it.imageId} size={120} />}
+              <h4>{it.label}</h4>
+              <div className="tl-popup-dates">{formatSpan(it.span)}</div>
+              {type && <span className="tl-popup-type" style={{ background: type.color }}>{type.name}</span>}
+              {it.verseRefs?.length ? <div className="tl-popup-verses">📖 {it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</div> : null}
+              {it.tags?.length ? <div className="tl-popup-tags">{it.tags.map((t) => <span key={t} className="tag-chip">{t}</span>)}</div> : null}
+              {it.notes && <p className="tl-popup-notes">{it.notes}</p>}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
