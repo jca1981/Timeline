@@ -39,16 +39,15 @@ export function EntitySidebar() {
   function filterByType(typeName: string) {
     const type = doc.itemTypes.find((t) => t.name === typeName);
     if (!type) return;
-    setFilter({ ...activeFilter, types: [type.id] });
+    setFilter({ ...(activeFilter ?? { match: 'all' as const }), types: [type.id] });
   }
 
   function filterByTag(tag: string) {
-    setFilter({ ...activeFilter, tags: [tag] });
+    setFilter({ ...(activeFilter ?? { match: 'all' as const }), tags: [tag] });
   }
 
   function filterByParent(parentId: string) {
-    // Show only descendants of this parent (inclusive)
-    setFilter({ ...activeFilter, parentId });
+    setFilter({ ...(activeFilter ?? { match: 'all' as const }), parentId });
   }
 
   function clearFilter() {
@@ -72,6 +71,7 @@ export function EntitySidebar() {
             >
               {collapsed ? '▶' : '▼'} {typeName} ({nodes.length})
             </button>
+            <button className="entity-filter-btn" onClick={() => filterByType(typeName)} title="Filtrér til kun denne type">⊙</button>
             {!collapsed && (
               <ul className="entity-list">
                 {nodes.slice(0, 30).map((node) => {
@@ -82,7 +82,8 @@ export function EntitySidebar() {
                       <span
                         className={`entity-name ${isEntityTypeFiltered ? 'filtered' : ''}`}
                         onClick={() => { select(node.item.id); jumpTo(node.item.id); }}
-                        title={childCount > 0 ? `${childCount} underliggende poster` : undefined}
+                        title={childCount > 0 ? `${childCount} underliggende poster – højreklik for subtree-filter` : undefined}
+                        onContextMenu={(e) => { e.preventDefault(); if (hasChildren) filterByParent(node.item.id); }}
                       >
                         {node.item.label}
                         {hasChildren && <span className="entity-count"> ({childCount})</span>}

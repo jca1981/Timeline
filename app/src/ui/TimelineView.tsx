@@ -1,10 +1,8 @@
-// **** Timeline-view (M2+M4+M12): vandret zoombar tidslinje + entity-sidebar + collapse + søg + klynger ****
-// Zoom: musehjul, pan: træk. Usikker = gradient-halo, fortsat = pil.
-// M12: Entity-sidebar, fold hierarki, søg & centrér, klynge-tælling.
+// **** Timeline-view (M2+M4+M12+M13): zoombar tidslinje + sidebar + collapse + søg + klynger + minimap + type-lanes + tastatur ****
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../store';
 import { formatSpan, formatUncertainty } from '../core/format';
-import { clampPx, contentBounds, pickStep, spanBounds, stepLabel, ticksFor } from '../core/scale';
+import { clampPx, contentBounds, spanBounds, ticksFor } from '../core/scale';
 import { applyFilter } from '../core/filters';
 import { isDependencyViolated } from '../core/dependencies';
 import { EntitySidebar } from './EntitySidebar';
@@ -16,7 +14,10 @@ interface Viewport {
 }
 
 const ROW_H = 28;
-const CLUSTER_THRESHOLD = 4; // clustered når N poster overlapper inden for X pixels
+const CLUSTER_THRESHOLD = 4;
+const MINIMAP_H = 20;
+
+type LaneMode = 'chrono' | 'type';
 
 export function TimelineView() {
   const doc = useApp((s) => s.doc);
@@ -27,6 +28,7 @@ export function TimelineView() {
   const jumpTarget = useApp((s) => s.jumpTarget);
   const clearJump = useApp((s) => s.clearJump);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const minimapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1000);
   const [vp, setVp] = useState<Viewport>({ center: 1730000, px: 1 / 40 });
   const vpRef = useRef(vp);
@@ -36,7 +38,10 @@ export function TimelineView() {
   const [searchQ, setSearchQ] = useState('');
   const [searchResults, setSearchResults] = useState<Item[]>([]);
 
-  // mål bredde (justér for sidebar)
+  // M13: type-lane mode
+  const [laneMode, setLaneMode] = useState<LaneMode>('chrono');
+
+  // mål bredde
   useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -91,7 +96,36 @@ export function TimelineView() {
     setSearchResults(matches);
   }, [searchQ, doc.items]);
 
-  // hjul-zoom (non-passive for at kunne preventDefault)
+  // M13: Tastatur navigation (Ctrl+←/→, +/− zoom)
+  const rowsRef = useRef<{ it: Item; bd: NonNullable<ReturnType<typeof spanBounds>>; y: number }[]>([]);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Skip hvis i input
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+      const rows = rowsRef.current;
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          const dir = e.key === 'ArrowRight' ? 1 : -1;
+          const curIdx = rows.findIndex((r) => r.it.id === selectedId);
+          const nextIdx = curIdx < 0 ? 0 : Math.max(0, Math.min(rows.length - 1, curIdx + dir));
+          if (rows[nextIdx]) {
+            const bd = rows[nextIdx].bd;
+            setVp((v) => ({ center: (bd.a + bd.b) / 2, px: Math.max(v.px, 0.01) }));
+            select(rows[nextIdx].it.id);
+          }
+        }
+      } else if (e.key === '+' || e.key === '=') {
+        setVp((v) => ({ ...v, px: clampPx(v.px * 1.4) }));
+      } else if (e.key === '-' || e.key === '_') {
+        setVp((v) => ({ ...v, px: clampPx(v.px / 1.4) }));
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedId, select]);
+
+  // hjul-zoom
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -118,7 +152,7 @@ export function TimelineView() {
     const el = wrapRef.current;
     if (!el) return;
     const down = (e: PointerEvent) => {
-      if ((e.target as HTMLElement).closest('.bar') || (e.target as HTMLElement).closest('.cluster')) return;
+      if ((e.target as HTMLElement).closest('.bar') || (e.target as HTMLElement).closest('.cluster') || (e.target as HTMLElement).closest('.minimap')) return;
       drag.current = { x: e.clientX, center: vpRef.current.center };
       el.setPointerCapture(e.pointerId);
     };
@@ -138,13 +172,11 @@ export function TimelineView() {
     };
   }, []);
 
-  const step = pickStep(vp.px);
   const ticks = useMemo(() => ticksFor(left, right, vp.px), [left, right, vp.px]);
 
-  // ---- M12: Build rows med collapse-støtte + klynger ----
+  // ---- Rows med collapse + klynger + lanes ----
   const activeFilter = useApp((s) => s.activeFilter);
 
-  // Forældre-børn kort
   const childrenMap = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const it of doc.items) {
@@ -157,12 +189,11 @@ export function TimelineView() {
     return map;
   }, [doc.items]);
 
-  // Items der er collapsed (skjul descendants)
   const hiddenByCollapse = useMemo(() => {
     const hidden = new Set<string>();
     const stack: string[] = [];
     for (const id of collapsedIds) {
-      if (id.startsWith('grp:') || id.startsWith('tag:')) continue; // non-item collapse keys
+      if (id.startsWith('grp:') || id.startsWith('tag:')) continue;
       stack.push(id);
     }
     while (stack.length) {
@@ -175,20 +206,18 @@ export function TimelineView() {
     return hidden;
   }, [collapsedIds, childrenMap]);
 
-  // Rows (filtreret + collapsed + klynge-detektering)
-  const { rows, clusters } = useMemo(() => {
+  const { rows, clusters, laneGroups } = useMemo(() => {
     const filtered = applyFilter(doc.items, activeFilter).filter((it) => !hiddenByCollapse.has(it.id));
     const list = [...filtered]
       .map((it) => ({ it, bd: spanBounds(it.span) }))
       .filter((r): r is { it: Item; bd: NonNullable<ReturnType<typeof spanBounds>> } => !!r.bd)
       .sort((a, b) => a.bd.a - b.bd.a || a.it.label.localeCompare(b.it.label));
 
-    // Klynge-detektion: when items overlap horizontally AND there are many in same pixel band
+    // Cluster detection
     const clustered = new Set<string>();
     const clusterList: { items: Item[]; x: number; y: number; count: number }[] = [];
 
     if (list.length > 10) {
-      // Group by y-row proximity and x-overlap
       const groups: { items: Item[]; minA: number; maxB: number }[] = [];
       for (const r of list) {
         const cx = (r.bd.a + r.bd.b) / 2;
@@ -206,7 +235,6 @@ export function TimelineView() {
         }
         if (!placed) groups.push({ items: [r.it], minA: r.bd.a, maxB: r.bd.b });
       }
-      // Clusters with too many items at small zoom
       for (const g of groups) {
         if (g.items.length >= CLUSTER_THRESHOLD && vp.px < 0.005) {
           const cx = (g.minA + g.maxB) / 2;
@@ -216,15 +244,93 @@ export function TimelineView() {
       }
     }
 
-    // Assign rows (skip clustered)
     const unclustered = list.filter((r) => !clustered.has(r.it.id));
-    const positioned = unclustered.map((r, i) => ({ ...r, y: i * ROW_H }));
 
-    return { rows: positioned, clusters: clusterList };
-  }, [doc.items, activeFilter, hiddenByCollapse, vp.px]);
+    // Lane mode: group by type
+    let lanes: { typeId: string; typeName: string; items: typeof unclustered }[] = [];
+    if (laneMode === 'type') {
+      const byType = new Map<string, typeof unclustered>();
+      for (const r of unclustered) {
+        const arr = byType.get(r.it.typeId) ?? [];
+        arr.push(r);
+        byType.set(r.it.typeId, arr);
+      }
+      lanes = doc.itemTypes
+        .filter((t) => (byType.get(t.id)?.length ?? 0) > 0)
+        .map((t) => ({ typeId: t.id, typeName: t.name, items: byType.get(t.id)! }));
+    }
+
+    // Assign y-positions
+    let yPos = 0;
+    type Row = { it: Item; bd: NonNullable<ReturnType<typeof spanBounds>>; y: number };
+    let positioned: Row[];
+    const laneInfo: { typeName: string; y: number; count: number; color: string }[] = [];
+
+    if (laneMode === 'type' && lanes.length > 1) {
+      positioned = [];
+      for (const lane of lanes) {
+        const type = doc.itemTypes.find((t) => t.id === lane.typeId);
+        laneInfo.push({ typeName: lane.typeName, y: yPos, count: lane.items.length, color: type?.color ?? '#888' });
+        for (const r of lane.items) {
+          positioned.push({ ...r, y: yPos * ROW_H });
+          yPos++;
+        }
+        yPos++; // gap between lanes
+      }
+    } else {
+      positioned = unclustered.map((r, i) => ({ ...r, y: i * ROW_H }));
+    }
+
+    rowsRef.current = positioned;
+    return { rows: positioned, clusters: clusterList, laneGroups: laneInfo };
+  }, [doc.items, doc.itemTypes, activeFilter, hiddenByCollapse, vp.px, laneMode]);
 
   const visible = rows.filter((r) => x(r.bd.b) > -200 && x(r.bd.a) < width + 200);
   const hidden = rows.length - visible.length;
+
+  // ---- Minimap helpers ----
+  const contentBd = useMemo(() => contentBounds(doc.items.map((i) => i.span)), [doc.items]);
+  const totalRows = rows.length;
+
+  function minimapX(jd: number): number {
+    if (!contentBd) return 0;
+    return ((jd - contentBd.left) / (contentBd.right - contentBd.left)) * width;
+  }
+
+  // Minimap drag
+  const mmDrag = useRef(false);
+  useEffect(() => {
+    const el = minimapRef.current;
+    if (!el) return;
+    const down = (e: PointerEvent) => {
+      if ((e.target as HTMLElement).closest('.minimap')) {
+        mmDrag.current = true;
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        const rect = el.getBoundingClientRect();
+        const frac = (e.clientX - rect.left) / rect.width;
+        if (contentBd) {
+          const jd = contentBd.left + frac * (contentBd.right - contentBd.left);
+          setVp((v) => ({ ...v, center: jd }));
+        }
+      }
+    };
+    const move = (e: PointerEvent) => {
+      if (!mmDrag.current || !contentBd) return;
+      const rect = el.getBoundingClientRect();
+      const frac = (e.clientX - rect.left) / rect.width;
+      const jd = contentBd.left + frac * (contentBd.right - contentBd.left);
+      setVp((v) => ({ ...v, center: jd }));
+    };
+    const up = () => { mmDrag.current = false; };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    return () => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+    };
+  }, [contentBd]);
 
   const zoom = (factor: number) =>
     setVp((v) => ({ ...v, px: clampPx(v.px * factor) }));
@@ -234,14 +340,21 @@ export function TimelineView() {
       <EntitySidebar />
       <div className="tl-main">
         <div className="toolbar">
-          <button onClick={() => zoom(1.6)} title="Zoom ind">＋</button>
-          <button onClick={() => zoom(1 / 1.6)} title="Zoom ud">－</button>
+          <button onClick={() => zoom(1.6)} title="Zoom ind (+)">＋</button>
+          <button onClick={() => zoom(1 / 1.6)} title="Zoom ud (−)">－</button>
           <button onClick={fit}>Tilpas</button>
-          {/* Søg & hoppe */}
+          <button
+            className={laneMode === 'type' ? 'on' : ''}
+            onClick={() => setLaneMode((m) => m === 'chrono' ? 'type' : 'chrono')}
+            title="Skift mellem kronologisk rækkefølge og spor pr. type"
+          >
+            {laneMode === 'type' ? '🔀 Spor pr. type' : '📅 Kronologisk'}
+          </button>
+          {/* Søg */}
           <div className="tl-search">
             <input
               type="text"
-              placeholder="Søg post…"
+              placeholder="Søg post… (Ctrl+←/→ navigér)"
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
               onKeyDown={(e) => {
@@ -270,6 +383,31 @@ export function TimelineView() {
               : ''}
           </span>
         </div>
+
+        {/* M13: Minimap */}
+        {contentBd && (
+          <div className="minimap" ref={minimapRef} style={{ height: MINIMAP_H, width }}>
+            {/* content density bars */}
+            {doc.items.map((it) => {
+              const bd = spanBounds(it.span);
+              if (!bd) return null;
+              const x1 = minimapX(bd.a);
+              const w = Math.max(1, minimapX(bd.b) - x1);
+              const type = doc.itemTypes.find((t) => t.id === it.typeId);
+              const color = it.color ?? type?.color ?? '#888';
+              return <div key={it.id} className="minimap-bar" style={{ left: x1, width: w, background: color }} />;
+            })}
+            {/* viewport indicator */}
+            <div
+              className="minimap-viewport"
+              style={{
+                left: minimapX(left),
+                width: Math.max(4, minimapX(right) - minimapX(left)),
+              }}
+            />
+          </div>
+        )}
+
         <div className="tl" ref={wrapRef}>
           <div className="ruler" style={{ height: 30 }}>
             {ticks.map((t, i) => (
@@ -278,13 +416,22 @@ export function TimelineView() {
               </div>
             ))}
           </div>
-          <div className="lanes" style={{ height: Math.max(rows.length, 1) * ROW_H }}>
+          <div className="lanes" style={{ height: Math.max(totalRows, 1) * ROW_H }}>
             {ticks.map((t, i) => (
               <div key={i} className="grid" style={{ left: x(t.jd), height: '100%' }} />
             ))}
-            {Array.from({ length: rows.length }, (_, i) => (
+            {Array.from({ length: totalRows }, (_, i) => (
               <div key={i} className={`lanebg ${i % 2 ? 'alt' : ''}`} style={{ top: i * ROW_H, height: ROW_H }} />
             ))}
+
+            {/* Lane labels (type mode) */}
+            {laneGroups.map((lg, i) => (
+              <div key={i} className="lane-label" style={{ top: lg.y * ROW_H - 2, color: lg.color }}>
+                <span className="lane-label-dot" style={{ background: lg.color }} />
+                {lg.typeName} ({lg.count})
+              </div>
+            ))}
+
             {visible.map(({ it, bd, y }) => {
               const type = doc.itemTypes.find((t) => t.id === it.typeId);
               const color = it.color ?? type?.color ?? '#888';
@@ -303,13 +450,8 @@ export function TimelineView() {
                     <span className="halo" style={{ left: x(bd.ub) - xa, width: x(bd.b) - x(bd.ub), background: `linear-gradient(90deg, ${color}22, ${color}55)` }} />
                   )}
                   {it.span.ongoing && <span className="arrow" style={{ borderColor: color }} />}
-                  {/* Collapse toggle */}
                   {hasChildren && (
-                    <button
-                      className={`bar-collapse ${isCollapsed ? 'collapsed' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); toggleCollapse(it.id); }}
-                      title={isCollapsed ? `Vis ${childrenMap.get(it.id)!.length} children` : 'Skjul children'}
-                    >
+                    <button className={`bar-collapse ${isCollapsed ? 'collapsed' : ''}`} onClick={(e) => { e.stopPropagation(); toggleCollapse(it.id); }} title={isCollapsed ? `Vis ${childrenMap.get(it.id)!.length} children` : 'Skjul children'}>
                       {isCollapsed ? '+' : '−'}
                     </button>
                   )}
@@ -326,22 +468,14 @@ export function TimelineView() {
               const cx = x(cl.x);
               if (cx < -50 || cx > width + 50) return null;
               return (
-                <div
-                  key={i}
-                  className="cluster"
-                  style={{ left: cx - 16, top: ROW_H / 2 - 16 }}
-                  title={`${cl.count} poster her. Klik for at zoome ind.`}
-                  onClick={() => {
-                    setVp((v) => ({ center: cl.x, px: Math.min(0.1, v.px * 4) }));
-                  }}
-                >
+                <div key={i} className="cluster" style={{ left: cx - 16, top: ROW_H / 2 - 16 }} title={`${cl.count} poster her. Klik for at zoome ind.`} onClick={() => setVp((v) => ({ center: cl.x, px: Math.min(0.1, v.px * 4) }))}>
                   {cl.count}
                 </div>
               );
             })}
 
-            {/* M4: Dependency-pile (SVG overlay) */}
-            <svg className="dep-overlay" width={width} height={Math.max(rows.length, 1) * ROW_H}>
+            {/* Dependency-pile + Profeti-buer (SVG overlay) */}
+            <svg className="dep-overlay" width={width} height={Math.max(totalRows, 1) * ROW_H}>
               {(doc.dependencies ?? []).map((dep) => {
                 const blockerRow = rows.find((r) => r.it.id === dep.blockerId);
                 const blockedRow = rows.find((r) => r.it.id === dep.blockedId);
@@ -361,8 +495,6 @@ export function TimelineView() {
                   </g>
                 );
               })}
-
-              {/* M7: Profeti→Opfyldelse-buer (gyldne buer) */}
               {(doc.relations ?? []).filter((r) => r.typeId === 'rt-fulfillment').map((rel) => {
                 const prophecyRow = rows.find((r) => r.it.id === rel.fromId);
                 const fulfillRow = rows.find((r) => r.it.id === rel.toId);
@@ -383,7 +515,6 @@ export function TimelineView() {
                   </g>
                 );
               })}
-
               <defs>
                 <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
                   <polygon points="0 0, 8 3, 0 6" fill="#888" />
@@ -395,7 +526,7 @@ export function TimelineView() {
             </svg>
           </div>
         </div>
-        <p className="hint">Træk = pan · Hjul = zoom · Søg = hop til post · +/− = fold hierarki</p>
+        <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump</p>
       </div>
     </div>
   );

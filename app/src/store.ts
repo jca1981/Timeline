@@ -89,6 +89,7 @@ interface AppState {
   duplicateItem(id: string): void;
   clearAll(): void;
   importDoc(doc: TimelineDoc): void;
+  mergeDoc(incoming: TimelineDoc): void;
   addRelation(fromId: string, toId: string, typeId: string, note?: string): void;
   removeRelation(id: string): void;
   toggleRelation(fromId: string, toId: string, typeId: string): void;
@@ -198,6 +199,25 @@ export const useApp = create<AppState>((set, get) => ({
     clearHistory();
     persist(doc);
     set({ doc, errors: {}, selectedId: null });
+  },
+
+  mergeDoc: (incoming: TimelineDoc) => {
+    pushSnapshot(get().doc);
+    const s = get();
+    const existingIds = new Set(s.doc.items.map((i) => i.id));
+    const newItems = incoming.items.filter((i) => !existingIds.has(i.id));
+    const existingRelIds = new Set((s.doc.relations ?? []).map((r) => r.id));
+    const newRels = (incoming.relations ?? []).filter((r) => !existingRelIds.has(r.id));
+    const existingTypeIds = new Set(s.doc.itemTypes.map((t) => t.id));
+    const newTypes = (incoming.itemTypes ?? []).filter((t) => !existingTypeIds.has(t.id));
+    const merged: TimelineDoc = {
+      ...s.doc,
+      items: [...s.doc.items, ...newItems],
+      relations: [...(s.doc.relations ?? []), ...newRels],
+      itemTypes: [...s.doc.itemTypes, ...newTypes],
+    };
+    persist(merged);
+    set({ doc: merged });
   },
 
   addRelation: (fromId, toId, typeId, note) => {

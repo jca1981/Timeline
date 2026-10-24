@@ -18,6 +18,7 @@ type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortæl
 export default function App() {
   const doc = useApp((s) => s.doc);
   const importDoc = useApp((s) => s.importDoc);
+  const mergeDoc = useApp((s) => s.mergeDoc);
   const [view, setView] = useState<View>('ark');
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -61,12 +62,9 @@ export default function App() {
     try {
       const json = JSON.parse(await file.text());
       if (!json.items || !Array.isArray(json.items)) throw new Error('Ugyldigt JSON: mangler items[]');
-      if (window.confirm(`Importer “${json.name || file.name}” (${json.items.length} poster)?
-
-Nuværende indhold erstattes.`)) {
-        importDoc(json);
+      const replace = window.confirm(`Importer "${json.name || file.name}" (${json.items.length} poster)?\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)`);
+        if (replace) { importDoc(json); } else { mergeDoc(json); }
         setView('ark');
-      }
     } catch (e) {
       alert('JSON-import fejlede: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -78,11 +76,10 @@ Nuværende indhold erstattes.`)) {
     setImporting(true);
     try {
       const { doc: imported, images, warnings } = importAeon(await file.arrayBuffer(), file.name.replace(/\.aeon$/i, ''));
-      if (window.confirm(`Importer ${imported.items.length} poster, ${imported.relations?.length ?? 0} relationer${images.length ? ` og ${images.length} billeder` : ''}?
-
-Nuværende indhold erstattes.`)) {
+      const replace = window.confirm(`Importer ${imported.items.length} poster, ${imported.relations?.length ?? 0} relationer${images.length ? ` og ${images.length} billeder` : ''}?\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)`);
+      if (true) {
         if (images.length) await putImages(images.map((img) => ({ id: img.id, entry: { blob: img.blob, mimeType: img.mimeType, filename: img.filename } })));
-        importDoc(imported);
+        if (replace) { importDoc(imported); } else { mergeDoc(imported); }
         setView('ark');
         if (warnings.length) alert('Advarsler:\n' + warnings.join('\n'));
       }

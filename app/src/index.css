@@ -255,3 +255,17 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .bar-collapse { position: absolute; left: -14px; top: 0; width: 14px; height: 20px; background: none; border: none; color: inherit; font-size: 11px; font-weight: bold; cursor: pointer; opacity: 0.7; padding: 0; line-height: 20px; }
 .bar-collapse:hover { opacity: 1; }
 .bar-collapse.collapsed { color: #fff; background: var(--accent); border-radius: 3px; width: 16px; text-align: center; left: -17px; }
+
+/* M13: Minimap */
+.minimap { position: relative; background: #0d0f13; border: 1px solid var(--line); border-radius: 4px; margin-bottom: 4px; cursor: pointer; overflow: hidden; opacity: 0.85; }
+.minimap:hover { opacity: 1; }
+.minimap-bar { position: absolute; top: 4px; height: calc(100% - 8px); opacity: 0.6; border-radius: 1px; min-width: 1px; }
+.minimap-viewport { position: absolute; top: 0; height: 100%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.4); border-radius: 2px; pointer-events: none; }
+
+/* M13: Lane labels */
+.lane-label { position: absolute; left: 4px; font-size: 10px; font-weight: bold; opacity: 0.8; z-index: 3; pointer-events: none; display: flex; align-items: center; gap: 4px; }
+.lane-label-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* M13: Entity filter button */
+.entity-filter-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 14px; padding: 0 4px; opacity: 0.5; margin-left: 2px; }
+.entity-filter-btn:hover { opacity: 1; }
