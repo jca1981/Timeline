@@ -309,3 +309,23 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 /* M16: Related highlight on hover */
 .bar.related { outline: 2px dashed #fff3; outline-offset: 1px; }
 .bar.related.selected { outline-color: var(--accent); }
+
+/* M17: Era breadcrumb */
+.era-breadcrumb { padding: 3px 8px; font-size: 11px; color: #999; border-bottom: 1px solid var(--line); }
+.era-breadcrumb em { font-style: normal; font-weight: 600; }
+
+/* M17: Connectors SVG */
+.connectors { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
+
+/* M17: Pin buttons on bars */
+.bar-pin { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 9px; cursor: pointer; opacity: 0; transition: opacity 0.15s; padding: 0 2px; }
+.bar:hover .bar-pin { opacity: 0.7; }
+.bar-pin.pinned { opacity: 1; }
+.bar-pin:hover { opacity: 1; }
+
+/* M17: Pinned strip */
+.pinned-strip { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-top: 1px solid var(--line); font-size: 11px; flex-wrap: wrap; }
+.pinned-label { color: #888; font-size: 10px; }
+.pinned-chip { padding: 2px 8px; border-radius: 10px; border: 1px solid; cursor: pointer; font-size: 10px; }
+.pinned-chip.selected { box-shadow: 0 0 0 2px var(--accent); }
+.pinned-chip:hover { opacity: 0.8; }

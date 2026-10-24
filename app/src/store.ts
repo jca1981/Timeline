@@ -116,6 +116,8 @@ interface AppState {
   jumpTarget: string | null; // itemId at zoome til (forbruges af TimelineView)
   jumpTo(itemId: string): void;
   clearJump(): void;
+  pinnedIds: Set<string>;
+  togglePin(id: string): void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -383,4 +385,10 @@ export const useApp = create<AppState>((set, get) => ({
   jumpTarget: null,
   jumpTo: (itemId) => set({ jumpTarget: itemId }),
   clearJump: () => set({ jumpTarget: null }),
+  pinnedIds: new Set<string>(),
+  togglePin: (id) => set((s) => {
+    const next = new Set(s.pinnedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return { pinnedIds: next };
+  }),
 }));

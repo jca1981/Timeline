@@ -29,6 +29,8 @@ export function TimelineView() {
   const jumpTarget = useApp((s) => s.jumpTarget);
   const clearJump = useApp((s) => s.clearJump);
   const jumpTo = useApp((s) => s.jumpTo);
+  const pinnedIds = useApp((s) => s.pinnedIds);
+  const togglePin = useApp((s) => s.togglePin);
   const wrapRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1000);
@@ -352,6 +354,17 @@ export function TimelineView() {
   const visible = rows.filter((r) => x(r.bd.b) > -200 && x(r.bd.a) < width + 200);
   const hidden = rows.length - visible.length;
 
+  // M17: Era breadcrumb — which eras contain current viewport center?
+  const viewportCenterJD = vp.center;
+  const activeEras = eraBands.filter((e) => e.a <= viewportCenterJD && e.b >= viewportCenterJD);
+
+  // M17: Vertical connectors (parent → children y-midpoints)
+  const rowYMap = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) m.set(r.it.id, r.y + ROW_H / 2);
+    return m;
+  }, [rows]);
+
   // ---- Minimap helpers ----
   const contentBd = useMemo(() => contentBounds(doc.items.map((i) => i.span)), [doc.items]);
   const totalRows = rows.length;
@@ -478,6 +491,15 @@ export function TimelineView() {
           </div>
         )}
 
+        {/* M17: Era breadcrumb */}
+        {activeEras.length > 0 && (
+          <div className="era-breadcrumb">
+            📍 {activeEras.map((e, i) => (
+              <span key={e.id}>{i > 0 ? ' → ' : ''}<em style={{ color: e.color }}>{e.label}</em></span>
+            ))}
+          </div>
+        )}
+
         <div className="tl" ref={wrapRef}>
           <div className="ruler" style={{ height: 30 }}>
             {ticks.map((t, i) => (
@@ -513,6 +535,16 @@ export function TimelineView() {
               </div>
             ))}
 
+            {/* M17: Vertical connectors parent↔child */}
+            <svg className="connectors" width={width} height={Math.max(totalRows, 1) * ROW_H}>
+              {visible.filter(({ it }) => it.parentId && rowYMap.has(it.parentId)).map(({ it, bd }) => {
+                const parentY = rowYMap.get(it.parentId!)!;
+                const childY = rowYMap.get(it.id)!;
+                const cx = x((bd.a + bd.b) / 2);
+                return <line key={`conn-${it.id}`} x1={cx} y1={parentY} x2={cx} y2={childY} stroke="#ffffff18" strokeWidth={1} strokeDasharray="2,3" />;
+              })}
+            </svg>
+
             {visible.map(({ it, bd, y }) => {
               const color = effectiveColor.get(it.id) ?? '#888';
               const xa = x(bd.a);
@@ -535,6 +567,8 @@ export function TimelineView() {
                       {isCollapsed ? '+' : '−'}
                     </button>
                   )}
+                  {pinnedIds.has(it.id) && <button className="bar-pin pinned" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fjern pin">📌</button>}
+                  {!pinnedIds.has(it.id) && w > 100 && <button className="bar-pin" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fastgør i bunden">📍</button>}
                   <span className="barlabel" style={{ color: w > 140 ? '#fff' : color }}>
                     {it.imageId ? '🖼 ' : ''}{w > 26 ? it.label : ''}
                     {isCollapsed && (childrenMap.get(it.id)?.length ?? 0) > 0 && ` (+${childrenMap.get(it.id)!.length})`}
@@ -626,7 +660,23 @@ export function TimelineView() {
             )}
           </div>
         )}
-        <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump</p>
+        {/* M17: Pinned strip */}
+        {pinnedIds.size > 0 && (
+          <div className="pinned-strip">
+            <span className="pinned-label">📌 Fastgjorte:</span>
+            {[...pinnedIds].map((id) => {
+              const it = doc.items.find((x) => x.id === id);
+              if (!it) return null;
+              const color = effectiveColor.get(id) ?? '#888';
+              return (
+                <span key={id} className={`pinned-chip ${selectedId === id ? 'selected' : ''}`} style={{ borderColor: color, background: color + '22' }} onClick={() => { select(id); jumpTo(id); }} onContextMenu={(e) => { e.preventDefault(); togglePin(id); }}>
+                  {it.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+        <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump · 📍 pin</p>
         {/* M16: Detail-popup */}
         {popupId && (() => {
           const it = doc.items.find((x) => x.id === popupId);
