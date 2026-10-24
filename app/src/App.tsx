@@ -5,12 +5,14 @@ import { TimelineView } from './ui/TimelineView';
 import { MatrixView } from './ui/MatrixView';
 import { FamilyTreeView } from './ui/FamilyTreeView';
 import { SubwayView } from './ui/SubwayView';
+import { NarrativeView } from './ui/NarrativeView';
+import { DocumentBar } from './ui/DocumentBar';
 import { Inspector } from './ui/Inspector';
 import { FilterBar } from './ui/FilterBar';
 import { importAeon } from './core/aeonImport';
 import { TEMPLATES } from './model/templates';
 
-type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway';
+type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling';
 
 export default function App() {
   const doc = useApp((s) => s.doc);
@@ -81,6 +83,7 @@ Nuværende indhold erstattes.`)) {
           value={doc.name}
           onChange={(e) => useApp.setState((s) => ({ doc: { ...s.doc, name: e.target.value } }))}
         />
+        <DocumentBar />
         <nav>
           <button className={view === 'ark' ? 'tab on' : 'tab'} onClick={() => setView('ark')}>Ark</button>
           <button className={view === 'tidslinje' ? 'tab on' : 'tab'} onClick={() => setView('tidslinje')}>
@@ -94,6 +97,9 @@ Nuværende indhold erstattes.`)) {
           </button>
           <button className={view === 'subway' ? 'tab on' : 'tab'} onClick={() => setView('subway')}>
             Subway
+          </button>
+          <button className={view === 'fortælling' ? 'tab on' : 'tab'} onClick={() => setView('fortælling')}>
+            Fortælling
           </button>
         </nav>
         <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
@@ -131,6 +137,7 @@ Nuværende indhold erstattes.`)) {
           {view === 'matrix' && <MatrixView />}
           {view === 'slægtstræ' && <FamilyTreeView />}
           {view === 'subway' && <SubwayView />}
+          {view === 'fortælling' && <NarrativeView />}
         </main>
         <Inspector />
       </div>

@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import type { Span } from './core/types';
 import { syncSpan } from './core/sync';
-import { saveDoc, loadDoc as idbLoad } from './core/persist';
+import { saveDoc, loadDoc as idbLoad, saveDocById, loadDocById, deleteDocById, listDocs, type DocMeta } from './core/persist';
 import {
   DEFAULT_RELATION_TYPES,
   emptyDoc,
@@ -17,6 +17,15 @@ import {
 } from './model/doc';
 
 const LS_KEY = 'aeon-clone:doc:v1';
+const LS_DOCID = 'aeon-clone:docId:v1';
+
+function getDocId(): string {
+  return localStorage.getItem(LS_DOCID) || DOC_KEY;
+}
+function setDocId(id: string) {
+  try { localStorage.setItem(LS_DOCID, id); } catch { /* */ }
+}
+const DOC_KEY = 'current';
 
 /** Sync initial load (localStorage som lynhurtig cache; IndexedDB hydrates senere). */
 function loadDocSync(): TimelineDoc {
@@ -40,11 +49,19 @@ function persist(doc: TimelineDoc) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch { /* ignorer */ }
   // IndexedDB som primær lager (større dokumenter)
   saveDoc(doc).catch(() => {});
+  // Also save by docId for multi-doc
+  const id = getDocId();
+  if (id !== DOC_KEY) saveDocById(id, doc, doc.name).catch(() => {});
 }
 
 /** Hydrate fra IndexedDB (kaldes én gang efter mount). */
 export async function hydrateStore() {
-  const doc = await idbLoad<TimelineDoc>();
+  const id = getDocId();
+  let doc: TimelineDoc | null = null;
+  if (id !== DOC_KEY) {
+    doc = await loadDocById<TimelineDoc>(id);
+  }
+  if (!doc) doc = await idbLoad<TimelineDoc>();
   if (doc) {
     doc.relationTypes ??= DEFAULT_RELATION_TYPES;
     doc.relations ??= [];
@@ -52,6 +69,9 @@ export async function hydrateStore() {
     doc.savedFilters ??= {};
     useApp.setState({ doc, errors: {}, selectedId: null });
   }
+  // Load doc list
+  const list = await listDocs();
+  useApp.setState({ docList: list });
 }
 
 interface AppState {
@@ -59,6 +79,7 @@ interface AppState {
   errors: Record<string, string>; // itemId -> sync-fejl (rød kant)
   selectedId: string | null; // inspektør-valgt post
   activeFilter: Filter | null; // M4 aktivt filter
+  docList: DocMeta[]; // M9 multi-doc profiles
   select(id: string | null): void;
   addItem(partial?: Partial<Item>): string;
   updateItem(id: string, patch: Partial<Item>): void;
@@ -78,6 +99,12 @@ interface AppState {
   setFilter(f: Filter | null): void;
   saveFilter(name: string, f: Filter): void;
   removeSavedFilter(name: string): void;
+  // M9: Multi-doc
+  newDoc(name?: string): void;
+  switchDoc(id: string): Promise<void>;
+  deleteDoc(id: string): Promise<void>;
+  saveAsDoc(name: string): Promise<void>;
+  refreshDocList(): Promise<void>;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -233,5 +260,54 @@ export const useApp = create<AppState>((set, get) => ({
       persist(doc);
       return { doc };
     });
+  },
+
+  // ---- M9: Multi-doc profiles ----
+  docList: [],
+
+  newDoc: (name) => {
+    const doc = emptyDoc(name || 'Nyt tidslinje');
+    persist(doc);
+    set({ doc, errors: {}, selectedId: null, activeFilter: null });
+  },
+
+  switchDoc: async (id) => {
+    // Save current first
+    const cur = get().doc;
+    persist(cur);
+    // Load the target
+    const doc = await loadDocById<TimelineDoc>(id);
+    if (!doc) return;
+    doc.relationTypes ??= DEFAULT_RELATION_TYPES;
+    doc.relations ??= [];
+    doc.dependencies ??= [];
+    doc.savedFilters ??= {};
+    setDocId(id);
+    set({ doc, errors: {}, selectedId: null, activeFilter: null });
+  },
+
+  deleteDoc: async (id) => {
+    await deleteDocById(id);
+    const list = await listDocs();
+    set({ docList: list });
+    if (getDocId() === id) {
+      // switched away — load current/first
+      setDocId(DOC_KEY);
+      await hydrateStore();
+    }
+  },
+
+  saveAsDoc: async (name) => {
+    const id = newId();
+    const cur = { ...get().doc, name };
+    await saveDocById(id, cur, name);
+    setDocId(id);
+    const list = await listDocs();
+    set({ doc: cur, docList: list });
+  },
+
+  refreshDocList: async () => {
+    const list = await listDocs();
+    set({ docList: list });
   },
 }));
