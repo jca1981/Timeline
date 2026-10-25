@@ -7,7 +7,8 @@
 import { addDuration } from './jdn';
 import { syncSpan } from './sync';
 import type { DateValue, Duration, Span } from './types';
-import type { Item, Relation, RelationType, TimelineDoc } from '../model/doc';
+import type { Item, Relation, RelationType, Source, SourceKind, TimelineDoc } from '../model/doc';
+import { reliabilityFromPct, safeUrl } from './sources';
 
 export interface AeonImage { id: string; blob: ArrayBuffer; mimeType: string; filename?: string; }
 
@@ -28,17 +29,24 @@ interface AeonItem {
   startDate?: AeonDate | null; duration?: AeonDuration | null;
   latestStartDate?: AeonDate | null; durationToEarliestEnd?: AeonDuration | null;
   tags?: string[]; image?: string; attachments?: string[];
+  links?: string[]; // M29: web-laenker (attachment-id'er med http-sti)
+  propertyValues?: Record<string, unknown>;
 }
+interface AeonRefDef { id: string; label?: string; inverseLabel?: string; key?: string; types?: string[] }
+interface AeonPropDef { id: string; label?: string; key?: string; format?: string; allowed?: { id: string; label?: string }[] }
+interface AeonAttachment { id: string; path?: string; label?: string }
 interface AeonRaw {
   definitions: {
-    types: { byId: Record<string, { id: string; label: string; enabled?: boolean }> };
-    references: { byId: Record<string, { id: string; label?: string; inverseLabel?: string }> };
+    types: { byId: Record<string, { id: string; label: string; enabled?: boolean; key?: string }> };
+    references: { byId: Record<string, AeonRefDef> };
     colors: { byId: Record<string, { id: string; swatchColor?: string }> };
+    properties?: { byId: Record<string, AeonPropDef> };
   };
   data: {
     items: { byId: Record<string, AeonItem> };
-    relationships?: { byId: Record<string, { id: string; subject: string; reference: string; object: string }> };
+    relationships?: { byId: Record<string, { id: string; subject: string; reference: string; object: string }> } | Array<{ id: string; subject: string; reference: string; object: string }>;
     tags?: Record<string, string>;
+    attachments?: { byId: Record<string, AeonAttachment> } | Record<string, AeonAttachment>;
   };
   fileVersion?: number;
 }
@@ -52,7 +60,6 @@ function indexOfBytes(hay: Uint8Array, needle: number[], from = 0): number {
   return -1;
 }
 const utf8Decoder = new TextDecoder('utf-8');
-
 /**
  * Klammeparring fra `start` (som praeciser at vaere en `{`). Ignorerer strenger og escapede teikn.
  * UTF-8's fortsaettelsesbytes er altid >= 0x80 og kan derfor ikke forveksles med { } " \
@@ -81,6 +88,14 @@ function matchJsonEnd(bytes: Uint8Array, start: number): number {
  *  - fileVersion 15 (nyere):   { fileVersion, core: { definitions, data: { itemsById, itemDatesById, relationshipsById, superAndChildOrderById, tags } } }
  * Alt mapper til den flade form, resten af importen kan kaede til.
  */
+/** Egenskabsdefinitioner som id → def (Aeon gemmer dem som { byId }, dict eller array). */
+function propsById(p: any): Record<string, AeonPropDef> {
+  const src = p?.byId ?? p;
+  if (!src) return {};
+  if (Array.isArray(src)) return Object.fromEntries(src.map((x: any) => [x?.id ?? '', x]));
+  return src as Record<string, AeonPropDef>;
+}
+
 export function normalizeAeonDoc(j: any): AeonDoc {
   if (j?.definitions?.types?.byId && j?.data?.items?.byId) return j as AeonDoc;
   const core = j?.core ?? j;
@@ -113,11 +128,13 @@ export function normalizeAeonDoc(j: any): AeonDoc {
       types: { byId: defs.types?.byId ?? {} },
       references: { byId: defs.references?.byId ?? {} },
       colors: { byId: defs.colors?.byId ?? {} },
+      properties: { byId: propsById(defs.properties) },
     },
     data: {
       items: { byId: items },
       relationships: data.relationshipsById ? { byId: data.relationshipsById } : data.relationships,
       tags: data.tags,
+      attachments: data.attachmentsById ? { byId: data.attachmentsById } : data.attachments,
     },
   } as AeonDoc;
 }
@@ -225,6 +242,120 @@ function aeonColor(hexOrName: string | undefined, colors: AeonRaw['definitions']
 
 const TYPE_PALETTE = ['#4a90d9', '#59a14f', '#d9a441', '#a865c8', '#d96a6a', '#5fb3b3', '#b3b35f', '#8a6ad9', '#d98a3d', '#3dd9a4'];
 
+// ---- kilder (M29b): Aeons kilde-element + "Source"-relationer -> doc.sources ----
+const SOURCE_LABEL_RE = /^(kilde|source)$/i;
+
+/** Relation der binder en post til et kilde-element (bade indbygget sourceRef og brugervalgte). */
+function isSourceRefDef(def: AeonRefDef): boolean {
+  return def.key === 'sourceRef' || SOURCE_LABEL_RE.test((def.label ?? '').trim());
+}
+
+/** Item-typer der er kilder: dem en Source-relation peger pa, plus typer der hedder "Kilde"/"Source". */
+export function aeonSourceTypeDefs(raw: AeonRaw): Set<string> {
+  const out = new Set<string>();
+  for (const def of Object.values(raw.definitions.references?.byId ?? {})) {
+    if (isSourceRefDef(def)) for (const t of def.types ?? []) out.add(t);
+  }
+  for (const [id, t] of Object.entries(raw.definitions.types?.byId ?? {})) {
+    if (t.key === 'source' || SOURCE_LABEL_RE.test((t.label ?? '').trim())) out.add(id);
+  }
+  return out;
+}
+
+/** propertyValues er keyed paa property-id (kan vaere UUID) — slar op pae both id og key. */
+function propEntry(it: AeonItem, props: Record<string, AeonPropDef>, key: string): { def?: AeonPropDef; value: unknown } | null {
+  for (const [pid, value] of Object.entries(it.propertyValues ?? {})) {
+    if (pid === key || props[pid]?.key === key) return { def: props[pid], value };
+  }
+  return null;
+}
+
+const flatVal = (v: unknown): string =>
+  (Array.isArray(v) ? v : [v]).map((s) => String(s ?? '').trim()).filter(Boolean).join(', ');
+
+/** Aeons sourceType-verdi -> vor tre-trins kildetype (ojenvidne-forst). */
+export function aeonSourceKind(value: unknown): SourceKind | undefined {
+  const v = flatVal(value).toLowerCase();
+  if (!v) return undefined;
+  if (/tertiary|tertiær/.test(v)) return 'tertiær';
+  if (/secondary|sekundær/.test(v)) return 'sekundær';
+  return 'primær'; // publiceret/ukendt, billede, relikt, artefakt osv. er ojenvidne-kilder
+}
+
+/**
+ * Aeons trovaerdighed -> 1-5. Duer pae begge formater: `percentage` (0-100 eller
+ * 0-1) og `list` (valg-id'er i rekkefoelge, foerste valg = bedste). Tal uden
+ * liste slaes op som procent.
+ */
+export function aeonReliability(value: unknown, def?: AeonPropDef): number | undefined {
+  if (value == null || value === '') return undefined;
+  const allowed = def?.allowed ?? [];
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    if (def?.format !== 'percentage' && allowed.length && value >= 0 && value < allowed.length) {
+      return allowed.length - Math.round(value); // index 0 = bedste valg
+    }
+    return reliabilityFromPct(value > 1 ? value / 100 : value);
+  }
+  const s = flatVal(value).toLowerCase();
+  const idx = allowed.findIndex((o) => o.id.toLowerCase() === s || (o.label ?? '').toLowerCase().trim() === s);
+  if (idx >= 0) return allowed.length - idx;
+  const n = Number(s);
+  return Number.isFinite(n) ? aeonReliability(n, def) : undefined;
+}
+
+/** Attachment-stier: http/https bliver link; aeonEmbedded:// er indlejrede filer. */
+function aeonAttachmentsMap(raw: AeonRaw): Record<string, AeonAttachment> {
+  const wrap = raw.data.attachments as unknown as Record<string, unknown> | undefined;
+  if (!wrap) return {};
+  const byId = 'byId' in wrap ? (wrap.byId as Record<string, AeonAttachment> | undefined) : undefined;
+  return byId ?? (wrap as Record<string, AeonAttachment>);
+}
+
+function firstHttpUrl(item: AeonItem, att: Record<string, AeonAttachment>): string | null {
+  for (const id of [...(item.links ?? []), ...(item.attachments ?? [])]) {
+    const u = safeUrl(att[id]?.path);
+    if (u) return u;
+  }
+  return null;
+}
+
+/**
+ * Bygter kildebibliotek af Aeons kilde-elementer. De er poster i Aeons data, men
+ * hos os er de kilder (vises i Kilder-fanen, ikke som barpper i tidslinjen).
+ */
+export function aeonSources(raw: AeonRaw): Source[] {
+  const props = raw.definitions.properties?.byId ?? {};
+  const att = aeonAttachmentsMap(raw);
+  const srcTypes = aeonSourceTypeDefs(raw);
+  const out: Source[] = [];
+  for (const it of Object.values(raw.data.items?.byId ?? {})) {
+    if (!srcTypes.has(it.type)) continue;
+    const s: Source = { id: it.id, title: it.label || '(uden titel)' };
+    const notes = [it.summary, flatVal(propEntry(it, props, 'notes')?.value)].filter(Boolean).join('\n');
+    if (notes) s.notes = notes;
+    const url = firstHttpUrl(it, att);
+    if (url) s.url = url;
+    const st = propEntry(it, props, 'sourceType');
+    const kind = aeonSourceKind(st?.value);
+    if (kind) s.kind = kind;
+    const medium = st?.def?.allowed?.find((o) => o.id === st.value)?.label;
+    if (medium) s.medium = medium;
+    const rel = propEntry(it, props, 'reliability');
+    const rv = aeonReliability(rel?.value, rel?.def);
+    if (rv) s.reliability = rv;
+    out.push(s);
+  }
+  return out;
+}
+
+/** Alle relationer, uanset om Aeon gemmer dem som { byId } eller som array. */
+function relRows(raw: AeonRaw): { id: string; subject: string; reference: string; object: string }[] {
+  const r = raw.data.relationships as unknown;
+  if (!r) return [];
+  if (Array.isArray(r)) return r as { id: string; subject: string; reference: string; object: string }[];
+  return Object.values((r as { byId?: Record<string, { id: string; subject: string; reference: string; object: string }> }).byId ?? {});
+}
+
 // ---- Billede-index parsing (M11) ----
 /**
  * Aeon's binære format: [image blobs][JSON][zero-pad][footer-index].
@@ -265,7 +396,7 @@ export function extractAeonImages(buf: ArrayBuffer, jsonStartHint = -1): AeonIma
     // read id
     const id = new TextDecoder().decode(u8.subarray(pos + 8, pos + 8 + idLen));
     // Aeon bruger baade UUID'er og korte base58-id'er (fx "FiBLTR4P596XqkQB6oPJH")
-    if (!/^[0-9A-Za-z_\-]{8,40}$/.test(id)) { pos++; continue; }
+    if (!/^[0-9A-Za-z_-]{8,40}$/.test(id)) { pos++; continue; }
     const filename = new TextDecoder().decode(u8.subarray(pos + 8 + idLen, pos + 8 + idLen + fnameLen));
     const dataStart = pos + 8 + idLen + fnameLen;
     if (dataStart + 16 > jsonStart) { pos++; continue; }
@@ -298,9 +429,19 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
   const imageIdSet = new Set(images.map((i) => i.id));
   const warnings: string[] = [];
 
-  // item-typer (spring "genericNode"/mindmap-noder fra — de er ikke tidsposter)
+  // kilder: Aeons kilde-elementer wordt til doc.sources (ikke bars i tidslinjen)
+  const sources = aeonSources(raw);
+  const sourceItemIds = new Set(sources.map((s) => s.id));
+  const srcRefIds = new Set(
+    Object.entries(raw.definitions.references?.byId ?? {})
+      .filter(([, def]) => isSourceRefDef(def))
+      .map(([id]) => id),
+  );
+
+  // item-typer (spring "genericNode"/mindmap-noder og kilde-typer fra — de er ikke tidsposter)
   const skipTypes = new Set(['genericNode']);
-  const typeIds = Object.keys(raw.definitions.types.byId).filter((t) => raw.definitions.types.byId[t].enabled !== false && !skipTypes.has(t));
+  const srcTypeIds = aeonSourceTypeDefs(raw);
+  const typeIds = Object.keys(raw.definitions.types.byId).filter((t) => raw.definitions.types.byId[t].enabled !== false && !skipTypes.has(t) && !srcTypeIds.has(t));
   const itemTypes = typeIds.map((id, i) => ({
     id,
     name: raw.definitions.types.byId[id].label || id,
@@ -316,12 +457,13 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
   let dropped = 0;
   for (const ai of Object.values(raw.data.items.byId)) {
     if (skipTypes.has(ai.type)) continue;
+    if (sourceItemIds.has(ai.id)) continue; // kilde-element → doc.sources i stedet for en post
     if (!typeIdSet.has(ai.type)) { warnings.push(`Ukendt type "${ai.type}" — springer over "${ai.label}"`); dropped++; continue; }
     const span = aeonToSpan(ai);
     const item: Item = { id: ai.id, typeId: ai.type, label: ai.label || '(uden navn)', span };
     if (ai.summary) item.notes = ai.summary;
     if (ai.color) item.color = aeonColor(ai.color, raw.definitions.colors) ?? undefined;
-    if (ai.super && typeIdSet.has(raw.data.items.byId[ai.super]?.type ?? '')) item.parentId = ai.super;
+    if (ai.super && !sourceItemIds.has(ai.super) && typeIdSet.has(raw.data.items.byId[ai.super]?.type ?? '')) item.parentId = ai.super;
     const tags = (ai.tags ?? []).map((t) => tagNames[t]).filter(Boolean);
     if (tags.length) item.tags = tags;
     if (ai.image && imageIdSet.has(ai.image)) item.imageId = ai.image;
@@ -331,7 +473,7 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
   // relationstyper: parentRef → vores rt-parent; øvrige generiske fra definitions.references
   const relationTypes: RelationType[] = [];
   const relTypeMap = new Map<string, string>(); // aeon-ref-id → vores typeId
-  const usedRefs = new Set((Object.values(raw.data.relationships?.byId ?? {}) as { reference: string }[]).map((r) => r.reference));
+  const usedRefs = new Set(relRows(raw).map((r) => r.reference).filter((ref) => !srcRefIds.has(ref)));
   for (const refId of usedRefs) {
     if (refId === 'parentRef') { relTypeMap.set(refId, 'rt-parent'); continue; }
     const def = raw.definitions.references.byId[refId];
@@ -349,7 +491,17 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
   // parentRef vendes om så from = forælder (object), to = barn (subject) — ligesom vores demo.
   const relations: Relation[] = [];
   const seen = new Set<string>();
-  for (const r of Object.values(raw.data.relationships?.byId ?? {}) as { id: string; subject: string; reference: string; object: string }[]) {
+  const citations = new Map<string, string[]>(); // post-id → kilde-id'er
+  for (const r of relRows(raw)) {
+    if (srcRefIds.has(r.reference)) {
+      // "postens Kilde er kilden" — vend om hvis filen gemmer det den anden vej
+      const srcId = sourceItemIds.has(r.object) ? r.object : sourceItemIds.has(r.subject) ? r.subject : null;
+      const itemId = srcId === r.subject ? r.object : r.subject;
+      if (!srcId || !sourceItemIds.has(srcId)) continue;
+      const list = citations.get(itemId);
+      if (list) { if (!list.includes(srcId)) list.push(srcId); } else citations.set(itemId, [srcId]);
+      continue;
+    }
     const typeId = relTypeMap.get(r.reference);
     if (!typeId) continue;
     const has = (id: string) => items.some((i) => i.id === id);
@@ -361,9 +513,20 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
     relations.push({ id: `aeonrel-${r.id}`, fromId, toId, typeId });
   }
 
+  // haeft citationer paa posterne (kun poster der faktisk er importeret)
+  const itemIdSet = new Set(items.map((i) => i.id));
+  let orphans = 0;
+  for (const [itemId, ids] of citations) {
+    const it = items.find((i) => i.id === itemId);
+    if (!it || !itemIdSet.has(itemId)) { orphans++; continue; }
+    it.sourceIds = ids;
+  }
+
   const noDate = items.filter((i) => !i.span.start).length;
   if (noDate) warnings.push(`${noDate} poster uden dato importeret (vises kun i Ark)`);
   if (dropped) warnings.push(`${dropped} poster sprunget over (ukendt type)`);
+  if (sources.length) warnings.push(`${sources.length} kilder importeret til Kilder-fanen`);
+  if (orphans) warnings.push(`${orphans} kildehenvisninger henviser til en post der ikke findes`);
 
   const doc: TimelineDoc = {
     version: 1,
@@ -372,6 +535,7 @@ export function importAeon(buf: ArrayBuffer, docName?: string): { doc: TimelineD
     relationTypes,
     items: items.map((it) => ({ ...it, span: syncSpan(it.span).span ?? it.span })),
     relations,
+    sources: sources.length ? sources : undefined,
   };
   return { doc, images, warnings };
 }

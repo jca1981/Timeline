@@ -45,6 +45,7 @@ button:hover { border-color: var(--accent); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button.danger { color: var(--danger); }
 .count { color: var(--dim); font-size: 12px; margin-left: auto; }
+.dim { color: var(--dim); }
 
 table.sheet { width: 100%; border-collapse: collapse; font-size: 13px; }
 .sheet th { text-align: left; color: var(--dim); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); }
@@ -466,6 +467,15 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .stars { font-size: 11px; letter-spacing: 1px; margin-left: 6px; color: #c9a227; }
 .stars.dim { color: var(--dim); letter-spacing: 0; }
 .src-notes { font-size: 11px; color: var(--dim); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* M30: person-fane — levetid, slægtninge som links, kildeantal */
+.people .pname { background: none; border: 0; border-left: 4px solid transparent; padding: 2px 6px 2px 8px; margin-left: -8px; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.people .pname:hover { background: rgba(255, 255, 255, 0.05); }
+.people .pname.on { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+.people .plink { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline dotted; cursor: pointer; }
+.people .plink:hover { color: var(--accent); }
+.people td.life { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.people td.cited { font-variant-numeric: tabular-nums; text-align: right; }
 
 @media print {
   body { background: #fff !important; color: #000 !important; }

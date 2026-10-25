@@ -9,6 +9,7 @@ import { SubwayView } from './ui/SubwayView';
 import { NarrativeView } from './ui/NarrativeView';
 import { CompareView } from './ui/CompareView';
 import { SourcesView } from './ui/SourcesView';
+import { PeopleView } from './ui/PeopleView';
 import { DocumentBar } from './ui/DocumentBar';
 import { Inspector } from './ui/Inspector';
 import { FilterBar } from './ui/FilterBar';
@@ -19,7 +20,7 @@ import { downloadHtml } from './core/exportHtml';
 import { downloadSvg } from './core/exportSvg';
 import { TEMPLATES } from './model/templates';
 
-type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling' | 'sammenlign' | 'kilder';
+type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling' | 'sammenlign' | 'kilder' | 'personer';
 
 export default function App() {
   const doc = useApp((s) => s.doc);
@@ -96,8 +97,8 @@ export default function App() {
     setImporting(true);
     try {
       const { doc: imported, images, warnings } = importAeon(await file.arrayBuffer(), file.name.replace(/\.aeon$/i, ''));
-      const replace = window.confirm(`Importer ${imported.items.length} poster, ${imported.relations?.length ?? 0} relationer${images.length ? ` og ${images.length} billeder` : ''}?\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)`);
-      if (true) {
+      const replace = window.confirm(`Importer ${imported.items.length} poster, ${imported.relations?.length ?? 0} relationer${imported.sources?.length ? `, ${imported.sources.length} kilder` : ''}${images.length ? ` og ${images.length} billeder` : ''}?\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)`);
+      if (imported.items.length) {
         if (images.length) await putImages(images.map((img) => ({ id: img.id, entry: { blob: img.blob, mimeType: img.mimeType, filename: img.filename } })));
         if (replace) { importDoc(imported); } else { mergeDoc(imported); }
         setView('ark');
@@ -146,6 +147,9 @@ export default function App() {
           <button className={view === 'kilder' ? 'tab on' : 'tab'} onClick={() => setView('kilder')} title="Kildeliste på tværs af alle poster">
             Kilder{doc.sources?.length ? ` (${doc.sources.length})` : ''}
           </button>
+          <button className={view === 'personer' ? 'tab on' : 'tab'} onClick={() => setView('personer')} title="Alle personer med levetid, forældre, børn og kilder">
+            Personer
+          </button>
         </nav>
         <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
           {importing ? 'Importer…' : 'Importer .aeon'}
@@ -191,6 +195,7 @@ export default function App() {
             {view === 'fortælling' && <NarrativeView />}
             {view === 'sammenlign' && <CompareView />}
             {view === 'kilder' && <SourcesView />}
+            {view === 'personer' && <PeopleView />}
           </ErrorBoundary>
         </main>
         <Inspector />

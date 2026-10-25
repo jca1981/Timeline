@@ -4,3 +4,4 @@ dist/
 .tmp/
 Import/*.aeon
 app/debug-render.ts
+Import/*.json

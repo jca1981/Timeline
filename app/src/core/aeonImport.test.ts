@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { aeonToDV, importAeon, findAeonJson } from './aeonImport';
+import { aeonToDV, importAeon, findAeonJson, aeonSourceKind, aeonReliability } from './aeonImport';
+import { peopleOf, peopleStats } from './people';
 
 // ---- synthetisk .aeon-fil: billede-støj + JSON + padding/footer ----
 const RAW = {
@@ -217,6 +218,124 @@ describe('aeonImport (fileVersion 15)', () => {
   });
 });
 
+// ---- M29b: Aeons kilder (kilde-element + "Source"-relationer) ----
+const SRC_RAW = {
+  definitions: {
+    types: {
+      byId: {
+        defaultEvent: { id: 'defaultEvent', label: 'Event', enabled: true },
+        SOU: { id: 'SOU', label: 'Source', enabled: true, identifierPrefix: 'SOU' },
+      },
+    },
+    references: {
+      byId: {
+        sourceRef: { id: 'sourceRef', label: 'Source', key: 'sourceRef', types: ['SOU'] },
+        'SRC-CUSTOM': { id: 'SRC-CUSTOM', label: 'kilde', types: ['SOU'] },
+        parentRef: { id: 'parentRef', label: 'Parent', inverseLabel: 'Child' },
+      },
+    },
+    colors: { byId: {} },
+    properties: {
+      byId: {
+        'PROP-REL': {
+          id: 'PROP-REL', key: 'reliability', label: 'Reliability', format: 'list',
+          allowed: [{ id: 'extremely', label: 'Extremely' }, { id: 'very', label: 'Very' }, { id: 'moderately', label: 'Moderately' }, { id: 'notVery', label: 'Not very' }, { id: 'poor', label: 'Poor' }],
+        },
+        'PROP-TYPE': {
+          id: 'PROP-TYPE', key: 'sourceType', label: 'Source Type', format: 'list',
+          allowed: [{ id: 'publishedDocument', label: 'Published' }, { id: 'secondarySource', label: 'Secondary' }],
+        },
+        notes: { id: 'notes', key: 'notes', label: 'Notes', format: 'multitext' },
+      },
+    },
+  },
+  data: {
+    items: {
+      byId: {
+        E1: { id: 'E1', type: 'defaultEvent', label: 'Jesus dber for Pilatus', startDate: { era: 1, year: 33, month: 4, day: 3, precision: 2 }, links: ['ATT1'] },
+        E2: { id: 'E2', type: 'defaultEvent', label: 'Uden kilde', startDate: { era: 1, year: 29, precision: 2 } },
+        S1: {
+          id: 'S1', type: 'SOU', label: 'JW.ORG', summary: 'Wachtturm-artikel', links: ['ATT1'],
+          propertyValues: { 'PROP-TYPE': 'publishedDocument', 'PROP-REL': 80, notes: 'tilgengelig paa nettet' },
+        },
+        S2: { id: 'S2', type: 'SOU', label: 'Oscar - optegnelse', propertyValues: { 'PROP-TYPE': 'secondarySource' } },
+        S3: { id: 'S3', type: 'SOU', label: 'Uden URL', propertyValues: { 'PROP-REL': 'poor' } },
+      },
+    },
+    // nyere .aeon-filer gemmer relationer som array — importen skal kaede begge former
+    relationships: [
+      { id: 'RS1', subject: 'E1', reference: 'sourceRef', object: 'S1' },
+      { id: 'RS2', subject: 'E1', reference: 'SRC-CUSTOM', object: 'S2' },
+      { id: 'RS3', subject: 'S3', reference: 'sourceRef', object: 'E1' }, // vendt om i filen
+      { id: 'RP', subject: 'E2', reference: 'parentRef', object: 'E1' },
+    ],
+    tags: {},
+    attachments: {
+      byId: {
+        ATT1: { id: 'ATT1', label: 'INFO', path: 'https://www.jw.org/da/bibliotek/blade/g201309/' },
+        ATT2: { id: 'ATT2', label: 'foto.jpg', path: 'aeonEmbedded://attachments/ATT2' },
+      },
+    },
+  },
+  fileVersion: 7,
+};
+
+describe('Aeon-kilder (M29b)', () => {
+  const sbuf = wrapAeon(JSON.stringify(SRC_RAW));
+
+  it('flytter kilde-elementer fra poster til kildebiblioteket', () => {
+    const { doc, warnings } = importAeon(sbuf, 'Kilde-test');
+    expect(doc.items.map((i) => i.id)).toEqual(['E1', 'E2']);
+    expect((doc.sources ?? []).map((s) => s.id).sort()).toEqual(['S1', 'S2', 'S3']);
+    expect(warnings.join(' ')).toContain('3 kilder importeret');
+    // kilde-typer skal ikke fyldes op i type-listen i Ark
+    expect(doc.itemTypes.map((t) => t.id)).toEqual(['defaultEvent']);
+  });
+
+  it('mapper kilde-relationer til citationer og undenser Source-relationstyper', () => {
+    const { doc } = importAeon(sbuf, 'Kilde-test');
+    const e1 = doc.items.find((i) => i.id === 'E1')!;
+    expect(e1.sourceIds).toEqual(['S1', 'S2', 'S3']); // inkl. den relation der er gemt omvendt
+    expect((doc.relations ?? []).map((r) => r.typeId)).toEqual(['rt-parent']);
+    expect((doc.relationTypes ?? []).map((t) => t.name)).toEqual(['Forælder']);
+  });
+
+  it('laser URL, kildetype, medium, troværdighed og noter', () => {
+    const { doc } = importAeon(sbuf, 'Kilde-test');
+    const s1 = doc.sources!.find((s) => s.id === 'S1')!;
+    expect(s1.url).toBe('https://www.jw.org/da/bibliotek/blade/g201309/');
+    expect(s1.kind).toBe('primær');
+    expect(s1.medium).toBe('Published');
+    expect(s1.reliability).toBe(4); // 80 % → fire ud af fem
+    expect(s1.notes).toContain('Wachtturm-artikel');
+    expect(s1.notes).toContain('tilgengelig');
+    const s2 = doc.sources!.find((s) => s.id === 'S2')!;
+    expect(s2.kind).toBe('sekundær');
+    expect(s2.url).toBeUndefined(); // aeonEmbedded-stier er filer, ikke web-laenker
+    expect(doc.sources!.find((s) => s.id === 'S3')!.reliability).toBe(1); // listevalget "poor"
+  });
+
+  it('hjaelper-funktioner: sourceType- og reliability-formater', () => {
+    expect(aeonSourceKind('publishedDocument')).toBe('primær');
+    expect(aeonSourceKind('visualDocument')).toBe('primær');
+    expect(aeonSourceKind('secondarySource')).toBe('sekundær');
+    expect(aeonSourceKind('tertiarySource')).toBe('tertiær');
+    expect(aeonSourceKind('')).toBeUndefined();
+    const list = { id: 'reliability', key: 'reliability', format: 'list', allowed: [
+      { id: 'extremely', label: 'Extremely' }, { id: 'very', label: 'Very' },
+      { id: 'moderately', label: 'Moderately' }, { id: 'notVery', label: 'Not very' }, { id: 'poor', label: 'Poor' },
+    ] };
+    expect(aeonReliability('extremely', list)).toBe(5);
+    expect(aeonReliability('moderately', list)).toBe(3);
+    expect(aeonReliability('Poor', list)).toBe(1); // label i stedet for id, stor forbogstav
+    expect(aeonReliability(2, list)).toBe(3); // index i listen
+    expect(aeonReliability(80, { id: 'r', key: 'reliability', format: 'percentage' })).toBe(4);
+    expect(aeonReliability(0.95, { id: 'r', key: 'reliability', format: 'percentage' })).toBe(5);
+    expect(aeonReliability(0, { id: 'r', key: 'reliability', format: 'percentage' })).toBe(1);
+    expect(aeonReliability(undefined, list)).toBeUndefined();
+  });
+});
+
 // ---- ægte fil (kun lokalt — hopper automatisk over i CI) ----
 const REAL_CANDIDATES = [
   fileURLToPath(new URL('../../../Import/Tidslinie-Historien Til nu.aeon', import.meta.url)),
@@ -236,4 +355,23 @@ const REAL = REAL_CANDIDATES.find((p) => existsSync(p));
   // BC-datoer skal være negative årstal
   const bc = doc.items.filter((i) => (i.span.start?.y ?? 0) < 0);
   expect(bc.length).toBeGreaterThan(50);
+  // M29b: Aeons kilde-elementer bliver til kilder med citationer, ikke barpper
+  expect((doc.sources ?? []).length).toBeGreaterThanOrEqual(5);
+  expect(doc.items.filter((i) => i.sourceIds?.length).length).toBeGreaterThan(20);
+  expect(doc.items.some((i) => i.label === 'JW.ORG')).toBe(false);
+}, 30_000);
+
+(REAL ? it : it.skip)('den virkelige fil giver person-overblik (M30)', () => {
+  const buf = readFileSync(REAL!).buffer as ArrayBuffer;
+  const { doc } = importAeon(buf, 'Tidslinje');
+  const rows = peopleOf(doc);
+  expect(rows.length).toBeGreaterThanOrEqual(50); // Aeons 87 "Person"-poster
+  const zer = rows.find((r) => r.item.label === 'Zerubbabel');
+  expect(zer?.parents.map((p) => p.label)).toEqual(['Shealtiel']);
+  const maria = rows.find((r) => r.item.label === 'Maria Jesus mor');
+  expect(maria?.spouses.map((s) => s.label)).toEqual(['Josef']);
+  // de fleste personer har ingen dato — netop det hul fanen skal gøre synligt
+  const stats = peopleStats(rows);
+  expect(stats.dated).toBeLessThan(rows.length);
+  expect(stats.families).toBeGreaterThan(10);
 }, 30_000);
