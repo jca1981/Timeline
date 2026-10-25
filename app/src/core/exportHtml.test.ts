@@ -55,4 +55,29 @@ describe('exportAsHtml', () => {
     const html = exportAsHtml(doc);
     expect(html).toContain('Tomt dokument');
   });
+
+  // Regression: ondartet import (labels/navne/farver fra en .aeon) må ikke kunne injicere
+  // script i den eksporterede, selvstaendige HTML-fil.
+  it('escapes ondartet indhold sä eksporten ikke kan indeholde script', () => {
+    const doc = emptyDoc('On<scr' + 'ipt>alert(1)</scr' + 'ipt>dt');
+    const evil = mkItem('e', '<scr' + 'ipt>alert(1)</scr' + 'ipt>', 2000, 2010);
+    evil.color = '#fff" onload="alert(1)';
+    doc.items = [evil];
+    const html = exportAsHtml(doc);
+    expect(html).not.toContain('<script');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('onload=');
+    expect(html).toContain('fill="#888"'); // ugyldig farve → sicher fallback
+  });
+
+  // Regression: gylden bjaelke + hvid tekst var ulaeselig (1.9:1) - eksporten skal ogsa vaere laeselig.
+  it('bruger kontrastfarve pa laeselig vis i SVG-eksporten', () => {
+    const doc = emptyDoc('Gylden');
+    const it = mkItem('n', 'Rige', -500, 100);
+    it.color = '#d9a441';
+    doc.items = [it];
+    const html = exportAsHtml(doc);
+    expect(html).not.toContain('fill="#fff"');
+    expect(html).toMatch(/fill="#11141a"/); // moerk tekst pa den gyldne bjaelke
+  });
 });

@@ -1,6 +1,6 @@
 // **** Tests af timeline-scale: zoom-trin, ticks over BC/AD, spænd→JD-bounds ****
 import { describe, expect, it } from 'vitest';
-import { contentBounds, pickStep, spanBounds, ticksFor } from './scale';
+import { CLUSTER_PX_PER_DAY, clampPx, clusterFitPx, contentBounds, fitPx, MAX_PX_PER_DAY, MIN_PX_PER_DAY, pickStep, spanBounds, ticksFor } from './scale';
 import { addDuration, toJD } from './jdn';
 import type { Span } from './types';
 
@@ -94,5 +94,32 @@ describe('spænd→JD-bounds', () => {
     ])!;
     expect(cb.left).toBe(toJD({ y: -454, precision: 'year' }));
     expect(cb.right).toBeGreaterThan(toJD(YMD(2026, 10, 1)));
+  });
+});
+
+describe('fit-zoom (klynge-klik)', () => {
+  it('passer tidsrum inden for bredden (80 % som standard)', () => {
+    expect(fitPx(0, 1000, 1000)).toBeCloseTo(0.8, 6); // 1000 dage på 800 px
+    expect(fitPx(0, 1000, 1000, 0.5)).toBeCloseTo(0.5, 6);
+  });
+  it('punktformet tidsrum og ugyldig bredde giver ikke NaN / uendelig', () => {
+    expect(fitPx(500, 500, 1000)).toBeCloseTo(800, 6); // span slår ikke til 0
+    expect(fitPx(0, 1000, 0)).toBe(MIN_PX_PER_DAY);
+    expect(fitPx(NaN, 1000, 900)).toBe(MIN_PX_PER_DAY);
+    expect(fitPx(0, 1, 1e12)).toBe(MAX_PX_PER_DAY); // altid clamped
+  });
+  it('klynge-klik zoomer ALTID så klyngen opløses (holder sig over tærsklen)', () => {
+    // Klynge over ~3 mio. dage (skabelse → nutid): ren fit ville være 0,0002 px/dag
+    const huge = clusterFitPx(0, 1_100_000_000, 900);
+    expect(huge).toBeGreaterThan(CLUSTER_PX_PER_DAY); // ellers genskabes klyngen straks
+    expect(huge).toBe(clampPx(CLUSTER_PX_PER_DAY * 2));
+    // Lille klynge: fit vinder (hele tidsrummet på skærmen)
+    expect(clusterFitPx(0, 100, 900)).toBeCloseTo(7.2, 6);
+  });
+  it('fitPx ligger altid inden for zoom-grænserne', () => {
+    for (const px of [fitPx(0, 1e9, 900), fitPx(0, 1, 900), clusterFitPx(0, 1e12, 900)]) {
+      expect(px).toBeGreaterThanOrEqual(MIN_PX_PER_DAY);
+      expect(px).toBeLessThanOrEqual(MAX_PX_PER_DAY);
+    }
   });
 });

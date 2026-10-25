@@ -2,6 +2,7 @@
 import type { TimelineDoc, Item } from '../model/doc';
 import { spanBounds } from './scale';
 import { contentBounds } from './scale';
+import { textColorFor, readableOn } from './color';
 
 /**
  * Generates a self-contained HTML file with a static SVG timeline.
@@ -41,20 +42,27 @@ export function exportAsHtml(doc: TimelineDoc, filter?: (it: Item) => boolean): 
   const ROW_H = 22;
   const H = items.length * ROW_H + 60;
 
+  // Sikkerhed: etiketter/navne/farver kan komme fra importerte .aeon-filer og må ikke kunne
+  // injicere markup i den eksporterede, selvstaendige HTML-fil.
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const attr = (s: string) => esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  // hex eller gængst CSS-navn (kun bogstaver -ingen anfoerselstegn/koder, saa det er sikkert i SVG/HTML)
+  const safeColor = (c: string | undefined) => (c && (/^#[0-9a-fA-F]{3,8}$/.test(c) || /^[a-zA-Z]+$/.test(c)) ? c : '#888');
+
   const eraSvgs = eras.map((it) => {
     const bd = spanBounds(it.span)!;
     const type = doc.itemTypes.find((t) => t.id === it.typeId);
-    const color = it.color ?? type?.color ?? '#888';
-    return `<rect x="${px(bd.a)}" y="30" width="${px(bd.b) - px(bd.a)}" height="${H - 60}" fill="${color}" opacity="0.05" /><text x="${px(bd.a) + 4}" y="42" font-size="9" fill="${color}" opacity="0.7">${it.label}</text>`;
+    const color = safeColor(it.color ?? type?.color);
+    return `<rect x="${px(bd.a)}" y="30" width="${px(bd.b) - px(bd.a)}" height="${H - 60}" fill="${color}" opacity="0.05" /><text x="${px(bd.a) + 4}" y="42" font-size="9" fill="${readableOn(color, '#1a1d23')}" opacity="0.9">${esc(it.label)}</text>`;
   }).join('\n');
 
   const rowsSvg = items.map(({ it, bd }, i) => {
     const type = doc.itemTypes.find((t) => t.id === it.typeId);
-    const color = it.color ?? type?.color ?? '#888';
+    const color = safeColor(it.color ?? type?.color);
     const xa = px(bd.a);
     const w = Math.max(3, px(bd.b) - xa);
     const y = 40 + i * ROW_H;
-    return `<rect x="${xa}" y="${y + 4}" width="${w}" height="14" rx="3" fill="${color}" /><text x="${xa + (w > 100 ? 4 : w + 4)}" y="${y + 14}" font-size="10" fill="${w > 100 ? '#fff' : color}">${it.label}</text>`;
+    return `<rect x="${xa}" y="${y + 4}" width="${w}" height="${14}" rx="3" fill="${color}" /><text x="${xa + (w > 100 ? 4 : w + 4)}" y="${y + 14}" font-size="10" fill="${w > 100 ? textColorFor(color).color : readableOn(color, '#1a1d23')}">${esc(it.label)}</text>`;
   }).join('\n');
 
   // Dateless count
@@ -64,7 +72,7 @@ export function exportAsHtml(doc: TimelineDoc, filter?: (it: Item) => boolean): 
 <html lang="da">
 <head>
 <meta charset="utf-8" />
-<title>${doc.name || 'Timeline'}</title>
+<title>${attr(doc.name || 'Timeline')}</title>
 <style>
 body { margin: 20px; background: #1a1d23; color: #eee; font-family: system-ui, sans-serif; }
 h1 { font-size: 18px; }
@@ -73,7 +81,7 @@ svg { width: 100%; max-width: ${W}px; display: block; margin-top: 10px; }
 </style>
 </head>
 <body>
-<h1>📜 ${doc.name || 'Timeline'}</h1>
+<h1>📜 ${attr(doc.name || 'Timeline')}</h1>
 <p class="meta">${items.length} daterede poster${datelessCount > 0 ? ` (${datelessCount} uden dato)` : ''} · Genereret ${new Date().toLocaleDateString('da')}</p>
 <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
 <rect width="${W}" height="${H}" fill="#0d0f13" rx="6"/>

@@ -2,6 +2,7 @@
 import type { TimelineDoc, Item } from '../model/doc';
 import { spanBounds, contentBounds, ticksFor } from './scale';
 import { applyFilter } from './filters';
+import { textColorFor, readableOn } from './color';
 import type { Filter } from '../model/doc';
 
 export function exportAsSvg(doc: TimelineDoc, filter?: Filter): string {
@@ -46,7 +47,8 @@ export function exportAsSvg(doc: TimelineDoc, filter?: Filter): string {
     const color = typeColor(r.it);
     svg += `<rect x="${xa}" y="${y + 5}" width="${w}" height="14" rx="3" fill="${color}" opacity="0.85"/>`;
     if (w > 26) {
-      svg += `<text x="${xa + 4}" y="${y + 16}" fill="${w > 140 ? '#fff' : color}" font-size="10">${esc(r.it.label)}</text>`;
+      const tcol = w > 140 ? textColorFor(color).color : readableOn(color, '#16181d');
+      svg += `<text x="${xa + 4}" y="${y + 16}" fill="${tcol}" font-size="10">${esc(r.it.label)}</text>`;
     }
   });
 

@@ -3,6 +3,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../store';
 import { applyFilter } from '../core/filters';
 import { spanBounds, clampPx, ticksFor } from '../core/scale';
+import { panCenter } from '../core/pan';
+import { textColorFor, readableOn } from '../core/color';
 import type { Filter, Item } from '../model/doc';
 
 export function CompareView() {
@@ -81,7 +83,11 @@ function MiniTimeline({ filter }: { filter: Filter }) {
     const el = wrapRef.current;
     if (!el) return;
     const down = (e: PointerEvent) => { dragRef.current = { x: e.clientX, center: vp.center }; el.setPointerCapture(e.pointerId); };
-    const move = (e: PointerEvent) => { if (dragRef.current) setVp((v) => ({ ...v, center: dragRef.current!.center - (e.clientX - dragRef.current!.x) / v.px })); };
+    const move = (e: PointerEvent) => {
+      const d = dragRef.current; // v rdi-kopi: ref kan nulstilles for opdateringen k rer
+      if (!d) return;
+      setVp((v) => panCenter(v, d, e.clientX));
+    };
     const up = () => (dragRef.current = null);
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointermove', move);
@@ -99,7 +105,7 @@ function MiniTimeline({ filter }: { filter: Filter }) {
         {ticks.map((t, i) => (
           <g key={i}>
             <line x1={x(t.jd)} y1={0} x2={x(t.jd)} y2={H} stroke="#333" strokeWidth={0.5} />
-            {t.label && <text x={x(t.jd) + 2} y={10} fontSize={9} fill="#777">{t.label}</text>}
+            {t.label && <text x={x(t.jd) + 2} y={10} fontSize={9} fill={readableOn('#777')}>{t.label}</text>}
           </g>
         ))}
         {visible.map(({ it, bd }, i) => {
@@ -110,7 +116,7 @@ function MiniTimeline({ filter }: { filter: Filter }) {
           return (
             <g key={it.id}>
               <rect x={xa} y={i * ROW_H + 14} width={w} height={ROW_H - 4} rx={2} fill={color} opacity={0.85} />
-              {w > 80 && <text x={xa + 3} y={i * ROW_H + 25} fontSize={9} fill="#fff">{it.label}</text>}
+              {w > 80 && <text x={xa + 3} y={i * ROW_H + 25} fontSize={9} fill={textColorFor(color).color} style={{ textShadow: textColorFor(color).shadow }}>{it.label}</text>}
             </g>
           );
         })}

@@ -12,6 +12,7 @@ import { DocumentBar } from './ui/DocumentBar';
 import { Inspector } from './ui/Inspector';
 import { FilterBar } from './ui/FilterBar';
 import { importAeon } from './core/aeonImport';
+import ErrorBoundary from './ui/ErrorBoundary';
 import { putImages } from './core/images';
 import { downloadHtml } from './core/exportHtml';
 import { downloadSvg } from './core/exportSvg';
@@ -172,16 +173,20 @@ export default function App() {
           {TEMPLATES.map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
         </select>
       </header>
+      {/* FilterBar ligger OVER .body – som flex-barn i .body (row) ville den med mange typer/mærker
+          drukne <main> (max-content > containerbredde → main:0px → tomt timeline-view). */}
+      <FilterBar />
       <div className="body">
-        <FilterBar />
         <main>
-          {view === 'ark' && <SpreadsheetView />}
-          {view === 'tidslinje' && <TimelineView />}
-          {view === 'matrix' && <MatrixView />}
-          {view === 'slægtstræ' && <FamilyTreeView />}
-          {view === 'subway' && <SubwayView />}
-          {view === 'fortælling' && <NarrativeView />}
-          {view === 'sammenlign' && <CompareView />}
+          <ErrorBoundary key={view} label={`visningen “${view}”`}>
+            {view === 'ark' && <SpreadsheetView />}
+            {view === 'tidslinje' && <TimelineView />}
+            {view === 'matrix' && <MatrixView />}
+            {view === 'slægtstræ' && <FamilyTreeView />}
+            {view === 'subway' && <SubwayView />}
+            {view === 'fortælling' && <NarrativeView />}
+            {view === 'sammenlign' && <CompareView />}
+          </ErrorBoundary>
         </main>
         <Inspector />
       </div>

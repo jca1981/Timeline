@@ -2,10 +2,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../store';
 import { formatSpan, formatUncertainty } from '../core/format';
-import { clampPx, contentBounds, spanBounds, ticksFor } from '../core/scale';
+import { clampPx, clusterFitPx, contentBounds, CLUSTER_PX_PER_DAY, spanBounds, ticksFor } from '../core/scale';
 import { toJD, fromJD } from '../core/jdn';
 import { applyFilter } from '../core/filters';
 import { isDependencyViolated } from '../core/dependencies';
+import { textColorFor, readableOn, PANEL_BG } from '../core/color';
+import { panCenter } from '../core/pan';
 import { EntitySidebar } from './EntitySidebar';
 import { ItemImage } from './ItemImage';
 import type { Item } from '../model/doc';
@@ -216,9 +218,10 @@ export function TimelineView() {
       el.setPointerCapture(e.pointerId);
     };
     const move = (e: PointerEvent) => {
-      if (!drag.current) return;
-      const dx = e.clientX - drag.current.x;
-      setVp((v) => ({ ...v, center: drag.current!.center - dx / v.px }));
+      // Snap til v rdi: React korer opdateringen ldere, hvor pointerup kan have nulstillet ref'en.
+      const d = drag.current;
+      if (!d) return;
+      setVp((v) => panCenter(v, d, e.clientX));
     };
     const up = () => (drag.current = null);
     el.addEventListener('pointerdown', down);
@@ -333,7 +336,7 @@ export function TimelineView() {
 
     // Cluster detection
     const clustered = new Set<string>();
-    const clusterList: { items: Item[]; x: number; y: number; count: number }[] = [];
+    const clusterList: { items: Item[]; x: number; a: number; b: number; y: number; count: number }[] = [];
 
     if (list.length > 10) {
       const groups: { items: Item[]; minA: number; maxB: number }[] = [];
@@ -354,10 +357,10 @@ export function TimelineView() {
         if (!placed) groups.push({ items: [r.it], minA: r.bd.a, maxB: r.bd.b });
       }
       for (const g of groups) {
-        if (g.items.length >= CLUSTER_THRESHOLD && vp.px < 0.005) {
+        if (g.items.length >= CLUSTER_THRESHOLD && vp.px < CLUSTER_PX_PER_DAY) {
           const cx = (g.minA + g.maxB) / 2;
           for (const it of g.items) clustered.add(it.id);
-          clusterList.push({ items: g.items, x: cx, y: 0, count: g.items.length });
+          clusterList.push({ items: g.items, x: cx, a: g.minA, b: g.maxB, y: 0, count: g.items.length });
         }
       }
     }
@@ -622,7 +625,7 @@ export function TimelineView() {
               if (exb < -500 || ex > width + 500) return null;
               return (
                 <div key={era.id} className="era-band" style={{ left: ex, width: exb - ex, background: era.color + '12', borderLeft: `2px solid ${era.color}44`, borderRight: `2px solid ${era.color}44` }} title={era.label}>
-                  <span className="era-label" style={{ color: era.color }}>{era.label}</span>
+                  <span className="era-label" style={{ color: readableOn(era.color ?? '#8f9bb3', PANEL_BG) }}>{era.label}</span>
                 </div>
               );
             })}
@@ -667,6 +670,11 @@ export function TimelineView() {
               const w = Math.max(3, xb - xa);
               const hasChildren = (childrenMap.get(it.id)?.length ?? 0) > 0;
               const isCollapsed = collapsedIds.has(it.id);
+              // Laeselighed: tekst INDI i bjelken faar kontrastfarve (gylden bjaelke + hvid = 1.9:1 dur ikke),
+              // tekst UDEN for bjelken justeres sa den staer mod det moerke panel.
+              const labelStyle = w > 140
+                ? { color: textColorFor(color).color, textShadow: textColorFor(color).shadow }
+                : { color: readableOn(color, PANEL_BG), textShadow: 'none' };
               const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
               return (
                 <div key={it.id} draggable className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''} ${multiSelected.has(it.id) ? 'multi-sel' : ''}`} title={tip} onClick={(e) => { if (e.ctrlKey || e.metaKey) { toggleMulti(it.id); } else { select(it.id); setPopupId(popupId === it.id ? null : it.id); } }} onDoubleClick={(e) => { e.stopPropagation(); setEditLabelId(it.id); }} onDragStart={(e) => { e.dataTransfer.setData('text/tl-item', it.id); }} onDragOver={(e) => { if (e.dataTransfer.types.includes('text/tl-item')) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); const src = e.dataTransfer.getData('text/tl-item'); if (src && src !== it.id) updateItem(src, { parentId: it.id }); }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
@@ -687,7 +695,7 @@ export function TimelineView() {
                   {editLabelId === it.id ? (
                     <input className="bar-edit" autoFocus defaultValue={it.label} onBlur={(e) => { updateItem(it.id, { label: e.target.value || it.label }); setEditLabelId(null); }} onKeyDown={(e) => { if (e.key === 'Enter') { updateItem(it.id, { label: (e.target as HTMLInputElement).value || it.label }); setEditLabelId(null); } if (e.key === 'Escape') setEditLabelId(null); }} />
                   ) : (
-                    <span className="barlabel" style={{ color: w > 140 ? '#fff' : color }}>
+                    <span className="barlabel" style={labelStyle}>
                       {it.imageId ? '🖼 ' : ''}{w > 26 ? it.label : ''}
                       {isCollapsed && (childrenMap.get(it.id)?.length ?? 0) > 0 && ` (+${childrenMap.get(it.id)!.length})`}
                       {!isCollapsed && (descCount.get(it.id) ?? 0) > 0 && <span className="desc-badge">{descCount.get(it.id)}</span>}
@@ -702,7 +710,7 @@ export function TimelineView() {
               const cx = x(cl.x);
               if (cx < -50 || cx > width + 50) return null;
               return (
-                <div key={i} className="cluster" style={{ left: cx - 16, top: ROW_H / 2 - 16 }} title={`${cl.count} poster her. Klik for at zoome ind.`} onClick={() => setVp((v) => ({ center: cl.x, px: Math.min(0.1, v.px * 4) }))}>
+                <div key={i} className="cluster" style={{ left: cx - 16, top: ROW_H / 2 - 16 }} title={`${cl.count} poster her. Klik for at zoome ind.`} onClick={() => setVp(() => ({ center: cl.x, px: clusterFitPx(cl.a, cl.b, width) }))}>
                   {cl.count}
                 </div>
               );
@@ -849,7 +857,7 @@ export function TimelineView() {
               {it.imageId && <ItemImage imageId={it.imageId} size={120} />}
               <h4>{it.label}</h4>
               <div className="tl-popup-dates">{formatSpan(it.span)}</div>
-              {type && <span className="tl-popup-type" style={{ background: type.color }}>{type.name}</span>}
+              {type && (() => { const tc = textColorFor(type.color); return <span className="tl-popup-type" style={{ background: type.color, color: tc.color, textShadow: tc.shadow }}>{type.name}</span>; })()}
               {it.verseRefs?.length ? <div className="tl-popup-verses">📖 {it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</div> : null}
               {it.tags?.length ? <div className="tl-popup-tags">{it.tags.map((t) => <span key={t} className="tag-chip">{t}</span>)}</div> : null}
               {it.notes && <p className="tl-popup-notes">{it.notes}</p>}

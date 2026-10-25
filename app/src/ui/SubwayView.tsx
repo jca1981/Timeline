@@ -4,6 +4,7 @@ import { useApp } from '../store';
 import { spanBounds } from '../core/scale';
 import type { Item } from '../model/doc';
 import { applyFilter } from '../core/filters';
+import { readableOn } from '../core/color';
 
 // Farvepalet til spor (16 farver, cykliske)
 const PALETTE = [
@@ -202,7 +203,7 @@ export function SubwayView() {
                 <line x1={xStart} y1={y} x2={xEnd} y2={y} stroke={line.color} strokeWidth={4} strokeLinecap="round" opacity={0.7} />
 
                 {/* Spor-label (til venstre) */}
-                <text x={4} y={y - 8} fill={line.color} fontSize={11} fontWeight={700}>{line.name}</text>
+                <text x={4} y={y - 8} fill={readableOn(line.color)} fontSize={11} fontWeight={700}>{line.name}</text>
 
                 {/* Stationer */}
                 {stations.map((st, si) => {
@@ -274,7 +275,7 @@ export function SubwayView() {
               return ticks.map((t, i) => (
                 <g key={i}>
                   <line x1={t.x} y1={PAD_TOP - 20} x2={t.x} y2={PAD_TOP + lines.length * TRACK_H} stroke="#333" strokeWidth={0.5} />
-                  <text x={t.x} y={PAD_TOP - 25} textAnchor="middle" fill="#888" fontSize={9}>{t.label}</text>
+                  <text x={t.x} y={PAD_TOP - 25} textAnchor="middle" fill={readableOn('#888')} fontSize={9}>{t.label}</text>
                 </g>
               ));
             })()}

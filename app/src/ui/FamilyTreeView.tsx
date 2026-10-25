@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import dagre from 'dagre';
 import { useApp } from '../store';
+import { panPoint } from '../core/pan';
+import { textColorFor } from '../core/color';
 import type { Item } from '../model/doc';
 
 const NODE_W = 140;
@@ -179,10 +181,9 @@ export function FamilyTreeView() {
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    const dx = e.clientX - dragging.current.startX;
-    const dy = e.clientY - dragging.current.startY;
-    setVp((prev) => ({ ...prev, x: dragging.current!.origX + dx, y: dragging.current!.origY + dy }));
+    const d = dragging.current; // v rdi-kopi: ref kan nulstilles f rer React k rer opdateringen
+    if (!d) return;
+    setVp((prev) => panPoint(prev, d, e.clientX, e.clientY));
   }, []);
 
   const onPointerUp = useCallback(() => { dragging.current = null; }, []);
@@ -240,7 +241,7 @@ export function FamilyTreeView() {
                 y={NODE_H / 2}
                 dominantBaseline="middle"
                 textAnchor="middle"
-                fill="#fff"
+                fill={textColorFor(n.color).color}
                 fontSize={12}
                 fontWeight={500}
               >

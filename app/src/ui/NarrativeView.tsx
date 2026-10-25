@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useApp } from '../store';
 import { buildTree, flattenTree } from '../core/hierarchy';
 import { formatUncertainty } from '../core/format';
+import { readableOn, PANEL_BG } from '../core/color';
 import { ItemImage } from './ItemImage';
 import type { Item } from '../model/doc';
 
@@ -94,7 +95,7 @@ export function NarrativeView() {
       >
         <span className="narr-date">{fmtYear(it.span.start?.y)}</span>
         <span className="narr-label">{it.label}</span>
-        {type && <span className="narr-type" style={{ color: type.color }}>{type.name}</span>}
+        {type && <span className="narr-type" style={{ color: readableOn(type.color, PANEL_BG) }}>{type.name}</span>}
         {it.span.uncertain && <span className="narr-uncertain">{formatUncertainty(it.span)}</span>}
         {it.verseRefs && it.verseRefs.length > 0 && (
           <span className="narr-verse"> 📖{it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</span>

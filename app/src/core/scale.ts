@@ -10,6 +10,24 @@ export function clampPx(px: number): number {
   return Math.min(MAX_PX_PER_DAY, Math.max(MIN_PX_PER_DAY, px));
 }
 
+/** px/dag der faar et tidsrum [a,b] til at passe pa `width` px (fill = andel af bredden). */
+export function fitPx(a: number, b: number, width: number, fill = 0.8): number {
+  const span = Math.max(1, b - a);
+  if (!(width > 0) || !isFinite(span)) return MIN_PX_PER_DAY;
+  return clampPx((width * fill) / span);
+}
+
+// Under denne px/dag slaar timeline-view poster sammen til klynger.
+export const CLUSTER_PX_PER_DAY = 0.005;
+
+/**
+ * Klik pa en klynge: zoom sa klyngens tidsrum passer - men ALDRIG sa laedt at
+ * klyngen bare genskabes med det samme (vi ligger over cluster-taersklen).
+ */
+export function clusterFitPx(a: number, b: number, width: number): number {
+  return clampPx(Math.max(fitPx(a, b, width), CLUSTER_PX_PER_DAY * 2));
+}
+
 export type Step =
   | { kind: 'time'; sec: number } // fast JD-step (sekunder)
   | { kind: 'day'; n: number } // n dage (n=7 → uger, alignet mandag)
