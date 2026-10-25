@@ -118,13 +118,117 @@ describe('aeonImport', () => {
   });
 });
 
+// ---- Aeon 3.15+ (fileVersion 15): core-wrap, dater adskilt, tags som map ----
+const RAW15 = {
+  fileVersion: 15,
+  core: {
+    definitions: {
+      types: {
+        byId: {
+          defaultEvent: { id: 'defaultEvent', label: 'Event', enabled: true },
+          defaultPerson: { id: 'defaultPerson', label: 'Person', enabled: true },
+          genericNode: { id: 'genericNode', label: 'Mindmap Node', enabled: true },
+        },
+      },
+      references: { byId: { parentRef: { id: 'parentRef', label: 'Parent', inverseLabel: 'Child' }, categoryRef: { id: 'categoryRef', label: 'Category' } } },
+      colors: { byId: { C1: { id: 'C1', swatchColor: 'yellow' } } },
+    },
+    data: {
+      itemsById: {
+        A: { id: 'A', type: 'defaultPerson', label: 'Esra', color: 'C1', tags: { T1: 0 }, image: 'IMGID12345678' },
+        B: { id: 'B', type: 'defaultEvent', label: 'Templet genopbygget' },
+        C: { id: 'C', type: 'defaultPerson', label: 'Uden dato' },
+        M: { id: 'M', type: 'genericNode', label: 'mindmap-node' },
+      },
+      itemDatesById: {
+        A: { ongoing: false, preferredStartDate: { era: 0, year: 455, month: 7, day: 1, precision: 2 }, preferredDuration: { years: 0, months: 0, weeks: 0, days: 0 }, startDate: { era: 0, year: 455, month: 7, day: 1, precision: 2 }, duration: { years: 0, months: 0, weeks: 0, days: 0 } },
+        B: { startDate: { era: 1, year: 515, month: 12, day: 1, precision: 2 }, duration: { years: 4, months: 0, weeks: 0, days: 0 } },
+        C: { startDate: { era: 1, precision: -1 } },
+        M: { startDate: { era: 1, year: 1, precision: -1 } },
+      },
+      superAndChildOrderById: { A: { childOrder: {}, super: null }, B: { childOrder: {}, super: 'A' } },
+      relationshipsById: {
+        R1: { id: 'R1', subject: 'B', reference: 'parentRef', object: 'A' },
+        R2: { id: 'R2', subject: 'A', reference: 'categoryRef', object: 'B' },
+        R3: { id: 'R3', subject: 'A', reference: 'parentRef', object: 'M' },
+      },
+      tags: { T1: 'Præst' },
+    },
+  },
+};
+
+/** Byg en "app.timeline.indexedArchive": [header][billede-blobs][footer-index][JSON]. Offsets er header-relative. */
+function wrapArchive(png: Uint8Array, json: string, records: { id: string; filename: string; offset: number; size: number }[]): ArrayBuffer {
+  const head = new TextEncoder().encode('app.timeline.indexedArchive');
+  const idx: number[] = [];
+  for (const r of records) {
+    const idB = [...new TextEncoder().encode(r.id)], fnB = [...new TextEncoder().encode(r.filename)];
+    const u32 = (n: number) => [n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >>> 24) & 255];
+    idx.push(...u32(idB.length), ...u32(fnB.length), ...idB, ...fnB, ...u32(r.offset), ...u32(0), ...u32(r.size), ...u32(0));
+  }
+  const body = new TextEncoder().encode(json);
+  const foot = new Uint8Array(64);
+  const parts = [head, png, new Uint8Array(idx), body, foot];
+  const total = parts.reduce((a, p) => a + p.length, 0);
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const p of parts) { out.set(p, at); at += p.length; }
+  return out.buffer;
+}
+
+describe('aeonImport (fileVersion 15)', () => {
+  // gyldig PNG-signatur + lidt data, sata stoerre end magiens 4 bytes
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...Array(300).fill(0x42)]);
+  const buf = wrapArchive(png, JSON.stringify(RAW15), [
+    { id: 'IMGID12345678', filename: 'esra.png', offset: 0, size: png.length },
+  ]);
+
+  it('finder JSON bak core-wrappen', () => {
+    expect(findAeonJson(buf).fileVersion).toBe(15);
+  });
+
+  it('mapper dater fra itemDatesById (ogsaa f.Kr.)', () => {
+    const { doc } = importAeon(buf);
+    const a = doc.items.find((i) => i.id === 'A')!;
+    expect(a.span.start).toEqual({ y: -454, mo: 7, d: 1, precision: 'day' });
+    const b = doc.items.find((i) => i.id === 'B')!;
+    expect(b.span.start).toEqual({ y: 515, mo: 12, d: 1, precision: 'day' });
+    expect(b.span.duration).toEqual({ y: 4 });
+    expect(doc.items.find((i) => i.id === 'C')!.span.start).toBeUndefined();
+  });
+
+  it('laser hierarchy fra superAndChildOrderById og tags som map', () => {
+    const { doc } = importAeon(buf);
+    expect(doc.items.find((i) => i.id === 'B')!.parentId).toBe('A');
+    expect(doc.items.find((i) => i.id === 'A')!.tags).toEqual(['Præst']);
+    expect(doc.items.some((i) => i.id === 'M')).toBe(false);
+    const rels = doc.relations!;
+    expect(rels.find((r) => r.typeId === 'rt-parent')!.fromId).toBe('A');
+    expect(rels).toHaveLength(2);
+  });
+
+  it('laser billeder ud af indexed archive (header-relative offsets, base58-id)', () => {
+    const { doc, images } = importAeon(buf);
+    expect(images).toHaveLength(1);
+    expect(images[0].id).toBe('IMGID12345678');
+    expect(images[0].mimeType).toBe('image/png');
+    expect(images[0].blob.byteLength).toBe(png.length);
+    expect(doc.items.find((i) => i.id === 'A')!.imageId).toBe('IMGID12345678');
+  });
+});
+
 // ---- ægte fil (kun lokalt — hopper automatisk over i CI) ----
-const REAL = fileURLToPath(new URL('../../../Import/Tidslinie-Historien Til nu.aeon', import.meta.url));
-const have = existsSync(REAL);
-(have ? it : it.skip)('importerer den virkelige .aeon-fil', () => {
-  const buf = readFileSync(REAL).buffer as ArrayBuffer;
-  const { doc } = importAeon(buf, 'Tidslinje');
+const REAL_CANDIDATES = [
+  fileURLToPath(new URL('../../../Import/Tidslinie-Historien Til nu.aeon', import.meta.url)),
+  'C:/Users/jensa/OneDrive/Documents/Tidslinie-Historien Til nu.aeon',
+];
+const REAL = REAL_CANDIDATES.find((p) => existsSync(p));
+(REAL ? it : it.skip)('importerer den virkelige .aeon-fil', () => {
+  const buf = readFileSync(REAL!).buffer as ArrayBuffer;
+  const { doc, images } = importAeon(buf, 'Tidslinje');
   expect(doc.items.length).toBeGreaterThan(200);
+  expect(doc.items.filter((i) => i.span.start).length).toBeGreaterThan(200);
+  expect(images.length).toBeGreaterThan(10);
   const jesus = doc.items.find((i) => i.label === 'Jesus');
   expect(jesus).toBeDefined();
   const par = (doc.relations ?? []).filter((r) => r.typeId === 'rt-parent' && r.toId === jesus!.id);

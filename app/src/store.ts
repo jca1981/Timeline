@@ -6,6 +6,7 @@ import { saveDoc, loadDoc as idbLoad, saveDocById, loadDocById, deleteDocById, l
 import { pushSnapshot, undo as histUndo, redo as histRedo, clearHistory } from './core/history';
 import {
   DEFAULT_RELATION_TYPES,
+  DEFAULT_TYPES,
   emptyDoc,
   newId,
   type Dependency,
@@ -19,6 +20,7 @@ import {
 
 const LS_KEY = 'aeon-clone:doc:v1';
 const LS_DOCID = 'aeon-clone:docId:v1';
+let lastDocSetTime = 0; // guard mod hydrate race
 
 function getDocId(): string {
   return localStorage.getItem(LS_DOCID) || DOC_KEY;
@@ -34,6 +36,8 @@ function loadDocSync(): TimelineDoc {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const doc = JSON.parse(raw) as TimelineDoc;
+      doc.itemTypes ??= DEFAULT_TYPES;
+      if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
       doc.relationTypes ??= DEFAULT_RELATION_TYPES;
       doc.relations ??= [];
       doc.dependencies ??= [];
@@ -64,10 +68,14 @@ export async function hydrateStore() {
   }
   if (!doc) doc = await idbLoad<TimelineDoc>();
   if (doc) {
+    doc.itemTypes ??= DEFAULT_TYPES;
+    if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
     doc.relationTypes ??= DEFAULT_RELATION_TYPES;
     doc.relations ??= [];
     doc.dependencies ??= [];
     doc.savedFilters ??= {};
+    // Overskriv IKKON hvis en import/switch allerede har sat doc efter vi startede hydrate
+    if (lastDocSetTime > 0) return;
     useApp.setState({ doc, errors: {}, selectedId: null });
   }
   // Load doc list
@@ -137,7 +145,9 @@ export const useApp = create<AppState>((set, get) => ({
 
   addItem: (partial) => {
     const id = newId();
-    const type = get().doc.itemTypes[0];
+    const types = get().doc.itemTypes;
+    if (!types.length) set((s) => ({ doc: { ...s.doc, itemTypes: DEFAULT_TYPES } }));
+    const type = (get().doc.itemTypes[0] ?? DEFAULT_TYPES[0]);
     const item: Item = { id, typeId: type.id, label: 'Ny post', span: { start: { y: new Date().getFullYear(), precision: 'year' } }, ...partial };
     set((s) => {
       pushSnapshot(s.doc);
@@ -210,20 +220,28 @@ export const useApp = create<AppState>((set, get) => ({
       const doc = emptyDoc();
       persist(doc);
       clearHistory(); // fresh start for new doc
-      return { doc, errors: {}, selectedId: null };
+      return { doc, errors: {}, selectedId: null, activeFilter: null };
     });
   },
 
   importDoc: (doc) => {
     pushSnapshot(get().doc);
+    doc.itemTypes ??= DEFAULT_TYPES;
+    if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
+    doc.relationTypes ??= DEFAULT_RELATION_TYPES;
+    doc.relations ??= [];
+    doc.dependencies ??= [];
+    doc.savedFilters ??= {};
     clearHistory();
     persist(doc);
-    set({ doc, errors: {}, selectedId: null });
+    lastDocSetTime = Date.now();
+    set({ doc, errors: {}, selectedId: null, activeFilter: null });
   },
 
   mergeDoc: (incoming: TimelineDoc) => {
     pushSnapshot(get().doc);
     const s = get();
+    set({ activeFilter: null });
     const existingIds = new Set(s.doc.items.map((i) => i.id));
     const newItems = incoming.items.filter((i) => !existingIds.has(i.id));
     const existingRelIds = new Set((s.doc.relations ?? []).map((r) => r.id));
@@ -332,6 +350,7 @@ export const useApp = create<AppState>((set, get) => ({
     pushSnapshot(get().doc);
     const doc = emptyDoc(name || 'Nyt tidslinje');
     persist(doc);
+    lastDocSetTime = Date.now();
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
   },
 
@@ -343,11 +362,14 @@ export const useApp = create<AppState>((set, get) => ({
     // Load the target
     const doc = await loadDocById<TimelineDoc>(id);
     if (!doc) return;
+    doc.itemTypes ??= DEFAULT_TYPES;
+    if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
     doc.relationTypes ??= DEFAULT_RELATION_TYPES;
     doc.relations ??= [];
     doc.dependencies ??= [];
     doc.savedFilters ??= {};
     setDocId(id);
+    lastDocSetTime = Date.now();
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
   },
 
