@@ -6,7 +6,7 @@ import { toJD } from '../core/jdn';
 import { formatVerse, jwUrl } from '../core/bible';
 import { generations, linksOf, relationTypes } from '../core/relations';
 import { DEP_KIND_LABELS, DEP_KIND_SHORT, dependenciesOf, isDependencyViolated } from '../core/dependencies';
-import { citeLabel, safeUrl, sourcesOf } from '../core/sources';
+import { citeLabel, reliabilityLabel, reliabilityStars, safeUrl, sourcesOf } from '../core/sources';
 import { ItemImage } from './ItemImage';
 import { putImage } from '../core/images';
 import { BOOKS } from '../model/bibleBooks';
@@ -103,6 +103,8 @@ export function Inspector() {
           return (
             <div className="verse" key={s.id}>
               {href ? <a href={href} target="_blank" rel="noreferrer">{citeLabel(s)} ↗</a> : <span>{citeLabel(s)}</span>}
+              {s.kind && <span className="kindchip" title="Kildetype">{s.kind}</span>}
+              {s.reliability ? <span className="stars" title={`Troværdighed: ${reliabilityLabel(s.reliability)}`}>{reliabilityStars(s.reliability)}</span> : <span className="dim stars" title="Vurder kilden i Kilder-fanen — bedømmelsen gælder på alle poster">ikke vurderet</span>}
               <button className="danger" title="Fjern kilde fra post" onClick={() => setSourceIds(item.id, (item.sourceIds ?? []).filter((x) => x !== s.id))}>✕</button>
               {s.notes && <blockquote>{s.notes}</blockquote>}
             </div>

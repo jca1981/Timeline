@@ -1,6 +1,6 @@
 // **** HTML-eksport (M14): standalone statisk tidslinje som HTML-fil ****
 import type { TimelineDoc, Item } from '../model/doc';
-import { bibliography, citeLabel, safeUrl } from './sources';
+import { bibliography, citeLabel, isStaleLink, reliabilityLabel, reliabilityStars, safeUrl } from './sources';
 import { spanBounds } from './scale';
 import { contentBounds } from './scale';
 import { textColorFor, readableOn } from './color';
@@ -78,12 +78,18 @@ export function exportAsHtml(doc: TimelineDoc, filter?: (it: Item) => boolean): 
   const datelessCount = doc.items.length - items.length;
 
   // M28: kildebiografi — eksportfilen skal kunne sige, hvor oplysningerne kommer fra
+  // M29: kildetype + troværdighed + hvornår linket er tjekket (en eksport fil
+  // læses måneder senere, hvor døde links og udaterede paastande er det farlige)
   const bibHtml = bib.list.length
     ? `<h2>Kilder</h2><ol class="srcs">${bib.list
         .map((s, i) => {
           const href = safeUrl(s.url);
           const label = esc(citeLabel(s));
-          return `<li id="k${i + 1}">${href ? `<a href="${attr(href)}" target="_blank" rel="noreferrer">${label} ↗</a>` : label}${s.notes ? ` <span class="note">${esc(s.notes)}</span>` : ''}</li>`;
+          const meta = [s.kind, s.reliability ? `${reliabilityStars(s.reliability)} ${reliabilityLabel(s.reliability)}` : null].filter(Boolean).join(' · ');
+          const chk = !s.checkedAt
+            ? (href ? 'link ikke tjekket' : '')
+            : `${href ? 'link ' : ''}tjekket ${esc(s.checkedAt)}${isStaleLink(s) ? ' — bør genbesøges' : ''}`;
+          return `<li id="k${i + 1}">${href ? `<a href="${attr(href)}" target="_blank" rel="noreferrer">${label} ↗</a>` : label}${meta ? ` <span class="kind">${esc(meta)}</span>` : ''}${chk ? ` <span class="chk">${chk}</span>` : ''}${s.notes ? ` <span class="note">${esc(s.notes)}</span>` : ''}</li>`;
         })
         .join('')}</ol>`
     : '';
@@ -101,6 +107,8 @@ svg { width: 100%; max-width: ${W}px; display: block; margin-top: 10px; }
 h2 { font-size: 15px; margin-top: 18px; }
 .srcs { font-size: 12px; line-height: 1.5; padding-left: 22px; }
 .srcs .note { color: #9aa3b2; }
+.srcs .kind { color: #c9a227; font-size: 11px; }
+.srcs .chk { color: #8b93a3; font-size: 11px; }
 </style>
 </head>
 <body>

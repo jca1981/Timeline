@@ -104,6 +104,24 @@ describe('exportAsHtml', () => {
     expect(html).toContain('2 kilder');
   });
 
+  // M29: eksportfilen læses længe efter import — type, troværdighed og hvornår
+  // linket er bekræftet, skal følge med, så læseren kan veje kilden.
+  it('udskriver kildetype, troværdighed og link-tjek', () => {
+    const doc = emptyDoc('Vurderede kilder');
+    doc.sources = [
+      { id: 's1', title: 'Øjenvidne', kind: 'primær', reliability: 5, checkedAt: '2026-10-01' },
+      { id: 's2', title: 'Netadresse', url: 'https://example.org/x' },
+    ];
+    const a = mkItem('a', 'Post', 2000, 2010);
+    a.sourceIds = ['s1', 's2'];
+    doc.items = [a];
+    const html = exportAsHtml(doc);
+    expect(html).toContain('primær');
+    expect(html).toContain('★★★★★');
+    expect(html).toContain('tjekket 2026-10-01'); // bog uden link kan godt være tjekket
+    expect(html).toContain('link ikke tjekket'); // s2 har URL men er aldrig bekræftet
+  });
+
   // Kildetekster og -URL'er kommer fra import og er lige så utroværdige som labels.
   it('escapes kildetekster og afviser javascript:-URL', () => {
     const doc = emptyDoc('Usikker kilde');

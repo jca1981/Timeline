@@ -455,6 +455,16 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .sources td.src-items a { display: inline-block; margin-right: 6px; cursor: pointer; }
 .sources .cite-count { font-variant-numeric: tabular-nums; }
 .sources tr.uncited td { opacity: 0.72; }
+/* M29: type/troværdighed-vælgere, link-tjek og advarsel om gamle links */
+.sources select.cell.pick { width: auto; min-width: 92px; font-size: 12px; }
+.sources .cell.date { width: 128px; font-size: 12px; }
+.sources span.chk { display: inline-flex; gap: 4px; align-items: center; }
+.sources button.quiet { opacity: 0.6; padding: 3px 6px; }
+.sources button.warn { color: var(--danger); border-color: var(--danger); padding: 3px 6px; }
+.sources tr.stale td { background: rgba(231, 76, 60, 0.08); }
+.kindchip { font-size: 10px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; color: var(--dim); }
+.stars { font-size: 11px; letter-spacing: 1px; margin-left: 6px; color: #c9a227; }
+.stars.dim { color: var(--dim); letter-spacing: 0; }
 .src-notes { font-size: 11px; color: var(--dim); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media print {

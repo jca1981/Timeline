@@ -26,7 +26,9 @@ export interface Item {
 /**
  * Kilde som førsteklasses data (M28). Deles på tværs af poster (én bog kan
  * citere 40 begivenheder), så troværdighed kan vurderes én gang og genbruges.
- * Bevidst smalt: titel + lokator (sidetal/kapitel) + URL + noter.
+ * M29: kildetype (primær/sekundær/tertiær), troværdighed og hvornår linket
+ * er tjekket sidst — Aeons eget ordforråd (sourceType/reliability) findes i
+ * importerede filer, så værdierne arves i stedet for at blive smidt ud.
  */
 export interface Source {
   id: string;
@@ -34,7 +36,14 @@ export interface Source {
   locator?: string; // fx "s. 214", "kap. 3", "1968-opslaget"
   url?: string; // kun http/https linkes (se core/sources.ts safeUrl)
   notes?: string; // fx "trediehånds-kilde, tjek mod arkæologi"
+  kind?: SourceKind; // M29: hvor direkte er kilden?
+  medium?: string; // M29: fri tekst om medie (Aeon: "publiceret dokument", "relikvie")
+  reliability?: number; // M29: 1..5 (se core/sources.ts RELIABILITY); undefined = ikke vurderet
+  checkedAt?: string; // M29: ISO-dato (YYYY-MM-DD) for sidste tjek af link/eksistens
 }
+
+/** Kildetype: egne øjenvidner → referater → referater af referater. */
+export type SourceKind = 'primær' | 'sekundær' | 'tertiær';
 
 /** Relationstype med navn i begge retninger (Aeon-mønster). */
 export interface RelationType {

@@ -83,8 +83,8 @@ function bk(): TimelineDoc {
   // M28: kilder som førsteklasses data — oversættelsen er primærkilde, tavlen i
   // studiebibelen er sekundær (kronologien står ikke i teksten)
   doc.sources = [
-    { id: 'src-nwt', title: 'Bibelen — Ny Verden-oversættelsen', url: 'https://www.jw.org/da/bibel/nwt/', notes: 'primærkilde: selve verset' },
-    { id: 'src-studietavle', title: 'Studiebibelen — kronologitavlen', locator: 'kongelisten', url: 'https://www.jw.org/da/bibel/henvisninger/', notes: 'sekundærkilde: datoer beregnet ud fra teksten' },
+    { id: 'src-nwt', title: 'Bibelen — Ny Verden-oversættelsen', url: 'https://www.jw.org/da/bibel/nwt/', notes: 'primærkilde: selve verset', kind: 'primær', reliability: 5, checkedAt: '2026-10-25' },
+    { id: 'src-studietavle', title: 'Studiebibelen — kronologitavlen', locator: 'kongelisten', url: 'https://www.jw.org/da/bibel/henvisninger/', notes: 'sekundærkilde: datoer beregnet ud fra teksten', kind: 'sekundær', reliability: 4, checkedAt: '2026-10-25' },
   ];
   for (const it of doc.items) {
     const ids: string[] = [];
