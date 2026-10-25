@@ -80,4 +80,42 @@ describe('exportAsHtml', () => {
     expect(html).not.toContain('fill="#fff"');
     expect(html).toMatch(/fill="#11141a"/); // moerk tekst pa den gyldne bjaelke
   });
+
+  // M28: kilder skal følge med ud i eksporten — ellers er den delte fil bare
+  // pástande uden belæg.
+  it('udskriver kildemarkører og kildeliste', () => {
+    const doc = emptyDoc('Med kilder');
+    doc.sources = [
+      { id: 's1', title: 'Studiebibelen', locator: 's. 214', url: 'https://example.org/studie' },
+      { id: 's2', title: 'Urtekilde', notes: 'tjek mod denne' },
+    ];
+    const a = mkItem('a', 'Fødsel', -5, 30);
+    a.sourceIds = ['s1', 's2'];
+    const b = mkItem('b', 'Død', 20, 60);
+    b.sourceIds = ['s1'];
+    doc.items = [a, b];
+    const html = exportAsHtml(doc);
+    expect(html).toContain('<ol class="srcs">');
+    expect(html).toContain('Studiebibelen — s. 214');
+    expect(html).toContain('href="https://example.org/studie"');
+    expect(html).toContain('<li id="k1">');
+    expect(html).toContain('[1,2]'); // markør for a
+    expect(html).toContain('[1]'); // markør for b
+    expect(html).toContain('2 kilder');
+  });
+
+  // Kildetekster og -URL'er kommer fra import og er lige så utroværdige som labels.
+  it('escapes kildetekster og afviser javascript:-URL', () => {
+    const doc = emptyDoc('Usikker kilde');
+    doc.sources = [
+      { id: 's1', title: '<img src=x onerror=alert(1)>', url: 'javascript:alert(1)' },
+    ];
+    const a = mkItem('a', 'Post', 2000, 2010);
+    a.sourceIds = ['s1'];
+    doc.items = [a];
+    const html = exportAsHtml(doc);
+    expect(html).not.toContain('<img src=x');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).not.toContain('href="javascript:');
+  });
 });

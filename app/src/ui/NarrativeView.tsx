@@ -4,6 +4,7 @@ import { useApp } from '../store';
 import { buildTree, flattenTree } from '../core/hierarchy';
 import { formatUncertainty } from '../core/format';
 import { readableOn, PANEL_BG } from '../core/color';
+import { citeLabel, sourcesOf } from '../core/sources';
 import { ItemImage } from './ItemImage';
 import type { Item } from '../model/doc';
 
@@ -76,6 +77,9 @@ export function NarrativeView() {
   }
   if (currentEra.length > 0) eras.push({ heading: currentEra[0]!.item, entries: currentEra });
 
+    // M28: kilder pr. post — opslag slås op én gang per rendering
+  const srcByItem = useMemo(() => new Map(doc.items.map((it) => [it.id, sourcesOf(doc, it)])), [doc]);
+
   // If only one "era" and no hierarchy, render flat
   const useFlat = eras.length <= 1 && !doc.items.some((it) => it.parentId);
 
@@ -99,6 +103,9 @@ export function NarrativeView() {
         {it.span.uncertain && <span className="narr-uncertain">{formatUncertainty(it.span)}</span>}
         {it.verseRefs && it.verseRefs.length > 0 && (
           <span className="narr-verse"> 📖{it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</span>
+        )}
+        {(srcByItem.get(it.id)?.length ?? 0) > 0 && (
+          <span className="narr-src"> 🔗{srcByItem.get(it.id)!.map(citeLabel).join(', ')}</span>
         )}
         {isFulfilled && (
           <span className="narr-arrow"> → 📜 {fulfilledBy!.map((fid) => doc.items.find((x) => x.id === fid)?.label ?? '?').join(', ')}</span>

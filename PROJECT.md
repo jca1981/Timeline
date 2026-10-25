@@ -47,6 +47,7 @@ Web-first: Vite + React + TypeScript + Zustand. Local-first: IndexedDB + JSON-fi
 - [x] Milestone 11: Billeder fra .aeon + IndexedDB billedbutik + upload – 97/97 tests grønne
 - [x] Milestone 12: Overskuelighed (entity-sidebar, fold hierarki, søg & centrér, klynge-tælling) – 100/100 tests grønne
 - [x] Milestone 27: .aeon v15-import (indexedArchive) + fluidd layout + pan-race-fix/ErrorBoundary + SW-fix + XSS-escaping + WCAG AA + klynge-fit-zoom – 145 tests grønne
+- [x] Milestone 28: Kilder som førsteklasses data – 155 tests grønne (`Source` i datamodellen + `item.sourceIds`, kilde-bibliotek på tværs af poster, dedup på titel/lokator/URL, "Kilder"-visning med citattal og ubrugte kilder, kilde-sektion i inspektøren (knyt eksisterende eller opret ny), `safeUrl()` der kun linker http/https, kildebiografi + [n]-markører i HTML-eksport, kilder i demo/skabeloner og ved import af en .aeon)
 - [ ] Milestone 13: collab editing (CRDT/WebSocket), preset-profiler, version snapshots
 
 ## Noter & beslutninger

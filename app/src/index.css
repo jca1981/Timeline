@@ -168,6 +168,7 @@ table.matrix { border-collapse: collapse; font-size: 12px; }
 .narr-type { font-size: 11px; margin-left: 6px; opacity: 0.7; }
 .narr-uncertain { font-size: 12px; color: var(--dim); margin-left: 4px; }
 .narr-verse { font-size: 12px; color: #7c8a3e; margin-left: 6px; }
+.narr-src { font-size: 12px; color: var(--dim); margin-left: 6px; }
 .narr-arrow { font-size: 12px; color: #d4a017; margin-left: 8px; font-style: italic; }
 .narr-fulfilled-by { font-size: 12px; color: #d4a017; margin-left: 8px; font-style: italic; }
 .narr-tags { font-size: 11px; color: var(--dim); margin-left: 8px; }
@@ -445,6 +446,16 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
   .minimap { margin: 4px 0 6px; }
   .tl-layout { min-height: 320px; }
 }
+
+/* ---- Kilder-visning (M28) ---- */
+.sources .cell { background: transparent; border: 1px solid transparent; color: inherit; width: 100%; padding: 3px 4px; border-radius: 4px; }
+.sources .cell:hover, .sources .cell:focus { border-color: var(--line); background: rgba(255, 255, 255, 0.04); }
+.sources .cell.narrow { width: 110px; }
+.sources td.src-items { font-size: 12px; }
+.sources td.src-items a { display: inline-block; margin-right: 6px; cursor: pointer; }
+.sources .cite-count { font-variant-numeric: tabular-nums; }
+.sources tr.uncited td { opacity: 0.72; }
+.src-notes { font-size: 11px; color: var(--dim); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media print {
   body { background: #fff !important; color: #000 !important; }

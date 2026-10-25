@@ -19,7 +19,21 @@ export interface Item {
   span: Span;
   dateStyle?: DateStyle; // relativ stil pr. item (uger/dage fra zero-date)
   verseRefs?: VerseRef[]; // bibelvers-links (deep links til jw.org + valgfrit citat)
+  sourceIds?: string[]; // M28: kilder (reference til doc.sources-biblioteket)
   imageId?: string; // reference til billed-butik (IndexedDB images store)
+}
+
+/**
+ * Kilde som førsteklasses data (M28). Deles på tværs af poster (én bog kan
+ * citere 40 begivenheder), så troværdighed kan vurderes én gang og genbruges.
+ * Bevidst smalt: titel + lokator (sidetal/kapitel) + URL + noter.
+ */
+export interface Source {
+  id: string;
+  title: string; // fx "Studies i Skriften — bind 2", "Ny Verden-oversættelsen"
+  locator?: string; // fx "s. 214", "kap. 3", "1968-opslaget"
+  url?: string; // kun http/https linkes (se core/sources.ts safeUrl)
+  notes?: string; // fx "trediehånds-kilde, tjek mod arkæologi"
 }
 
 /** Relationstype med navn i begge retninger (Aeon-mønster). */
@@ -76,6 +90,7 @@ export interface TimelineDoc {
   relations?: Relation[];
   dependencies?: Dependency[];    // M4
   savedFilters?: Record<string, Filter>; // M4
+  sources?: Source[]; // M28: kilde-bibliotek (valgfrit for baglænes-kompatibilitet)
 }
 
 export const DEFAULT_TYPES: ItemType[] = [
@@ -113,6 +128,17 @@ export function demoDoc(): TimelineDoc {
     { id: 'r2', fromId: 'i5', toId: 'i1', typeId: 'rt-fulfillment', note: 'profeti → opfyldelse' },
     { id: 'r3', fromId: 'i4', toId: 'i1', typeId: 'rt-contemporary' },
   ];
+  // M28: kilder som førsteklasses data — vers = oversaettelsen, usikker dato = beregning
+  doc.sources = [
+    { id: 'src-nwt', title: 'Bibelen — Ny Verden-oversættelsen', url: 'https://www.jw.org/da/bibel/nwt/', notes: 'primærkilde: selve verset' },
+    { id: 'src-studietavle', title: 'Studiebibelen — kronologitavlen', locator: 'kongelisten', url: 'https://www.jw.org/da/bibel/henvisninger/', notes: 'sekundærkilde: datoer beregnet ud fra teksten' },
+  ];
+  for (const it of doc.items) {
+    const ids: string[] = [];
+    if (it.verseRefs?.length) ids.push('src-nwt');
+    if (it.span.uncertain) ids.push('src-studietavle');
+    if (ids.length) it.sourceIds = ids;
+  }
   // sync alle spans (end/duration beregnes)
   doc.items = doc.items.map((it) => ({ ...it, span: syncSpan(it.span).span ?? it.span }));
   return doc;

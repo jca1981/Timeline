@@ -8,6 +8,7 @@ import { FamilyTreeView } from './ui/FamilyTreeView';
 import { SubwayView } from './ui/SubwayView';
 import { NarrativeView } from './ui/NarrativeView';
 import { CompareView } from './ui/CompareView';
+import { SourcesView } from './ui/SourcesView';
 import { DocumentBar } from './ui/DocumentBar';
 import { Inspector } from './ui/Inspector';
 import { FilterBar } from './ui/FilterBar';
@@ -18,7 +19,7 @@ import { downloadHtml } from './core/exportHtml';
 import { downloadSvg } from './core/exportSvg';
 import { TEMPLATES } from './model/templates';
 
-type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling' | 'sammenlign';
+type View = 'ark' | 'tidslinje' | 'matrix' | 'slægtstræ' | 'subway' | 'fortælling' | 'sammenlign' | 'kilder';
 
 export default function App() {
   const doc = useApp((s) => s.doc);
@@ -142,6 +143,9 @@ export default function App() {
           <button className={view === 'sammenlign' ? 'tab on' : 'tab'} onClick={() => setView('sammenlign')}>
             Sammenlign
           </button>
+          <button className={view === 'kilder' ? 'tab on' : 'tab'} onClick={() => setView('kilder')} title="Kildeliste på tværs af alle poster">
+            Kilder{doc.sources?.length ? ` (${doc.sources.length})` : ''}
+          </button>
         </nav>
         <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
           {importing ? 'Importer…' : 'Importer .aeon'}
@@ -186,6 +190,7 @@ export default function App() {
             {view === 'subway' && <SubwayView />}
             {view === 'fortælling' && <NarrativeView />}
             {view === 'sammenlign' && <CompareView />}
+            {view === 'kilder' && <SourcesView />}
           </ErrorBoundary>
         </main>
         <Inspector />

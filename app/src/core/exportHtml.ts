@@ -1,5 +1,6 @@
 // **** HTML-eksport (M14): standalone statisk tidslinje som HTML-fil ****
 import type { TimelineDoc, Item } from '../model/doc';
+import { bibliography, citeLabel, safeUrl } from './sources';
 import { spanBounds } from './scale';
 import { contentBounds } from './scale';
 import { textColorFor, readableOn } from './color';
@@ -56,17 +57,36 @@ export function exportAsHtml(doc: TimelineDoc, filter?: (it: Item) => boolean): 
     return `<rect x="${px(bd.a)}" y="30" width="${px(bd.b) - px(bd.a)}" height="${H - 60}" fill="${color}" opacity="0.05" /><text x="${px(bd.a) + 4}" y="42" font-size="9" fill="${readableOn(color, '#1a1d23')}" opacity="0.9">${esc(it.label)}</text>`;
   }).join('\n');
 
+  // M28: kilder nummereres i den rækkefølge, de først optræder (posterne er kronologiske)
+  const bib = bibliography(doc, items.map((r) => r.it));
+
   const rowsSvg = items.map(({ it, bd }, i) => {
     const type = doc.itemTypes.find((t) => t.id === it.typeId);
     const color = safeColor(it.color ?? type?.color);
     const xa = px(bd.a);
     const w = Math.max(3, px(bd.b) - xa);
     const y = 40 + i * ROW_H;
-    return `<rect x="${xa}" y="${y + 4}" width="${w}" height="${14}" rx="3" fill="${color}" /><text x="${xa + (w > 100 ? 4 : w + 4)}" y="${y + 14}" font-size="10" fill="${w > 100 ? textColorFor(color).color : readableOn(color, '#1a1d23')}">${esc(it.label)}</text>`;
+    // M28: kildemarker til fodnoten nederst (samme nummer som i kildelisten)
+    const nums = bib.numbers.get(it.id);
+    const mark = nums
+      ? `<a href="#k${nums[0]}" title="Kilde ${nums.join(', ')}"><text x="${W - PAD}" y="${y + 14}" text-anchor="end" font-size="9" fill="${readableOn('#8b93a3', '#0d0f13')}">[${nums.join(',')}]</text></a>`
+      : '';
+    return `<rect x="${xa}" y="${y + 4}" width="${w}" height="${14}" rx="3" fill="${color}" /><text x="${xa + (w > 100 ? 4 : w + 4)}" y="${y + 14}" font-size="10" fill="${w > 100 ? textColorFor(color).color : readableOn(color, '#1a1d23')}">${esc(it.label)}</text>${mark}`;
   }).join('\n');
 
   // Dateless count
   const datelessCount = doc.items.length - items.length;
+
+  // M28: kildebiografi — eksportfilen skal kunne sige, hvor oplysningerne kommer fra
+  const bibHtml = bib.list.length
+    ? `<h2>Kilder</h2><ol class="srcs">${bib.list
+        .map((s, i) => {
+          const href = safeUrl(s.url);
+          const label = esc(citeLabel(s));
+          return `<li id="k${i + 1}">${href ? `<a href="${attr(href)}" target="_blank" rel="noreferrer">${label} ↗</a>` : label}${s.notes ? ` <span class="note">${esc(s.notes)}</span>` : ''}</li>`;
+        })
+        .join('')}</ol>`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="da">
@@ -78,16 +98,20 @@ body { margin: 20px; background: #1a1d23; color: #eee; font-family: system-ui, s
 h1 { font-size: 18px; }
 .meta { font-size: 12px; opacity: 0.6; }
 svg { width: 100%; max-width: ${W}px; display: block; margin-top: 10px; }
+h2 { font-size: 15px; margin-top: 18px; }
+.srcs { font-size: 12px; line-height: 1.5; padding-left: 22px; }
+.srcs .note { color: #9aa3b2; }
 </style>
 </head>
 <body>
 <h1>📜 ${attr(doc.name || 'Timeline')}</h1>
-<p class="meta">${items.length} daterede poster${datelessCount > 0 ? ` (${datelessCount} uden dato)` : ''} · Genereret ${new Date().toLocaleDateString('da')}</p>
+<p class="meta">${items.length} daterede poster${datelessCount > 0 ? ` (${datelessCount} uden dato)` : ''}${bib.list.length ? ` · ${bib.list.length} kilde${bib.list.length === 1 ? '' : 'r'}` : ''} · Genereret ${new Date().toLocaleDateString('da')}</p>
 <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
 <rect width="${W}" height="${H}" fill="#0d0f13" rx="6"/>
 ${eraSvgs}
 ${rowsSvg}
 </svg>
+${bibHtml}
 </body>
 </html>`;
 }

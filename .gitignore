@@ -3,3 +3,4 @@ dist/
 *.log
 .tmp/
 Import/*.aeon
+app/debug-render.ts

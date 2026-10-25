@@ -6,6 +6,7 @@ import { toJD } from '../core/jdn';
 import { formatVerse, jwUrl } from '../core/bible';
 import { generations, linksOf, relationTypes } from '../core/relations';
 import { DEP_KIND_LABELS, DEP_KIND_SHORT, dependenciesOf, isDependencyViolated } from '../core/dependencies';
+import { citeLabel, safeUrl, sourcesOf } from '../core/sources';
 import { ItemImage } from './ItemImage';
 import { putImage } from '../core/images';
 import { BOOKS } from '../model/bibleBooks';
@@ -15,7 +16,7 @@ export function Inspector() {
   const doc = useApp((s) => s.doc);
   const id = useApp((s) => s.selectedId);
   const select = useApp((s) => s.select);
-  const { updateItem, setVerseRefs, addRelation, removeRelation, addDependency, removeDependency } = useApp();
+  const { updateItem, setVerseRefs, addRelation, removeRelation, addDependency, removeDependency, addSource, toggleSource, setSourceIds } = useApp();
   const item = doc.items.find((it) => it.id === id);
   if (!item) return null;
 
@@ -23,6 +24,7 @@ export function Inspector() {
   const span = item.span;
   const links = linksOf(doc, item.id);
   const deps = dependenciesOf(doc, item.id);
+  const srcs = sourcesOf(doc, item);
   const labelOf = (itemId: string) => doc.items.find((it) => it.id === itemId)?.label ?? '(slettet)';
 
   return (
@@ -94,6 +96,30 @@ export function Inspector() {
       </section>
 
       <section>
+        <h4>Kilder {srcs.length > 0 && <span className="dim">({srcs.length})</span>}</h4>
+        {srcs.length === 0 && <p className="dim">Ingen kilde er knyttet til denne post.</p>}
+        {srcs.map((s) => {
+          const href = safeUrl(s.url);
+          return (
+            <div className="verse" key={s.id}>
+              {href ? <a href={href} target="_blank" rel="noreferrer">{citeLabel(s)} ↗</a> : <span>{citeLabel(s)}</span>}
+              <button className="danger" title="Fjern kilde fra post" onClick={() => setSourceIds(item.id, (item.sourceIds ?? []).filter((x) => x !== s.id))}>✕</button>
+              {s.notes && <blockquote>{s.notes}</blockquote>}
+            </div>
+          );
+        })}
+        <AddSource
+          library={doc.sources ?? []}
+          attached={new Set(item.sourceIds ?? [])}
+          onAttach={(sid) => toggleSource(item.id, sid)}
+          onCreate={(cand) => {
+            const sid = addSource(cand);
+            if (sid) toggleSource(item.id, sid);
+          }}
+        />
+      </section>
+
+      <section>
         <h4>Relationer</h4>
         {links.length === 0 && <p className="dim">Ingen relationer endnu.</p>}
         {links.map((l) => {
@@ -153,6 +179,53 @@ function AddVerse({ onAdd }: { onAdd: (v: VerseRef) => void }) {
         setVs(''); setVsEnd('');
       }}>+</button>
     </div>
+  );
+}
+
+/**
+ * Kilde-valg (M28): link op på en eksisterende kilde i biblioteket, eller opret
+ * en ny. Dedup sker i store.addSource, saa samme bog ikke dukker op to gange.
+ */
+function AddSource(props: {
+  library: { id: string; title: string; locator?: string; url?: string }[];
+  attached: Set<string>;
+  onAttach: (id: string) => void;
+  onCreate: (cand: { title: string; locator?: string; url?: string }) => void;
+}) {
+  const [pick, setPick] = useState('');
+  const [title, setTitle] = useState('');
+  const [locator, setLocator] = useState('');
+  const [url, setUrl] = useState('');
+  const free = props.library.filter((s) => !props.attached.has(s.id));
+  return (
+    <>
+      <div className="addrow">
+        <select value={pick} onChange={(e) => setPick(e.target.value)}>
+          <option value="">→ eksisterende kilde…</option>
+          {free.map((s) => (
+            <option key={s.id} value={s.id}>{citeLabel(s)}</option>
+          ))}
+        </select>
+        <button
+          disabled={!pick}
+          title="Knyt valgte kilde til denne post"
+          onClick={() => { props.onAttach(pick); setPick(''); }}
+        >Knyt</button>
+      </div>
+      <div className="addrow">
+        <input value={title} placeholder="Kilde (bog, artikel, netsted)…" onChange={(e) => setTitle(e.target.value)} />
+        <input value={locator} placeholder="s. 214 / kap. 3" style={{ width: 90 }} onChange={(e) => setLocator(e.target.value)} />
+        <input value={url} placeholder="https://…" onChange={(e) => setUrl(e.target.value)} />
+        <button
+          disabled={!title.trim()}
+          title="Opret kilde og knyt til post"
+          onClick={() => {
+            props.onCreate({ title: title.trim(), locator: locator.trim() || undefined, url: url.trim() || undefined });
+            setTitle(''); setLocator(''); setUrl('');
+          }}
+        >+ ny</button>
+      </div>
+    </>
   );
 }
 

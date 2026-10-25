@@ -80,6 +80,19 @@ function bk(): TimelineDoc {
     { id: newId(), fromId: doc.items[14].id, toId: doc.items[18].id, typeId: 'rt-fulfillment', note: '70 år → tilbagevenden' },
   ];
 
+  // M28: kilder som førsteklasses data — oversættelsen er primærkilde, tavlen i
+  // studiebibelen er sekundær (kronologien står ikke i teksten)
+  doc.sources = [
+    { id: 'src-nwt', title: 'Bibelen — Ny Verden-oversættelsen', url: 'https://www.jw.org/da/bibel/nwt/', notes: 'primærkilde: selve verset' },
+    { id: 'src-studietavle', title: 'Studiebibelen — kronologitavlen', locator: 'kongelisten', url: 'https://www.jw.org/da/bibel/henvisninger/', notes: 'sekundærkilde: datoer beregnet ud fra teksten' },
+  ];
+  for (const it of doc.items) {
+    const ids: string[] = [];
+    if (it.verseRefs?.length) ids.push('src-nwt');
+    if (it.span.uncertain) ids.push('src-studietavle');
+    if (ids.length) it.sourceIds = ids;
+  }
+
   doc.items = doc.items.map((it) => ({ ...it, span: syncSpan(it.span).span ?? it.span }));
   return doc;
 }

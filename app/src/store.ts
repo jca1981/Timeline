@@ -4,6 +4,7 @@ import type { Span } from './core/types';
 import { syncSpan } from './core/sync';
 import { saveDoc, loadDoc as idbLoad, saveDocById, loadDocById, deleteDocById, listDocs, type DocMeta } from './core/persist';
 import { pushSnapshot, undo as histUndo, redo as histRedo, clearHistory } from './core/history';
+import { findDuplicateSource } from './core/sources';
 import {
   DEFAULT_RELATION_TYPES,
   DEFAULT_TYPES,
@@ -14,6 +15,7 @@ import {
   type Filter,
   type Item,
   type Relation,
+  type Source,
   type TimelineDoc,
   type VerseRef,
 } from './model/doc';
@@ -42,6 +44,7 @@ function loadDocSync(): TimelineDoc {
       doc.relations ??= [];
       doc.dependencies ??= [];
       doc.savedFilters ??= {};
+      doc.sources ??= [];
       return doc;
     }
   } catch { /* corrupt → start ny */ }
@@ -74,6 +77,7 @@ export async function hydrateStore() {
     doc.relations ??= [];
     doc.dependencies ??= [];
     doc.savedFilters ??= {};
+    doc.sources ??= [];
     // Overskriv IKKON hvis en import/switch allerede har sat doc efter vi startede hydrate
     if (lastDocSetTime > 0) return;
     useApp.setState({ doc, errors: {}, selectedId: null });
@@ -103,6 +107,12 @@ interface AppState {
   removeRelation(id: string): void;
   toggleRelation(fromId: string, toId: string, typeId: string): void;
   setVerseRefs(id: string, refs: VerseRef[]): void;
+  // M28: Kilder som førsteklasses data
+  addSource(cand: Omit<Source, 'id'>): string;
+  updateSource(id: string, patch: Partial<Source>): void;
+  removeSource(id: string): void;
+  setSourceIds(itemId: string, ids: string[]): void;
+  toggleSource(itemId: string, sourceId: string): void;
   // M4: Dependencies
   addDependency(blockerId: string, blockedId: string, kind: DepKind): string | null;
   removeDependency(id: string): void;
@@ -242,17 +252,33 @@ export const useApp = create<AppState>((set, get) => ({
     pushSnapshot(get().doc);
     const s = get();
     set({ activeFilter: null });
+    // M28: kilder flettes med — id'er der allerede findes (eller er den samme
+    // kilde skrevet forskelligt) genbruges, så poster ikke peger på dubletter.
+    const sources = [...(s.doc.sources ?? [])];
+    const remap = new Map<string, string>();
+    for (const inc of incoming.sources ?? []) {
+      const byId = sources.find((x) => x.id === inc.id);
+      if (byId) { remap.set(inc.id, byId.id); continue; }
+      const dup = findDuplicateSource(sources, inc);
+      if (dup) { remap.set(inc.id, dup.id); continue; }
+      sources.push(inc);
+    }
+    const fixSources = (it: Item): Item => {
+      if (!it.sourceIds?.length) return it;
+      const ids = [...new Set(it.sourceIds.map((id) => remap.get(id) ?? id))];
+      return ids.length === it.sourceIds.length && ids.every((id, i) => id === it.sourceIds![i]) ? it : { ...it, sourceIds: ids };
+    };
     const existingIds = new Set(s.doc.items.map((i) => i.id));
-    const newItems = incoming.items.filter((i) => !existingIds.has(i.id));
+    const newItems = incoming.items.filter((i) => !existingIds.has(i.id)).map(fixSources);
     const existingRelIds = new Set((s.doc.relations ?? []).map((r) => r.id));
     const newRels = (incoming.relations ?? []).filter((r) => !existingRelIds.has(r.id));
     const existingTypeIds = new Set(s.doc.itemTypes.map((t) => t.id));
-    const newTypes = (incoming.itemTypes ?? []).filter((t) => !existingTypeIds.has(t.id));
     const merged: TimelineDoc = {
       ...s.doc,
       items: [...s.doc.items, ...newItems],
       relations: [...(s.doc.relations ?? []), ...newRels],
-      itemTypes: [...s.doc.itemTypes, ...newTypes],
+      itemTypes: [...s.doc.itemTypes, ...(incoming.itemTypes ?? []).filter((t) => !existingTypeIds.has(t.id))],
+      sources,
     };
     persist(merged);
     set({ doc: merged });
@@ -288,6 +314,50 @@ export const useApp = create<AppState>((set, get) => ({
 
   setVerseRefs: (id, refs) => {
     get().updateItem(id, { verseRefs: refs.length ? refs : undefined });
+  },
+
+  // ---- M28: Kilder ----
+  addSource: (cand) => {
+    const doc = get().doc;
+    const list = doc.sources ?? [];
+    const title = (cand.title ?? '').trim();
+    if (!title) return ''; // titel er obligatorisk — ellers fyldes biblioteket med støj
+    const dup = findDuplicateSource(list, { title, locator: cand.locator, url: cand.url });
+    if (dup) return dup.id; // ingen dubletter — samme bog to gange er en fejlkilde
+    const src: Source = { id: newId(), ...cand, title: title || '(titel mangler)' };
+    persist({ ...doc, sources: [...list, src] });
+    return src.id;
+  },
+
+  updateSource: (id, patch) => {
+    const doc = get().doc;
+    const list = doc.sources ?? [];
+    if (!list.some((x) => x.id === id)) return;
+    persist({ ...doc, sources: list.map((x) => (x.id === id ? { ...x, ...patch, id } : x)) });
+  },
+
+  removeSource: (id) => {
+    const doc = get().doc;
+    persist({
+      ...doc,
+      sources: (doc.sources ?? []).filter((x) => x.id !== id),
+      items: doc.items.map((it) => {
+        if (!it.sourceIds?.includes(id)) return it;
+        const rest = it.sourceIds.filter((x) => x !== id);
+        return { ...it, sourceIds: rest.length ? rest : undefined };
+      }),
+    });
+  },
+
+  setSourceIds: (itemId, ids) => {
+    get().updateItem(itemId, { sourceIds: ids.length ? [...new Set(ids)] : undefined });
+  },
+
+  toggleSource: (itemId, sourceId) => {
+    const it = get().doc.items.find((x) => x.id === itemId);
+    if (!it || !(get().doc.sources ?? []).some((s) => s.id === sourceId)) return;
+    const cur = it.sourceIds ?? [];
+    get().setSourceIds(itemId, cur.includes(sourceId) ? cur.filter((x) => x !== sourceId) : [...cur, sourceId]);
   },
 
   // ---- M4: Dependencies ----
