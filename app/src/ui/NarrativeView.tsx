@@ -77,7 +77,7 @@ export function NarrativeView() {
   }
   if (currentEra.length > 0) eras.push({ heading: currentEra[0]!.item, entries: currentEra });
 
-    // M28: kilder pr. post — opslag slås op én gang per rendering
+    // M28: kilder pr. post - opslag slås op én gang per rendering
   const srcByItem = useMemo(() => new Map(doc.items.map((it) => [it.id, sourcesOf(doc, it)])), [doc]);
 
   // If only one "era" and no hierarchy, render flat
@@ -102,16 +102,16 @@ export function NarrativeView() {
         {type && <span className="narr-type" style={{ color: readableOn(type.color, PANEL_BG) }}>{type.name}</span>}
         {it.span.uncertain && <span className="narr-uncertain">{formatUncertainty(it.span)}</span>}
         {it.verseRefs && it.verseRefs.length > 0 && (
-          <span className="narr-verse"> 📖{it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</span>
+          <span className="narr-verse">Vers: {it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</span>
         )}
         {(srcByItem.get(it.id)?.length ?? 0) > 0 && (
-          <span className="narr-src"> 🔗{srcByItem.get(it.id)!.map(citeLabel).join(', ')}</span>
+          <span className="narr-src">Kilde: {srcByItem.get(it.id)!.map(citeLabel).join(', ')}</span>
         )}
         {isFulfilled && (
-          <span className="narr-arrow"> → 📜 {fulfilledBy!.map((fid) => doc.items.find((x) => x.id === fid)?.label ?? '?').join(', ')}</span>
+          <span className="narr-arrow"> → {fulfilledBy!.map((fid) => doc.items.find((x) => x.id === fid)?.label ?? '?').join(', ')}</span>
         )}
         {isFulfillment && !isFulfilled && (
-          <span className="narr-fulfilled-by"> ← 📜 opfylder: {fulfilledFrom!.map((fid) => doc.items.find((x) => x.id === fid)?.label ?? '?').join(', ')}</span>
+          <span className="narr-fulfilled-by"> ← opfylder: {fulfilledFrom!.map((fid) => doc.items.find((x) => x.id === fid)?.label ?? '?').join(', ')}</span>
         )}
         {it.tags && it.tags.length > 0 && (
           <span className="narr-tags"> {it.tags.map((t) => `#${t}`).join(' ')}</span>

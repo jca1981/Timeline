@@ -215,7 +215,7 @@ export function FamilyTreeView() {
           {edges.map((edge, i) => {
             if (edge.points.length < 2) return null;
             const d = edge.points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-            return <path key={i} d={d} fill="none" stroke="#999" strokeWidth={1.5} opacity={0.7} />;
+            return <path key={i} d={d} fill="none" stroke="var(--meta)" strokeWidth={1.5} opacity={0.7} />;
           })}
 
           {/* Nodes */}
@@ -232,7 +232,7 @@ export function FamilyTreeView() {
                 height={NODE_H}
                 rx={6}
                 fill={n.color}
-                stroke={n.id === selectedId ? '#fff' : 'transparent'}
+                stroke={n.id === selectedId ? 'var(--fg)' : 'transparent'}
                 strokeWidth={2}
                 opacity={0.85}
               />

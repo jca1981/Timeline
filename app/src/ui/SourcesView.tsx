@@ -4,7 +4,7 @@ import { useApp } from '../store';
 import { citationsBySource, citeLabel, isStaleLink, RELIABILITY, reliabilityLabel, reliabilityStars, safeUrl, sortSources, SOURCE_KINDS } from '../core/sources';
 import type { SourceKind } from '../model/doc';
 
-/** I dag som YYYY-MM-DD (bruges til "tjekket nu" — ISO så sorteringen virker). */
+/** I dag som YYYY-MM-DD (bruges til "tjekket nu" - ISO så sorteringen virker). */
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 /**
@@ -38,7 +38,7 @@ export function SourcesView() {
   return (
     <div className="sources">
       <div className="toolbar">
-        <input value={title} placeholder="Ny kilde — titel…" onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
+        <input value={title} placeholder="Kildens titel" onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
         <input value={locator} placeholder="s. 214 / kap. 3" style={{ width: 120 }} onChange={(e) => setLocator(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
         <input value={url} placeholder="https://…" style={{ width: 200 }} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
         <button className="primary" disabled={!title.trim()} onClick={add}>+ tilføj kilde</button>
@@ -50,7 +50,7 @@ export function SourcesView() {
         <span className="count">{sources.length} kilder · {uncited} uden citater · {unrated} ikke vurderet</span>
       </div>
 
-      {rowsAll.length === 0 && <p className="dim">Endnu ingen kilder. Knyt en kilde til en post i inspektøren, eller tilføj den her — så kan troværdighed vurderes én gang og genbruges på alle poster.</p>}
+      {rowsAll.length === 0 && <p className="dim">Endnu ingen kilder. Knyt en kilde til en post i inspektøren, eller tilføj den her. Så kan troværdighed vurderes én gang og genbruges på alle poster.</p>}
       {rowsAll.length > 0 && rows.length === 0 && <p className="dim">Alle kilder med link er tjekket for nylig. (Vis alle igen med knappen ovenfor.)</p>}
 
       {rows.length > 0 && (
@@ -61,7 +61,7 @@ export function SourcesView() {
               <th>Lokator</th>
               <th>URL</th>
               <th title="Hvor direkte er kilden? egne øjenvidner → referater">Type</th>
-              <th title="Troværdighed 1-5 — bruges til sortering og i eksport">Troværdighed</th>
+              <th title="Troværdighed 1-5, bruges til sortering og i eksport">Troværdighed</th>
               <th title="Sidst tjekket (dødt link?)">Tjekket</th>
               <th title="Poster der citerer kilden">Citater</th>
               <th>Citerende poster</th>
@@ -119,7 +119,7 @@ export function SourcesView() {
                         />
                         <button
                           className={staleRow ? 'warn' : 'quiet'}
-                          title={staleRow ? 'Linket bør genbesøges — markér det som tjekket i dag' : 'Markér tjekket i dag'}
+                          title={staleRow ? 'Linket bør genbesøges. Markér det som tjekket i dag' : 'Markér tjekket i dag'}
                           onClick={() => updateSource(s.id, { checkedAt: todayIso() })}
                         >nu</button>
                       </span>
@@ -135,7 +135,7 @@ export function SourcesView() {
                       className="danger"
                       title={items.length ? `Slet kilde og fjern ${items.length} citat(er)` : 'Slet kilde'}
                       onClick={() => { if (items.length === 0 || confirm(`Slet "${citeLabel(s)}" og ${items.length} citat(er)?`)) removeSource(s.id); }}
-                    >✕</button>
+                    >x</button>
                   </td>
                 </tr>
               );

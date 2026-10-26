@@ -32,7 +32,7 @@ export function Inspector() {
       <div className="insp-head">
         <span className="dot" style={{ background: item.color ?? type?.color ?? '#888' }} />
         <input value={item.label} onChange={(e) => updateItem(item.id, { label: e.target.value })} />
-        <button title="Luk inspektør" onClick={() => select(null)}>✕</button>
+        <button title="Luk inspektør" onClick={() => select(null)}>x</button>
       </div>
 
       <p className="insp-range">
@@ -76,7 +76,7 @@ export function Inspector() {
       <section>
         <h4>Overordnet (forælder)</h4>
         <select value={item.parentId ?? ''} onChange={(e) => updateItem(item.id, { parentId: e.target.value || undefined })}>
-          <option value="">— ingen —</option>
+          <option value="">ingen kilde</option>
           {doc.items.filter((it) => it.id !== item.id).map((it) => (
             <option key={it.id} value={it.id}>{it.label}</option>
           ))}
@@ -88,7 +88,7 @@ export function Inspector() {
         {(item.verseRefs ?? []).map((v, i) => (
           <div className="verse" key={i}>
             <a href={jwUrl(v)} target="_blank" rel="noreferrer">{formatVerse(v)} ↗</a>
-            <button className="danger" title="Fjern vers" onClick={() => setVerseRefs(item.id, (item.verseRefs ?? []).filter((_, j) => j !== i))}>✕</button>
+            <button className="danger" title="Fjern vers" onClick={() => setVerseRefs(item.id, (item.verseRefs ?? []).filter((_, j) => j !== i))}>x</button>
             {v.quote && <blockquote>”{v.quote}”</blockquote>}
           </div>
         ))}
@@ -104,8 +104,8 @@ export function Inspector() {
             <div className="verse" key={s.id}>
               {href ? <a href={href} target="_blank" rel="noreferrer">{citeLabel(s)} ↗</a> : <span>{citeLabel(s)}</span>}
               {s.kind && <span className="kindchip" title="Kildetype">{s.kind}</span>}
-              {s.reliability ? <span className="stars" title={`Troværdighed: ${reliabilityLabel(s.reliability)}`}>{reliabilityStars(s.reliability)}</span> : <span className="dim stars" title="Vurder kilden i Kilder-fanen — bedømmelsen gælder på alle poster">ikke vurderet</span>}
-              <button className="danger" title="Fjern kilde fra post" onClick={() => setSourceIds(item.id, (item.sourceIds ?? []).filter((x) => x !== s.id))}>✕</button>
+              {s.reliability ? <span className="stars" title={`Troværdighed: ${reliabilityLabel(s.reliability)}`}>{reliabilityStars(s.reliability)}</span> : <span className="dim stars" title="Vurder kilden i Kilder-fanen. Bedømmelsen gælder på alle poster">ikke vurderet</span>}
+              <button className="danger" title="Fjern kilde fra post" onClick={() => setSourceIds(item.id, (item.sourceIds ?? []).filter((x) => x !== s.id))}>x</button>
               {s.notes && <blockquote>{s.notes}</blockquote>}
             </div>
           );
@@ -131,7 +131,7 @@ export function Inspector() {
           return (
             <div className="link" key={l.rel.id}>
               <span><b>{l.label}</b> → <a onClick={() => select(l.otherId)}>{labelOf(l.otherId)}</a>{gen}{l.rel.note ? ` · ${l.rel.note}` : ''}</span>
-              <button className="danger" title="Fjern relation" onClick={() => removeRelation(l.rel.id)}>✕</button>
+              <button className="danger" title="Fjern relation" onClick={() => removeRelation(l.rel.id)}>x</button>
             </div>
           );
         })}
@@ -149,9 +149,9 @@ export function Inspector() {
             <div className={`link ${violated ? 'dep-violated' : ''}`} key={d.id}>
               <span>
                 <b>{dirLabel}</b> {labelOf(otherId)}
-                {violated && <span className="warn"> ⚠️ brud</span>}
+                {violated && <span className="warn">brud</span>}
               </span>
-              <button className="danger" title="Fjern dependency" onClick={() => removeDependency(d.id)}>✕</button>
+              <button className="danger" title="Fjern dependency" onClick={() => removeDependency(d.id)}>x</button>
             </div>
           );
         })}
@@ -290,7 +290,7 @@ function TagsEditor({ tags, onChange }: { tags: string[]; onChange: (tags: strin
         {tags.map((t) => (
           <span key={t} className="tag-badge">
             {t}
-            <button onClick={() => onChange(tags.filter((x) => x !== t))}>✕</button>
+            <button onClick={() => onChange(tags.filter((x) => x !== t))}>x</button>
           </span>
         ))}
       </div>

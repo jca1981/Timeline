@@ -60,7 +60,7 @@ export function FilterBar() {
     <div className="filter-bar">
       <input
         className="filter-text"
-        placeholder="🔍 Søg…"
+        placeholder="Søg…"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && apply()}
@@ -103,7 +103,7 @@ export function FilterBar() {
               className={`filter-chip ${tags.includes(tg) ? 'active' : ''}`}
               onClick={() => setTags(tags.includes(tg) ? tags.filter((x) => x !== tg) : [...tags, tg])}
             >
-              🏷 {tg}
+              {tg}
             </button>
           ))}
         </div>
@@ -111,7 +111,7 @@ export function FilterBar() {
 
       <button onClick={apply}>Filtrér</button>
       <button onClick={clear} className="dim">Ryd</button>
-      <button onClick={save} title="Gem aktivt filter">💾</button>
+      <button onClick={save} title="Gem aktivt filter">Gem filter</button>
 
       {Object.keys(savedFilters).length > 0 && (
         <div className="saved-filters">

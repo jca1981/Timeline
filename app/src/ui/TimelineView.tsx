@@ -9,8 +9,9 @@ import { isDependencyViolated } from '../core/dependencies';
 import { textColorFor, readableOn, PANEL_BG } from '../core/color';
 import { panCenter } from '../core/pan';
 import { EntitySidebar } from './EntitySidebar';
+import { EmptyTimeline, FilteredOutTimeline } from './EmptyTimeline';
 import { ItemImage } from './ItemImage';
-import type { Item } from '../model/doc';
+import { type Item } from '../model/doc';
 
 interface Viewport {
   center: number; // JD i midten
@@ -282,7 +283,7 @@ export function TimelineView() {
     return hidden;
   }, [collapsedIds, childrenMap]);
 
-  // M15: Color inheritance — children without own color get parent’s color
+  // M15: Color inheritance - children without own color get parent’s color
   const effectiveColor = useMemo(() => {
     const typeMap = new Map(doc.itemTypes.map((t) => [t.id, t.color]));
     const itemMap = new Map(doc.items.map((it) => [it.id, it]));
@@ -399,7 +400,7 @@ export function TimelineView() {
         yPos++; // gap between lanes
       }
     } else {
-      // M24: Greedy bin-packing — pack non-overlapping items in same row
+      // M24: Greedy bin-packing - pack non-overlapping items in same row
       const packed: { it: Item; bd: NonNullable<ReturnType<typeof spanBounds>>; y: number }[] = [];
       const rowEnds: number[] = []; // end x-jd for each row
       for (const r of unclustered) {
@@ -422,7 +423,7 @@ export function TimelineView() {
 
     rowsRef.current = positioned;
 
-    // M14: Era bands — parent items with many descendants + long span
+    // M14: Era bands - parent items with many descendants + long span
     const ERA_MIN_DESC = 3;
     const ERA_MIN_SPAN_DAYS = 18250; // 50 years
     const eras: { id: string; label: string; a: number; b: number; color: string }[] = [];
@@ -445,7 +446,7 @@ export function TimelineView() {
   const visible = rows.filter((r) => x(r.bd.b) > -200 && x(r.bd.a) < width + 200);
   const hidden = rows.length - visible.length;
 
-  // M17: Era breadcrumb — which eras contain current viewport center?
+  // M17: Era breadcrumb - which eras contain current viewport center?
   const viewportCenterJD = vp.center;
   const activeEras = eraBands.filter((e) => e.a <= viewportCenterJD && e.b >= viewportCenterJD);
 
@@ -508,8 +509,8 @@ export function TimelineView() {
       <EntitySidebar />
       <div className="tl-main">
         <div className="toolbar">
-          <button onClick={() => zoom(1.6)} title="Zoom ind (+)">＋</button>
-          <button onClick={() => zoom(1 / 1.6)} title="Zoom ud (−)">－</button>
+          <button onClick={() => zoom(1.6)} title="Zoom ind">+</button>
+          <button onClick={() => zoom(1 / 1.6)} title="Zoom ud">&minus;</button>
           <button onClick={fit}>Tilpas</button>
           {/* M15: Zoom-presets */}
           <span className="zoom-presets">
@@ -523,24 +524,24 @@ export function TimelineView() {
               const maxB = Math.max(...allBds.map((b) => b.b));
               const newPx = clampPx((width - 40) / (maxB - minA));
               setVp({ center: (minA + maxB) / 2, px: newPx });
-            }} title="Zoom til at passe alt på skærmen">⊞</button>
+            }} title="Zoom til at passe alt på skærmen">Skærm</button>
             <button onClick={() => {
               const dv = fromJD(vp.center, 'year');
               const id = addItemAction({ label: 'Nyt item', span: { start: dv, duration: { y: 1 } } });
               select(id); setEditLabelId(id);
-            }} title="Tilføj item ved viewport-center">＋</button>
+            }} title="Tilføj post ved viewport-center">Ny post</button>
           </span>
           <select className="tl-sort" value={sortMode} onChange={(e) => setSortMode(e.target.value as typeof sortMode)} title="Sortér rækker">
-            <option value="chrono">📅 Start</option>
-            <option value="end">📅 Slut</option>
-            <option value="duration">📏 Varighed</option>
-            <option value="alpha">🔤 Alfa</option>
+            <option value="chrono">Start</option>
+            <option value="end">Slut</option>
+            <option value="duration">Varighed</option>
+            <option value="alpha">Alfa</option>
           </select>
           <button
             onClick={() => setLaneMode((m) => m === 'chrono' ? 'type' : 'chrono')}
             title="Skift mellem kronologisk rækkefølge og spor pr. type"
           >
-            {laneMode === 'type' ? '🔀 Spor pr. type' : '📅 Kronologisk'}
+            {laneMode === 'type' ? 'Spor pr. type' : 'Kronologisk'}
           </button>
           {/* Søg */}
           <div className="tl-search">
@@ -603,13 +604,15 @@ export function TimelineView() {
         {/* M17: Era breadcrumb */}
         {activeEras.length > 0 && (
           <div className="era-breadcrumb">
-            📍 {activeEras.map((e, i) => (
+            {activeEras.map((e, i) => (
               <span key={e.id}>{i > 0 ? ' → ' : ''}<em style={{ color: e.color }}>{e.label}</em></span>
             ))}
           </div>
         )}
 
         <div className="tl" ref={wrapRef}>
+          {rows.length === 0 && datelessItems.length === 0 &&
+            (doc.items.length === 0 ? <EmptyTimeline /> : <FilteredOutTimeline />)}
           <div className="ruler" style={{ height: 30 }}>
             {ticks.map((t, i) => (
               <div key={i} className="tick" style={{ left: x(t.jd) }}>
@@ -650,7 +653,7 @@ export function TimelineView() {
                 const parentY = rowYMap.get(it.parentId!)!;
                 const childY = rowYMap.get(it.id)!;
                 const cx = x((bd.a + bd.b) / 2);
-                return <line key={`conn-${it.id}`} x1={cx} y1={parentY} x2={cx} y2={childY} stroke="#ffffff18" strokeWidth={1} strokeDasharray="2,3" />;
+                return <line key={`conn-${it.id}`} x1={cx} y1={parentY} x2={cx} y2={childY} stroke="color-mix(in srgb, var(--fg) 10%, transparent)" strokeWidth={1} strokeDasharray="2,3" />;
               })}
             </svg>
 
@@ -673,16 +676,16 @@ export function TimelineView() {
               // Laeselighed: tekst INDI i bjelken faar kontrastfarve (gylden bjaelke + hvid = 1.9:1 dur ikke),
               // tekst UDEN for bjelken justeres sa den staer mod det moerke panel.
               const labelStyle = w > 140
-                ? { color: textColorFor(color).color, textShadow: textColorFor(color).shadow }
+                ? { color: textColorFor(color).color, textShadow: textColorFor(color).shadow } /* taste-skill-ignore: tekstkontrast paa fyldt datamark */
                 : { color: readableOn(color, PANEL_BG), textShadow: 'none' };
-              const tip = `${it.label} — ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\n📖 ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\n🏷 ${it.tags.join(', ')}` : ''}`;
+              const tip = `${it.label} · ${formatSpan(it.span)}${formatUncertainty(it.span) ? ` (${formatUncertainty(it.span)})` : ''}${it.verseRefs?.length ? `\nVers: ${it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}` : ''}${it.tags?.length ? `\nTags: ${it.tags.join(', ')}` : ''}`;
               return (
                 <div key={it.id} draggable className={`bar ${w > 140 ? 'wide' : ''} ${selectedId === it.id ? 'selected' : ''} ${relatedIds.has(it.id) ? 'related' : ''} ${multiSelected.has(it.id) ? 'multi-sel' : ''}`} title={tip} onClick={(e) => { if (e.ctrlKey || e.metaKey) { toggleMulti(it.id); } else { select(it.id); setPopupId(popupId === it.id ? null : it.id); } }} onDoubleClick={(e) => { e.stopPropagation(); setEditLabelId(it.id); }} onDragStart={(e) => { e.dataTransfer.setData('text/tl-item', it.id); }} onDragOver={(e) => { if (e.dataTransfer.types.includes('text/tl-item')) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); const src = e.dataTransfer.getData('text/tl-item'); if (src && src !== it.id) updateItem(src, { parentId: it.id }); }} onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, itemId: it.id }); }} onMouseEnter={() => setHoveredId(it.id)} onMouseLeave={() => setHoveredId(null)} style={{ left: xa, top: y + 5, width: w, background: color }}>
                   {bd.ua !== undefined && bd.ua > bd.a && (
-                    <span className="halo" style={{ left: x(bd.a) - xa, width: x(bd.ua) - x(bd.a), background: `linear-gradient(90deg, ${color}55, ${color}22)` }} />
+                    <span className="halo" style={{ left: x(bd.a) - xa, width: x(bd.ua) - x(bd.a), background: `${color}3d` }} />
                   )}
                   {bd.ub !== undefined && bd.ub < bd.b && (
-                    <span className="halo" style={{ left: x(bd.ub) - xa, width: x(bd.b) - x(bd.ub), background: `linear-gradient(90deg, ${color}22, ${color}55)` }} />
+                    <span className="halo" style={{ left: x(bd.ub) - xa, width: x(bd.b) - x(bd.ub), background: `${color}3d` }} />
                   )}
                   {it.span.ongoing && <span className="arrow" style={{ borderColor: color }} />}
                   {hasChildren && (
@@ -690,13 +693,13 @@ export function TimelineView() {
                       {isCollapsed ? '+' : '−'}
                     </button>
                   )}
-                  {pinnedIds.has(it.id) && <button className="bar-pin pinned" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fjern pin">📌</button>}
-                  {!pinnedIds.has(it.id) && w > 100 && <button className="bar-pin" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fastgør i bunden">📍</button>}
+                  {pinnedIds.has(it.id) && <button className="bar-pin pinned" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fjern pin">⇧</button>}
+                  {!pinnedIds.has(it.id) && w > 100 && <button className="bar-pin" onClick={(e) => { e.stopPropagation(); togglePin(it.id); }} title="Fastgør i bunden">⇩</button>}
                   {editLabelId === it.id ? (
                     <input className="bar-edit" autoFocus defaultValue={it.label} onBlur={(e) => { updateItem(it.id, { label: e.target.value || it.label }); setEditLabelId(null); }} onKeyDown={(e) => { if (e.key === 'Enter') { updateItem(it.id, { label: (e.target as HTMLInputElement).value || it.label }); setEditLabelId(null); } if (e.key === 'Escape') setEditLabelId(null); }} />
                   ) : (
                     <span className="barlabel" style={labelStyle}>
-                      {it.imageId ? '🖼 ' : ''}{w > 26 ? it.label : ''}
+                      {it.imageId ? '▣ ' : ''}{w > 26 ? it.label : ''}
                       {isCollapsed && (childrenMap.get(it.id)?.length ?? 0) > 0 && ` (+${childrenMap.get(it.id)!.length})`}
                       {!isCollapsed && (descCount.get(it.id) ?? 0) > 0 && <span className="desc-badge">{descCount.get(it.id)}</span>}
                     </span>
@@ -733,7 +736,7 @@ export function TimelineView() {
                 return (
                   <g key={dep.id}>
                     <path d={path} fill="none" stroke={violated ? '#e74c3c' : '#888'} strokeWidth={violated ? 2 : 1} strokeDasharray={violated ? '' : '4 2'} markerEnd="url(#arrowhead)" />
-                    <text x={(x1 + x2) / 2} y={midY - 4} textAnchor="middle" fontSize={9} fill={violated ? '#e74c3c' : '#666'}>{dep.kind}</text>
+                    <text x={(x1 + x2) / 2} y={midY - 4} textAnchor="middle" fontSize={11} fill={violated ? 'var(--negative)' : 'var(--meta)'}>{dep.kind}</text>
                   </g>
                 );
               })}
@@ -751,18 +754,18 @@ export function TimelineView() {
                 const path = `M${x1},${y1} Q${midX},${Math.min(y1, y2) - arcH} ${x2},${y2}`;
                 return (
                   <g key={rel.id} className="fulfill-arc">
-                    <path d={path} fill="none" stroke="#d4a017" strokeWidth={2} strokeLinecap="round" opacity={0.8} markerEnd="url(#arrow-gold)" />
-                    <circle cx={x1} cy={y1} r={4} fill="#d4a017" opacity={0.9} />
-                    <text x={midX} y={Math.min(y1, y2) - arcH + 2} textAnchor="middle" fontSize={10} fill="#d4a017">📜</text>
+                    <path d={path} fill="none" stroke="var(--data-alt)" strokeWidth={2} strokeLinecap="round" opacity={0.8} markerEnd="url(#arrow-gold)" />
+                    <circle cx={x1} cy={y1} r={4} fill="var(--data-alt)" opacity={0.9} />
+                    <text x={midX} y={Math.min(y1, y2) - arcH + 2} textAnchor="middle" fontSize={11} fill="var(--data-alt)">profeti</text>
                   </g>
                 );
               })}
               <defs>
                 <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                  <polygon points="0 0, 8 3, 0 6" fill="#888" />
+                  <polygon points="0 0, 8 3, 0 6" fill="var(--meta)" />
                 </marker>
                 <marker id="arrow-gold" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
-                  <polygon points="0 0, 7 2.5, 0 5" fill="#d4a017" />
+                  <polygon points="0 0, 7 2.5, 0 5" fill="var(--data-alt)" />
                 </marker>
               </defs>
             </svg>
@@ -780,7 +783,7 @@ export function TimelineView() {
                   const color = effectiveColor.get(it.id) ?? '#888';
                   return (
                     <span key={it.id} className={`dateless-chip ${selectedId === it.id ? 'selected' : ''}`} style={{ borderColor: color, background: color + '18' }} onClick={() => { select(it.id); jumpTo(it.id); }}>
-                      {it.imageId ? '🖼 ' : ''}{it.label}
+                      {it.imageId ? '▣ ' : ''}{it.label}
                     </span>
                   );
                 })}
@@ -791,7 +794,7 @@ export function TimelineView() {
         {/* M17: Pinned strip */}
         {pinnedIds.size > 0 && (
           <div className="pinned-strip">
-            <span className="pinned-label">📌 Fastgjorte:</span>
+            <span className="pinned-label">Fastgjorte:</span>
             {[...pinnedIds].map((id) => {
               const it = doc.items.find((x) => x.id === id);
               if (!it) return null;
@@ -804,43 +807,43 @@ export function TimelineView() {
             })}
           </div>
         )}
-        <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump · 📍 pin · Ctrl+klik = multivælg</p>
+        <p className="hint">Træk = pan · Hjul/+/− = zoom · Ctrl+←/→ = forrige/næste · Søg = hop til · Klik minimap = jump · ⇩ pin · Ctrl+klik = multivælg</p>
 
         {/* M19: Multi-select bulk actions */}
         {multiSelected.size > 0 && (
           <div className="bulk-bar">
             <span>{multiSelected.size} valgt</span>
-            <button onClick={() => { multiSelected.forEach((id) => togglePin(id)); }}>📍 Pin alle</button>
-            <button onClick={() => { multiSelected.forEach((id) => duplicateItem(id)); clearMulti(); }}>📋 Duplikér</button>
-            <label className="bulk-color" title="Sæt farve på alle valgte">🎨 <input type="color" onChange={(e) => { multiSelected.forEach((id) => setItemColor(id, e.target.value)); }} /></label>
-            <button onClick={() => { const tag = prompt('Nyt tag:'); if (tag) multiSelected.forEach((id) => { const it = doc.items.find((x) => x.id === id); if (it) updateItem(id, { tags: [...(it.tags ?? []), tag] }); }); }}>🏷 Tag</button>
-            <button onClick={() => { const ids = [...multiSelected]; ids.forEach((id) => removeItem(id)); clearMulti(); }} className="ctx-danger">🗑 Slet alle</button>
-            <button onClick={clearMulti}>✕ Ryd</button>
+            <button onClick={() => { multiSelected.forEach((id) => togglePin(id)); }}>Pin alle</button>
+            <button onClick={() => { multiSelected.forEach((id) => duplicateItem(id)); clearMulti(); }}>Duplikér</button>
+            <label className="bulk-color" title="Sæt farve på alle valgte"><input type="color" onChange={(e) => { multiSelected.forEach((id) => setItemColor(id, e.target.value)); }} /></label>
+            <button onClick={() => { const tag = prompt('Nyt tag:'); if (tag) multiSelected.forEach((id) => { const it = doc.items.find((x) => x.id === id); if (it) updateItem(id, { tags: [...(it.tags ?? []), tag] }); }); }}>Tag</button>
+            <button onClick={() => { const ids = [...multiSelected]; ids.forEach((id) => removeItem(id)); clearMulti(); }} className="ctx-danger">Slet alle</button>
+            <button onClick={clearMulti}>Ryd</button>
           </div>
         )}
 
         {/* M18: Context menu */}
         {ctxMenu && (
           <div className="ctx-menu" style={{ left: ctxMenu.x, top: ctxMenu.y }} onClick={() => setCtxMenu(null)}>
-            <button onClick={() => { select(ctxMenu.itemId); setPopupId(ctxMenu.itemId); }}>ℹ️ Vis detaljer</button>
+            <button onClick={() => { select(ctxMenu.itemId); setPopupId(ctxMenu.itemId); }}>Vis detaljer</button>
             <button onClick={() => {
               const it = doc.items.find((x) => x.id === ctxMenu.itemId);
               if (it) setFilter({ ...(activeFilter ?? { match: 'all' as const }), types: [it.typeId] });
-            }}>🔍 Filtrér på type</button>
+            }}>Filtrér på type</button>
             <button onClick={() => {
               const it = doc.items.find((x) => x.id === ctxMenu.itemId);
               if (it?.parentId) setFilter({ ...(activeFilter ?? { match: 'all' as const }), parentId: it.parentId });
-            }}>🌲 Vis søskende</button>
+            }}>Vis søskende</button>
             <button onClick={() => togglePin(ctxMenu.itemId)}>
-              {pinnedIds.has(ctxMenu.itemId) ? '📌 Fjern pin' : '📍 Fastgør'}
+              {pinnedIds.has(ctxMenu.itemId) ? 'Fjern pin' : 'Fastgør'}
             </button>
             {doc.items.find((x) => x.id === ctxMenu.itemId)?.parentId && (
-              <button onClick={() => jumpTo(doc.items.find((x) => x.id === ctxMenu.itemId)!.parentId!)}>⬆ Gå til forælder</button>
+              <button onClick={() => jumpTo(doc.items.find((x) => x.id === ctxMenu.itemId)!.parentId!)}>Gå til forælder</button>
             )}
             <hr />
-            <label className="ctx-color">🎨 Farve: <input type="color" value={doc.items.find((x) => x.id === ctxMenu.itemId)?.color ?? '#888888'} onChange={(e) => setItemColor(ctxMenu.itemId, e.target.value)} /></label>
-            <label className="ctx-type">📂 Type: <select value={doc.items.find((x) => x.id === ctxMenu.itemId)?.typeId ?? ''} onChange={(e) => updateItem(ctxMenu.itemId, { typeId: e.target.value })}>{doc.itemTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
-            <button className="ctx-danger" onClick={() => { if (confirm('Slet item?')) removeItem(ctxMenu.itemId); }}>🗑 Slet</button>
+            <label className="ctx-color">Farve: <input type="color" value={doc.items.find((x) => x.id === ctxMenu.itemId)?.color ?? '#888888'} onChange={(e) => setItemColor(ctxMenu.itemId, e.target.value)} /></label>
+            <label className="ctx-type">Type: <select value={doc.items.find((x) => x.id === ctxMenu.itemId)?.typeId ?? ''} onChange={(e) => updateItem(ctxMenu.itemId, { typeId: e.target.value })}>{doc.itemTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+            <button className="ctx-danger" onClick={() => { if (confirm('Slet item?')) removeItem(ctxMenu.itemId); }}>Slet</button>
           </div>
         )}
 
@@ -853,12 +856,12 @@ export function TimelineView() {
           const type = doc.itemTypes.find((t) => t.id === it.typeId);
           return (
             <div className="tl-popup" style={{ left: Math.max(10, Math.min(px, width - 260)) }}>
-              <button className="tl-popup-close" onClick={() => setPopupId(null)}>✕</button>
+              <button className="tl-popup-close" onClick={() => setPopupId(null)}>x</button>
               {it.imageId && <ItemImage imageId={it.imageId} size={120} />}
               <h4>{it.label}</h4>
               <div className="tl-popup-dates">{formatSpan(it.span)}</div>
-              {type && (() => { const tc = textColorFor(type.color); return <span className="tl-popup-type" style={{ background: type.color, color: tc.color, textShadow: tc.shadow }}>{type.name}</span>; })()}
-              {it.verseRefs?.length ? <div className="tl-popup-verses">📖 {it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</div> : null}
+              {type && (() => { const tc = textColorFor(type.color); return <span className="tl-popup-type" style={{ background: type.color, color: tc.color, textShadow: tc.shadow }}>{type.name}</span>; })()} /* taste-skill-ignore: tekstkontrast paa fyldt datamark */
+              {it.verseRefs?.length ? <div className="tl-popup-verses">Vers: {it.verseRefs.map((v) => `${v.bookSlug} ${v.ch}${v.vs ? ':' + v.vs : ''}`).join(', ')}</div> : null}
               {it.tags?.length ? <div className="tl-popup-tags">{it.tags.map((t) => <span key={t} className="tag-chip">{t}</span>)}</div> : null}
               {it.notes && <p className="tl-popup-notes">{it.notes}</p>}
               {(childrenMap.get(it.id)?.length ?? 0) > 0 && (

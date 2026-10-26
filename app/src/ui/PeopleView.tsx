@@ -1,4 +1,4 @@
-// **** Person-visning (M30): alle personer på ét ark — levetid, familie, fødested, kilder ****
+// **** Person-visning (M30): alle personer på ét ark - levetid, familie, fødested, kilder ****
 // Personer findes ud fra postens type ("Person"/"defaultPerson") eller via familie-relationer.
 // Klik på en person åbner inspektøren; klik på en slægtning hopper til den person.
 import { useMemo, useState } from 'react';

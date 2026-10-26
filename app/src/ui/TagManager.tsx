@@ -1,4 +1,4 @@
-// **** M23: Global tag-håndtering — vis alle tags, omdøb/slet på tværs af items ****
+// **** M23: Global tag-håndtering - vis alle tags, omdøb/slet på tværs af items ****
 import { useMemo, useState } from 'react';
 import { useApp } from '../store';
 
@@ -41,7 +41,7 @@ export function TagManager() {
 
   return (
     <details className="tag-manager">
-      <summary>🏷 Tags ({tagCounts.length})</summary>
+      <summary>Tags ({tagCounts.length})</summary>
       <div className="tm-list">
         {tagCounts.map(([tag, count]) => (
           <div key={tag} className="tm-row">
@@ -53,7 +53,7 @@ export function TagManager() {
               <span className="tm-tag" onDoubleClick={() => { setRenaming(tag); setNewName(tag); }} title="Dobbeltklik for at omdøbe">{tag}</span>
             )}
             <span className="tm-count">{count}</span>
-            <button className="tm-del" onClick={() => deleteTag(tag)} title="Slet tag">✕</button>
+            <button className="tm-del" onClick={() => deleteTag(tag)} title="Slet tag">x</button>
           </div>
         ))}
       </div>

@@ -5,3 +5,6 @@ dist/
 Import/*.aeon
 app/debug-render.ts
 Import/*.json
+
+.taste*/
+.taste*-preview.log

@@ -26,7 +26,7 @@ export default function App() {
   const doc = useApp((s) => s.doc);
   const importDoc = useApp((s) => s.importDoc);
   const mergeDoc = useApp((s) => s.mergeDoc);
-  const [view, setView] = useState<View>('ark');
+  const [view, setView] = useState<View>('tidslinje');
   const [importing, setImporting] = useState(false);
   // M20: Theme toggle
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('tl-theme') as 'dark' | 'light') || 'dark');
@@ -115,7 +115,7 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>📜 Timeline</h1>
+        <h1>Timeline</h1>
         <input
           id="doc"
           value={doc.name}
@@ -161,12 +161,12 @@ export default function App() {
             onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
           />
         </label>
-        <button className="tab" onClick={exportJson} title="Eksportér som JSON">💾 JSON</button>
-        <button className="tab" onClick={() => downloadHtml(doc)} title="Eksportér statisk HTML-tidslinje">🌐 HTML</button>
-        <button className="tab" onClick={() => downloadSvg(doc)} title="Eksportér SVG-billede">🖼 SVG</button>
-        <button className="tab" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Skift tema">{theme === 'dark' ? '☀️' : '🌙'} Tema</button>
+        <button className="tab" onClick={exportJson} title="Eksportér som JSON">Eksportér JSON</button>
+        <button className="tab" onClick={() => downloadHtml(doc)} title="Eksportér statisk HTML-tidslinje">HTML</button>
+        <button className="tab" onClick={() => downloadSvg(doc)} title="Eksportér SVG-billede">SVG</button>
+        <button className="tab" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Skift tema">{theme === 'dark' ? 'Lys' : 'Mørk'} tilstand</button>
         <label className="tab" title="Importér JSON-fil">
-          📂 JSON
+          Importér JSON
           <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
         </label>
         <select className="tab" onChange={(e) => {
@@ -201,7 +201,7 @@ export default function App() {
         <Inspector />
       </div>
       {saveStatus !== 'idle' && (
-        <span className={`save-indicator ${saveStatus}`}>{saveStatus === 'saving' ? 'Gemmer…' : '✓ Gemt'}</span>
+        <span className={`save-indicator ${saveStatus}`}>{saveStatus === 'saving' ? 'Gemmer…' : 'Gemt'}</span>
       )}
     </div>
   );

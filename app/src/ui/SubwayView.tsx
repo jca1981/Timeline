@@ -216,14 +216,14 @@ export function SubwayView() {
                       style={{ cursor: 'pointer' }}
                       onClick={(e) => { e.stopPropagation(); select(isSel ? null : st.item.id); }}
                     >
-                      <circle cx={cx} cy={y} r={isSel ? 8 : 6} fill={line.color} stroke={isSel ? '#fff' : '#222'} strokeWidth={isSel ? 2 : 1} />
+                      <circle cx={cx} cy={y} r={isSel ? 8 : 6} fill={line.color} stroke={isSel ? 'var(--fg)' : 'var(--bg)'} strokeWidth={isSel ? 2 : 1} />
                       {/* Label oven/under (skift for at undgå overlap) */}
                       <text
                         x={cx}
                         y={y + (si % 2 === 0 ? -14 : 18)}
                         textAnchor="middle"
-                        fill="#ccc"
-                        fontSize={10}
+                        fill="var(--fg)"
+                        fontSize={11}
                       >
                         {st.item.label.length > 14 ? st.item.label.slice(0, 13) + '…' : st.item.label}
                       </text>
@@ -249,8 +249,8 @@ export function SubwayView() {
               const midY = (from.y + to.y) / 2 - Math.abs(from.y - to.y) * 0.3 - 15;
               return (
                 <g key={rel.id} opacity={0.7}>
-                  <path d={`M${from.x},${from.y} Q${midX},${midY} ${to.x},${to.y}`} fill="none" stroke="#d4a017" strokeWidth={2} strokeDasharray="6 3" />
-                  <text x={midX} y={midY + 4} textAnchor="middle" fontSize={10} fill="#d4a017">📜</text>
+                  <path d={`M${from.x},${from.y} Q${midX},${midY} ${to.x},${to.y}`} fill="none" stroke="var(--data-alt)" strokeWidth={2} strokeDasharray="6 3" />
+                  <text x={midX} y={midY + 4} textAnchor="middle" fontSize={11} fill="var(--data-alt)">profeti</text>
                 </g>
               );
             });
@@ -274,7 +274,7 @@ export function SubwayView() {
               }
               return ticks.map((t, i) => (
                 <g key={i}>
-                  <line x1={t.x} y1={PAD_TOP - 20} x2={t.x} y2={PAD_TOP + lines.length * TRACK_H} stroke="#333" strokeWidth={0.5} />
+                  <line x1={t.x} y1={PAD_TOP - 20} x2={t.x} y2={PAD_TOP + lines.length * TRACK_H} stroke="var(--line)" strokeWidth={0.5} />
                   <text x={t.x} y={PAD_TOP - 25} textAnchor="middle" fill={readableOn('#888')} fontSize={9}>{t.label}</text>
                 </g>
               ));

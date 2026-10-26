@@ -80,11 +80,11 @@ export function SpreadsheetView() {
         <button onClick={() => useApp.setState({ doc: demoDoc(), selectedId: null })}>Indlæs bibel-demo</button>
         <button className="danger" onClick={clearAll}>Ryd alt</button>
         <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)} title="Sorteringsrækkefølge">
-          <option value="chrono">📅 Kronologisk</option>
-          <option value="tree">🌲 Hierarki</option>
-          <option value="manual">↕️ Manuel (træk)</option>
+          <option value="chrono">Kronologisk</option>
+          <option value="tree">Hierarki</option>
+          <option value="manual">Manuel (træk)</option>
         </select>
-        {rangeWarnings.length > 0 && <span className="warn" title="Børn uden for forælder-tidsramme">⚠️ {rangeWarnings.length} range-advarsel{rangeWarnings.length > 1 ? 'er' : ''}</span>}
+        {rangeWarnings.length > 0 && <span className="warn" title="Børn uden for forælder-tidsramme">{rangeWarnings.length} range-advarsel{rangeWarnings.length > 1 ? 'er' : ''}</span>}
         <span className="count">{doc.items.length} poster</span>
       </div>
       <table className="sheet">
@@ -119,7 +119,13 @@ export function SpreadsheetView() {
           ))}
           {filtered.length === 0 && (
             <tr>
-              <td colSpan={canDrag ? 11 : 10} className="empty">Ingen poster endnu — tryk "+ Tilføj post" eller "Indlæs bibel-demo".</td>
+              <td colSpan={canDrag ? 11 : 10} className="empty">
+                <p>Ingen poster endnu.</p>
+                <div className="empty-actions">
+                  <button className="primary" onClick={() => addItem()}>+ Tilføj post</button>
+                  <button onClick={() => useApp.setState({ doc: demoDoc(), selectedId: null })}>Indlæs bibel-demo</button>
+                </div>
+              </td>
             </tr>
           )}
         </tbody>
@@ -158,9 +164,9 @@ function Row({ item, error, depth, rangeWarn, canDrag, onDragStart, onDragOver, 
       <td style={{ paddingLeft: `${depth * 1.2}em` }}>
         {depth > 0 && <span className="tree-prefix">└ </span>}
         <input className="label" value={item.label} onChange={(e) => updateItem(item.id, { label: e.target.value })} />
-        {item.verseRefs?.length ? <span className="versebadge" title={`${item.verseRefs.length} vers-link(s)`}>📖{item.verseRefs.length}</span> : null}
-        {item.imageId ? <span className="versebadge" title="Har billede">🖼</span> : null}
-        {rangeWarn && <span className="warn" title={rangeWarn}> ⚠️</span>}
+        {item.verseRefs?.length ? <span className="versebadge" title={`${item.verseRefs.length} vers-link(s)`}>Vers {item.verseRefs.length}</span> : null}
+        {item.imageId ? <span className="versebadge" title="Har billede">Billede</span> : null}
+        {rangeWarn && <span className="warn" title={rangeWarn}>!</span>}
       </td>
       <td>
         <select value={item.typeId} onChange={(e) => updateItem(item.id, { typeId: e.target.value })}>
@@ -189,7 +195,7 @@ function Row({ item, error, depth, rangeWarn, canDrag, onDragStart, onDragOver, 
       </td>
       <td className="rowbtns">
         <button onClick={(e) => { e.stopPropagation(); duplicateItem(item.id); }} title="Dupliér">⧉</button>
-        <button className="danger" onClick={(e) => { e.stopPropagation(); removeItem(item.id); }} title="Slet">✕</button>
+        <button className="danger" onClick={(e) => { e.stopPropagation(); removeItem(item.id); }} title="Slet">x</button>
       </td>
     </tr>
   );

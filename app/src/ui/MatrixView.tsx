@@ -14,7 +14,7 @@ export function MatrixView() {
   const type = types.find((t) => t.id === typeId);
   const items = [...doc.items].sort((a, b) => a.label.localeCompare(b.label));
 
-  // M8: drill-down state — which cell was last clicked for detail view
+  // M8: drill-down state - which cell was last clicked for detail view
   const [detail, setDetail] = useState<{ fromId: string; toId: string } | null>(null);
 
   const detailFrom = detail ? items.find((it) => it.id === detail.fromId) : null;
@@ -95,7 +95,7 @@ export function MatrixView() {
         <div className="matrix-detail">
           <div className="detail-header">
             <span className="detail-arrow">{type?.name}</span>
-            <button className="close" onClick={() => setDetail(null)}>✕</button>
+            <button className="close" onClick={() => setDetail(null)}>x</button>
           </div>
           <div className="detail-body">
             <div className="detail-pair">
@@ -107,7 +107,7 @@ export function MatrixView() {
                 <span className="detail-role">{type?.reverseName}:</span> {detailTo.label}
               </button>
             </div>
-            {detailNote && <div className="detail-note">📝 {detailNote}</div>}
+            {detailNote && <div className="detail-note">{detailNote}</div>}
             <div className="detail-actions">
               <button className="danger" onClick={() => { toggleRelation(detail.fromId, detail.toId, typeId); setDetail(null); }}>Fjern relation</button>
             </div>

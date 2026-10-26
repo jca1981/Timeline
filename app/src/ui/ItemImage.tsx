@@ -30,7 +30,7 @@ export function ItemImage({ imageId, size = 150 }: { imageId?: string; size?: nu
       <img
         src={url}
         alt=""
-        style={{ maxWidth: size, maxHeight: size, objectFit: 'contain', borderRadius: 4, border: '1px solid #444' }}
+        style={{ maxWidth: size, maxHeight: size, objectFit: 'contain', borderRadius: 4, border: '1px solid var(--line)' }}
       />
     </div>
   );

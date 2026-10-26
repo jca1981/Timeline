@@ -73,9 +73,9 @@ export function EntitySidebar() {
     <aside className="entity-sidebar">
       <div className="entity-header">
         <strong>Entity-liste</strong>
-        {(activeFilter) && <button className="btn-link" onClick={clearFilter}>Ryd filter ✕</button>}
+        {(activeFilter) && <button className="btn-link" onClick={clearFilter}>Ryd filter</button>}
       </div>
-      <input className="sb-search" placeholder="🔎 Søg i liste..." value={sbQuery} onChange={(e) => setSbQuery(e.target.value)} />
+      <input className="sb-search" placeholder="Søg i liste..." value={sbQuery} onChange={(e) => setSbQuery(e.target.value)} />
 
       {Object.entries(filteredGrouped).map(([typeName, nodes]) => {
         const collapsed = collapsedIds.has('grp:' + typeName);

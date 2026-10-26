@@ -24,7 +24,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       <div className="crash" role="alert">
         <h2>Noget gik galt i {this.props.label ?? 'denne visning'}</h2>
         <p>
-          Dine data er ikke tabt — de ligger gemt lokalt. Prøv at prøve igen, eller skift visning.
+          Dine data er ikke tabt. De ligger gemt lokalt. Prøv at prøve igen, eller skift visning.
         </p>
         <pre>{String(error.message ?? error)}</pre>
         <div className="crash-actions">

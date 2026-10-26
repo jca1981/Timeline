@@ -104,7 +104,7 @@ function MiniTimeline({ filter }: { filter: Filter }) {
       <svg width={width} height={H}>
         {ticks.map((t, i) => (
           <g key={i}>
-            <line x1={x(t.jd)} y1={0} x2={x(t.jd)} y2={H} stroke="#333" strokeWidth={0.5} />
+            <line x1={x(t.jd)} y1={0} x2={x(t.jd)} y2={H} stroke="var(--line)" strokeWidth={0.5} />
             {t.label && <text x={x(t.jd) + 2} y={10} fontSize={9} fill={readableOn('#777')}>{t.label}</text>}
           </g>
         ))}
@@ -116,7 +116,7 @@ function MiniTimeline({ filter }: { filter: Filter }) {
           return (
             <g key={it.id}>
               <rect x={xa} y={i * ROW_H + 14} width={w} height={ROW_H - 4} rx={2} fill={color} opacity={0.85} />
-              {w > 80 && <text x={xa + 3} y={i * ROW_H + 25} fontSize={9} fill={textColorFor(color).color} style={{ textShadow: textColorFor(color).shadow }}>{it.label}</text>}
+              {w > 80 && <text x={xa + 3} y={i * ROW_H + 25} fontSize={9} fill={textColorFor(color).color} style={{ textShadow: textColorFor(color).shadow }} /* taste-skill-ignore: tekstkontrast paa fyldt datamark */>{it.label}</text>}
             </g>
           );
         })}
