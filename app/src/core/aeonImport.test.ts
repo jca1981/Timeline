@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { aeonToDV, importAeon, findAeonJson, aeonSourceKind, aeonReliability } from './aeonImport';
+import { aeonToDV, importAeon, findAeonJson, aeonSourceKind, aeonReliability, idList, allowedList } from './aeonImport';
 import { peopleOf, peopleStats } from './people';
 
 // ---- synthetisk .aeon-fil: billede-støj + JSON + padding/footer ----
@@ -206,6 +206,47 @@ describe('aeonImport (fileVersion 15)', () => {
     const rels = doc.relations!;
     expect(rels.find((r) => r.typeId === 'rt-parent')!.fromId).toBe('A');
     expect(rels).toHaveLength(2);
+  });
+
+  it('aeldre og nyere form for id-lister og property-valg', () => {
+    expect(idList(['x', 'y'])).toEqual(['x', 'y']);
+    expect(idList({ b: 1, a: 0, c: false })).toEqual(['a', 'b']); // 3.5: { id: raekkefoelge }
+    const valg = {
+      extremely: { id: 'extremely', label: 'Extremely', sortOrder: 0 },
+      very: { id: 'very', label: 'Very', sortOrder: 1 },
+      moderately: { id: 'moderately', label: 'Moderately', sortOrder: 2 },
+    };
+    expect(allowedList(valg).map((o) => o.id)).toEqual(['extremely', 'very', 'moderately']);
+    expect(allowedList([{ id: 'a', label: 'A' }]).map((o) => o.id)).toEqual(['a']);
+    expect(aeonReliability('very', { id: 'reliability', format: 'list', allowed: valg })).toBe(2);
+  });
+
+  it('poster med links/attachments som maps og kilder i 3.5-form', () => {
+    const valg = {
+      extremely: { id: 'extremely', label: 'Extremely', sortOrder: 0 },
+      very: { id: 'very', label: 'Very', sortOrder: 1 },
+      moderately: { id: 'moderately', label: 'Moderately', sortOrder: 2 },
+    };
+    const raw35: any = structuredClone(RAW15);
+    raw35.core.definitions.references.byId.sourceRef = { id: 'sourceRef', label: 'Source', types: { kildeType: true } };
+    raw35.core.definitions.properties = { byId: { reliability: { id: 'reliability', label: 'Reliability', format: 'list', allowed: valg } } };
+    raw35.core.data.itemsById.A.links = { ATT1: 0 };
+    raw35.core.data.itemsById.A.attachments = { ATT2: 1 };
+    raw35.core.data.itemsById.S = { id: 'S', type: 'kildeType', label: 'Min kilde', propertyValues: { reliability: 'very' }, links: { ATT3: 0 } };
+    raw35.core.data.itemDatesById.S = { startDate: { era: 1, year: 1, precision: -1 } };
+    raw35.core.data.attachmentsById = {
+      ATT1: { id: 'ATT1', path: 'https://eksempel.dk/artikel', label: 'artikel' },
+      ATT2: { id: 'ATT2', path: 'aeonEmbedded://attachments/ATT2', label: 'foto.png' },
+      ATT3: { id: 'ATT3', path: 'https://eksempel.dk/kilde', label: 'kilde' },
+    };
+    const { doc } = importAeon(wrapArchive(png, JSON.stringify(raw35), [{ id: 'IMGID12345678', filename: 'esra.png', offset: 0, size: png.length }]));
+    expect(doc.items.find((i) => i.id === 'A')!.tags).toEqual(['Præst']);
+    expect(doc.items.some((i) => i.id === 'S')).toBe(false); // kilde-element hoerer til biblioteket
+    const kilder = doc.sources!;
+    expect(kilder).toHaveLength(1);
+    expect(kilder[0].title).toBe('Min kilde');
+    expect(kilder[0].url).toBe('https://eksempel.dk/kilde');
+    expect(kilder[0].reliability).toBe(2);
   });
 
   it('laser billeder ud af indexed archive (header-relative offsets, base58-id)', () => {

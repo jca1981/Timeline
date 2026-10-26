@@ -32,8 +32,9 @@ interface AeonItem {
   links?: string[]; // M29: web-laenker (attachment-id'er med http-sti)
   propertyValues?: Record<string, unknown>;
 }
-interface AeonRefDef { id: string; label?: string; inverseLabel?: string; key?: string; types?: string[] }
-interface AeonPropDef { id: string; label?: string; key?: string; format?: string; allowed?: { id: string; label?: string }[] }
+interface AeonRefDef { id: string; label?: string; inverseLabel?: string; key?: string; types?: string[] | Record<string, boolean> }
+interface AeonOption { id: string; label?: string; sortOrder?: number }
+interface AeonPropDef { id: string; label?: string; key?: string; format?: string; allowed?: AeonOption[] | Record<string, AeonOption | boolean> }
 interface AeonAttachment { id: string; path?: string; label?: string }
 interface AeonRaw {
   definitions: {
@@ -89,11 +90,41 @@ function matchJsonEnd(bytes: Uint8Array, start: number): number {
  * Alt mapper til den flade form, resten af importen kan kaede til.
  */
 /** Egenskabsdefinitioner som id → def (Aeon gemmer dem som { byId }, dict eller array). */
+const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+
+/**
+ * Aeon gemmer id-lister to maeder afhængigt af version: `['id', ...]` (ældre) eller
+ * `{ id: raekkefoelge }` / `{ id: true }` (nyere, fx 3.5). Altid array ud.
+ */
+export function idList(v: unknown): string[] {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string');
+  if (v && typeof v === 'object') {
+    const rec = v as Record<string, unknown>;
+    return Object.keys(rec)
+      .filter((k) => rec[k] !== false)
+      .sort((a, b) => num(rec[a]) - num(rec[b]));
+  }
+  return [];
+}
+
+/** Valgmuligheder i property-def: array (aeldre) of { valgId: {id,label,sortOrder} } (nyere). */
+export function allowedList(v: unknown): AeonOption[] {
+  if (Array.isArray(v)) return v.filter((o) => o && typeof o === 'object') as AeonOption[];
+  if (v && typeof v === 'object') {
+    return Object.entries(v as Record<string, unknown>)
+      .map(([id, o]) => (o && typeof o === 'object' ? ({ ...(o as AeonOption), id: (o as AeonOption).id ?? id }) : { id }))
+      .sort((a, b) => num(a.sortOrder) - num(b.sortOrder));
+  }
+  return [];
+}
+
 function propsById(p: any): Record<string, AeonPropDef> {
   const src = p?.byId ?? p;
   if (!src) return {};
-  if (Array.isArray(src)) return Object.fromEntries(src.map((x: any) => [x?.id ?? '', x]));
-  return src as Record<string, AeonPropDef>;
+  const map: Record<string, AeonPropDef> = Array.isArray(src)
+    ? Object.fromEntries(src.map((x: any) => [x?.id ?? '', x]))
+    : (src as Record<string, AeonPropDef>);
+  return Object.fromEntries(Object.entries(map).map(([k, def]) => [k, { ...def, allowed: allowedList(def?.allowed) }]));
 }
 
 export function normalizeAeonDoc(j: any): AeonDoc {
@@ -111,8 +142,10 @@ export function normalizeAeonDoc(j: any): AeonDoc {
     items[id] = {
       ...raw,
       super: raw.super ?? hierarchy[id]?.super ?? null,
-      // nyere form opbevarer tags som { tagId: raekkefoelge } i stedet for en array af id'er
-      tags: Array.isArray(tags) ? tags : Object.keys(tags ?? {}),
+      // nyere form opbevarer tags/links/attachments som { id: raekkefoelge } i stedet for en array af id'er
+      tags: idList(tags),
+      links: idList(raw.links),
+      attachments: idList(raw.attachments),
       // datoer ligger adskilt i itemDatesById (startDate er den viste vaerdi, preferred* er brugers valg)
       startDate: d.startDate ?? d.preferredStartDate ?? null,
       duration: d.duration ?? d.preferredDuration ?? null,
@@ -126,7 +159,7 @@ export function normalizeAeonDoc(j: any): AeonDoc {
     fileVersion: j?.fileVersion,
     definitions: {
       types: { byId: defs.types?.byId ?? {} },
-      references: { byId: defs.references?.byId ?? {} },
+      references: { byId: Object.fromEntries(Object.entries(defs.references?.byId ?? {}).map(([k, d]: [string, any]) => [k, { ...d, types: idList(d?.types) }])) },
       colors: { byId: defs.colors?.byId ?? {} },
       properties: { byId: propsById(defs.properties) },
     },
@@ -254,7 +287,7 @@ function isSourceRefDef(def: AeonRefDef): boolean {
 export function aeonSourceTypeDefs(raw: AeonRaw): Set<string> {
   const out = new Set<string>();
   for (const def of Object.values(raw.definitions.references?.byId ?? {})) {
-    if (isSourceRefDef(def)) for (const t of def.types ?? []) out.add(t);
+    if (isSourceRefDef(def)) for (const t of idList(def.types)) out.add(t);
   }
   for (const [id, t] of Object.entries(raw.definitions.types?.byId ?? {})) {
     if (t.key === 'source' || SOURCE_LABEL_RE.test((t.label ?? '').trim())) out.add(id);
@@ -289,7 +322,7 @@ export function aeonSourceKind(value: unknown): SourceKind | undefined {
  */
 export function aeonReliability(value: unknown, def?: AeonPropDef): number | undefined {
   if (value == null || value === '') return undefined;
-  const allowed = def?.allowed ?? [];
+  const allowed = allowedList(def?.allowed);
   if (typeof value === 'number' && Number.isFinite(value)) {
     if (def?.format !== 'percentage' && allowed.length && value >= 0 && value < allowed.length) {
       return allowed.length - Math.round(value); // index 0 = bedste valg
@@ -312,7 +345,7 @@ function aeonAttachmentsMap(raw: AeonRaw): Record<string, AeonAttachment> {
 }
 
 function firstHttpUrl(item: AeonItem, att: Record<string, AeonAttachment>): string | null {
-  for (const id of [...(item.links ?? []), ...(item.attachments ?? [])]) {
+  for (const id of [...idList(item.links), ...idList(item.attachments)]) {
     const u = safeUrl(att[id]?.path);
     if (u) return u;
   }
@@ -338,7 +371,7 @@ export function aeonSources(raw: AeonRaw): Source[] {
     const st = propEntry(it, props, 'sourceType');
     const kind = aeonSourceKind(st?.value);
     if (kind) s.kind = kind;
-    const medium = st?.def?.allowed?.find((o) => o.id === st.value)?.label;
+    const medium = allowedList(st?.def?.allowed).find((o) => o.id === st?.value)?.label;
     if (medium) s.medium = medium;
     const rel = propEntry(it, props, 'reliability');
     const rv = aeonReliability(rel?.value, rel?.def);
