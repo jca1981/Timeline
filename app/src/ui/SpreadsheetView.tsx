@@ -77,7 +77,7 @@ export function SpreadsheetView() {
     <div>
       <div className="toolbar">
         <button className="primary" onClick={() => addItem()}>+ Tilføj post</button>
-        <button onClick={() => useApp.setState({ doc: demoDoc(), selectedId: null })}>Indlæs bibel-demo</button>
+        <button onClick={() => useApp.getState().importDoc(demoDoc())}>Indlæs bibel-demo</button>
         <button className="danger" onClick={clearAll}>Ryd alt</button>
         <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)} title="Sorteringsrækkefølge">
           <option value="chrono">Kronologisk</option>
@@ -123,7 +123,7 @@ export function SpreadsheetView() {
                 <p>Ingen poster endnu.</p>
                 <div className="empty-actions">
                   <button className="primary" onClick={() => addItem()}>+ Tilføj post</button>
-                  <button onClick={() => useApp.setState({ doc: demoDoc(), selectedId: null })}>Indlæs bibel-demo</button>
+                  <button onClick={() => useApp.getState().importDoc(demoDoc())}>Indlæs bibel-demo</button>
                 </div>
               </td>
             </tr>

@@ -46,7 +46,9 @@ function usePreview(): Preview {
 }
 
 function load(doc: ReturnType<typeof demoDoc>) {
-  useApp.setState({ doc, selectedId: null });
+  // importDoc ( ikke bare setState): persister og saetter hydrate-guard, ellers kan
+  // IndexedDB-hydrate paa en frisk profil overskrive handlingen faa millisekunder efter klik
+  useApp.getState().importDoc(doc);
 }
 
 /** Dokument uden poster: handlinger + aksen med skabelonens egne bjælker. */
