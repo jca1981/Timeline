@@ -12,6 +12,6 @@ createRoot(document.getElementById('root')!).render(
 // Register Service Worker for PWA/offline (M10)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/Timeline/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/Timeline/sw.js').catch((err) => console.error('SW-registrering fejlede', err));
   });
 }

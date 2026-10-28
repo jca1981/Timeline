@@ -21,12 +21,12 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-const sameOriginJson = (res: Response) =>
+const sameOriginJson = (res) =>
   res.ok && res.type === 'default' && new URL(res.url).origin === self.location.origin &&
   !/text\/html/i.test(res.headers.get('content-type') ?? '');
 
 /** Gem kun pålidelige same-origin-svar (aldrig en 404/HTML-fallback som "json"). */
-async function cacheGood(request: Request, response: Response): Promise<void> {
+async function cacheGood(request, response) {
   if (!sameOriginJson(response)) return;
   const cache = await caches.open(CACHE_NAME);
   await cache.put(request, response.clone());
