@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useApp } from '../store';
 import { toJD } from '../core/jdn';
+import { applyFilter } from '../core/filters';
 import type { Filter } from '../model/doc';
 
 export function FilterBar() {
@@ -126,7 +127,7 @@ export function FilterBar() {
 
       {activeFilter && (
         <span className="filter-active dim">
-          ({doc.items.filter((it) => { const fl = activeFilter; const t = fl.types?.includes(it.typeId) ?? true; const x = !fl.text || `${it.label} ${it.notes ?? ''}`.toLowerCase().includes(fl.text.toLowerCase()); return t && x; }).length}/{doc.items.length} vist)
+          ({applyFilter(doc.items, activeFilter).length}/{doc.items.length} vist)
         </span>
       )}
     </div>
