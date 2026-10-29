@@ -167,3 +167,27 @@ describe('commit()-invariant (issue #1)', () => {
     expect(persisted).toEqual(st().doc); // state og lager skal altid være ens
   });
 });
+
+// **** Issue #7: setSpan med ugyldig dato → fejl i errors-map, raawærdi bevaret, ingen korruption ****
+describe('setSpan validering (#7)', () => {
+  let useApp: Awaited<ReturnType<typeof freshStore>>;
+  beforeEach(async () => {
+    useApp = await freshStore();
+  });
+
+  it('ugyldig dag → errors[id] sat og span starter som indtastet', () => {
+    const id = useApp.getState().addItem({ typeId: 'event', label: 'X' });
+    useApp.getState().setSpan(id, { start: { y: 2024, mo: 2, d: 31, precision: 'day' } });
+    expect(useApp.getState().errors[id]).toBeTruthy();
+    const it = useApp.getState().doc.items.find((i) => i.id === id)!;
+    expect(it.span.start).toEqual({ y: 2024, mo: 2, d: 31, precision: 'day' }); // raaværdi, ej rullet til mar
+  });
+
+  it('gyldig dato → fejl fjernet igen', () => {
+    const id = useApp.getState().addItem({ typeId: 'event', label: 'Y' });
+    useApp.getState().setSpan(id, { start: { y: 2024, mo: 2, d: 31, precision: 'day' } });
+    expect(useApp.getState().errors[id]).toBeTruthy();
+    useApp.getState().setSpan(id, { start: { y: 2024, mo: 2, d: 28, precision: 'day' } });
+    expect(useApp.getState().errors[id]).toBeUndefined();
+  });
+});

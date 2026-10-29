@@ -78,6 +78,8 @@ input.label { width: 100%; min-width: 140px; }
 input[type='number'] { width: 58px; }
 input[type='checkbox'] { accent-color: var(--accent); }
 .dedit { display: inline-flex; gap: 4px; align-items: center; }
+/* issue #7: ugyldig dato (31. feb / md 13) markeres roed i seglv dato-editoren */
+.dedit.invalid input { border-color: #e5484d; background: rgba(229, 72, 77, 0.12); }
 .bcbtn { padding: 4px 7px; font-size: 13px; }
 .bcbtn.on { background: var(--active); border-color: var(--line); color: var(--fg); }
 .range { color: var(--fg); white-space: nowrap; font-variant-numeric: tabular-nums; }

@@ -1,6 +1,6 @@
 // **** Span-sync: start ↔ duration ↔ end holdes altid matematiske konsistente (Aeon-regel) ****
 import type { Duration, Precision, Span } from './types';
-import { addDuration, diffDuration, negateDuration, toJD } from './jdn';
+import { addDuration, diffDuration, negateDuration, toJD, isValidDate } from './jdn';
 
 export interface SyncResult {
   span?: Span;
@@ -21,6 +21,14 @@ export function syncSpan(next: Span): SyncResult {
   if (!next.start) {
     // dato-løst item: gem kun det brugeren har indtastet
     return { span: next };
+  }
+  // issue #7: kalender-ugyldige datoer (31. feb, måned 13) aafernes med dansk besked.
+  // Raawerdien bevares af setSpan (gaar i errors-mappen) saa brugeren kan rette feltet.
+  if (next.start && !isValidDate(next.start)) {
+    return { span: next, error: 'ugyldig startdato (maaned 1-12, dag inden for maaneden)' };
+  }
+  if (next.end && !isValidDate(next.end)) {
+    return { span: next, error: 'ugyldig slutdato (maaned 1-12, dag inden for maaneden)' };
   }
   if (next.duration && next.end) {
     // begge givet — valider konsistens

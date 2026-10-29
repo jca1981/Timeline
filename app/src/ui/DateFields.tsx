@@ -1,6 +1,7 @@
 // **** Præcisions-bevidste dato-input: år/måned/dag valgfri + f.Kr./e.Kr.-knap (bibel-venlig) ****
 import type { DateValue, Duration } from '../core/types';
 import { displayYear } from '../core/format';
+import { isValidDate } from '../core/jdn';
 
 function splitAstr(y: number): { shown: number; bc: boolean } {
   return y < 1 ? { shown: 1 - y, bc: true } : { shown: y, bc: false };
@@ -27,9 +28,10 @@ export function DateValueEditor({ value, onChange }: { value?: DateValue; onChan
 
   // hjælp: hvis måned/dag tastes før år, antag indeværende år
   const fallbackY = () => (value ? value.y : new Date().getFullYear());
+  const invalid = !!value && !isValidDate(value); // issue #7: roed markering + dansk titel ved 31. feb / md 13
 
   return (
-    <span className="dedit">
+    <span className={`dedit${invalid ? ' invalid' : ''}`} title={invalid ? 'Ugyldig dato (måned 1-12, dag inden for måneden)' : undefined}>
       <input
         type="number"
         min={1}
