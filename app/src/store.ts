@@ -521,7 +521,7 @@ export const useApp = create<AppState>((set, get) => ({
   clipboard: [],
   copyItems: (ids) => {
     const items = get().doc.items.filter((it) => ids.includes(it.id));
-    set({ clipboard: JSON.parse(JSON.stringify(items)) });
+    set({ clipboard: structuredClone(items) });
   },
   pasteClipboard: () => {
     const cbs = get().clipboard;

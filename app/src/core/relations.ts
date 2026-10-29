@@ -46,7 +46,7 @@ export function generations(doc: TimelineDoc, ancestorId: string, descendantId: 
   while (frontier.length) {
     if (frontier.includes(ancestorId)) return depth;
     const next: string[] = [];
-    for (const id of frontier) for (const p of parentsOf.get(id) ?? []) if (!visited.has(p)) (visited.add(p), next.push(p));
+    for (const id of frontier) for (const p of parentsOf.get(id) ?? []) if (!visited.has(p)) { visited.add(p); next.push(p); }
     frontier = next;
     depth++;
     if (depth > 200) break; // sløjfe-guard

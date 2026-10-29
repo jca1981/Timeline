@@ -20,7 +20,7 @@ export function MatrixView() {
   const detailFrom = detail ? items.find((it) => it.id === detail.fromId) : null;
   const detailTo = detail ? items.find((it) => it.id === detail.toId) : null;
   const detailRel = detail ? findRelation(doc, detail.fromId, detail.toId, typeId) : null;
-  const detailNote = (detailRel as any)?.note as string | undefined;
+  const detailNote = detailRel?.note;
 
   // M8: shared-links summary per item (shown in drill-down)
   const detailLinksFrom = detailFrom ? linksOf(doc, detailFrom.id).filter((l) => l.type.id === typeId) : [];
@@ -68,7 +68,7 @@ export function MatrixView() {
                   if (c.id === r.id) return <td key={c.id} className="diag" />;
                   const rel = findRelation(doc, r.id, c.id, typeId);
                   const isDetail = detail?.fromId === r.id && detail?.toId === c.id;
-                  const note = (rel as any)?.note as string | undefined;
+                  const note = rel?.note;
                   return (
                     <td
                       key={c.id}
