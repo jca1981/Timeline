@@ -159,22 +159,13 @@ export const useApp = create<AppState>((set, get) => ({
     if (!types.length) set((s) => ({ doc: { ...s.doc, itemTypes: DEFAULT_TYPES } }));
     const type = (get().doc.itemTypes[0] ?? DEFAULT_TYPES[0]);
     const item: Item = { id, typeId: type.id, label: 'Ny post', span: { start: { y: new Date().getFullYear(), precision: 'year' } }, ...partial };
-    set((s) => {
-      pushSnapshot(s.doc);
-      const doc = { ...s.doc, items: [...s.doc.items, item] };
-      persist(doc);
-      return { doc };
-    });
+    commit({ ...get().doc, items: [...get().doc.items, item] });
     return id;
   },
 
   updateItem: (id, patch) => {
-    set((s) => {
-      pushSnapshot(s.doc);
-      const doc = { ...s.doc, items: s.doc.items.map((it) => (it.id === id ? { ...it, ...patch } : it)) };
-      persist(doc);
-      return { doc };
-    });
+    const doc = get().doc;
+    commit({ ...doc, items: doc.items.map((it) => (it.id === id ? { ...it, ...patch } : it)) });
   },
 
   setSpan: (id, next) => {
@@ -185,36 +176,29 @@ export const useApp = create<AppState>((set, get) => ({
       get().updateItem(id, { span: next });
       return;
     }
-    set((s) => {
-      const errors = { ...s.errors };
-      delete errors[id];
-      const doc = { ...s.doc, items: s.doc.items.map((it) => (it.id === id ? { ...it, span: r.span! } : it)) };
-      persist(doc);
-      return { doc, errors };
-    });
+    const errors = { ...get().errors };
+    delete errors[id];
+    const doc = get().doc;
+    commit({ ...doc, items: doc.items.map((it) => (it.id === id ? { ...it, span: r.span! } : it)) }, { errors });
   },
 
   setItemColor: (id, color) => {
-    set((s) => {
-      pushSnapshot(s.doc);
-      const doc = { ...s.doc, items: s.doc.items.map((it) => (it.id === id ? { ...it, color } : it)) };
-      persist(doc);
-      return { doc };
-    });
+    const doc = get().doc;
+    commit({ ...doc, items: doc.items.map((it) => (it.id === id ? { ...it, color } : it)) });
   },
 
   removeItem: (id) => {
-    set((s) => {
-      pushSnapshot(s.doc);
-      const doc = {
-        ...s.doc,
-        items: s.doc.items.filter((it) => it.id !== id).map((it) => (it.parentId === id ? { ...it, parentId: undefined } : it)),
-        relations: (s.doc.relations ?? []).filter((r) => r.fromId !== id && r.toId !== id),
-        dependencies: (s.doc.dependencies ?? []).filter((d) => d.blockerId !== id && d.blockedId !== id),
-      };
-      persist(doc);
-      return { doc, selectedId: s.selectedId === id ? null : s.selectedId };
-    });
+    const doc = get().doc;
+    const sel = get().selectedId;
+    commit(
+      {
+        ...doc,
+        items: doc.items.filter((it) => it.id !== id).map((it) => (it.parentId === id ? { ...it, parentId: undefined } : it)),
+        relations: (doc.relations ?? []).filter((r) => r.fromId !== id && r.toId !== id),
+        dependencies: (doc.dependencies ?? []).filter((d) => d.blockerId !== id && d.blockedId !== id),
+      },
+      { selectedId: sel === id ? null : sel },
+    );
   },
 
   duplicateItem: (id) => {
@@ -288,22 +272,14 @@ export const useApp = create<AppState>((set, get) => ({
     if (fromId === toId) return; // ingen selvrelation
     const dup = (get().doc.relations ?? []).find((r) => r.typeId === typeId && r.fromId === fromId && r.toId === toId);
     if (dup) return;
-    set((s) => {
-      pushSnapshot(s.doc);
-      const rel: Relation = { id: newId(), fromId, toId, typeId, note };
-      const doc = { ...s.doc, relations: [...(s.doc.relations ?? []), rel] };
-      persist(doc);
-      return { doc };
-    });
+    const rel: Relation = { id: newId(), fromId, toId, typeId, note };
+    const doc = get().doc;
+    commit({ ...doc, relations: [...(doc.relations ?? []), rel] });
   },
 
   removeRelation: (id) => {
-    set((s) => {
-      pushSnapshot(s.doc);
-      const doc = { ...s.doc, relations: (s.doc.relations ?? []).filter((r) => r.id !== id) };
-      persist(doc);
-      return { doc };
-    });
+    const doc = get().doc;
+    commit({ ...doc, relations: (doc.relations ?? []).filter((r) => r.id !== id) });
   },
 
   toggleRelation: (fromId, toId, typeId) => {
@@ -325,7 +301,7 @@ export const useApp = create<AppState>((set, get) => ({
     const dup = findDuplicateSource(list, { title, locator: cand.locator, url: cand.url });
     if (dup) return dup.id; // ingen dubletter — samme bog to gange er en fejlkilde
     const src: Source = { id: newId(), ...cand, title: title || '(titel mangler)' };
-    persist({ ...doc, sources: [...list, src] });
+    commit({ ...doc, sources: [...list, src] });
     return src.id;
   },
 
@@ -333,12 +309,12 @@ export const useApp = create<AppState>((set, get) => ({
     const doc = get().doc;
     const list = doc.sources ?? [];
     if (!list.some((x) => x.id === id)) return;
-    persist({ ...doc, sources: list.map((x) => (x.id === id ? { ...x, ...patch, id } : x)) });
+    commit({ ...doc, sources: list.map((x) => (x.id === id ? { ...x, ...patch, id } : x)) });
   },
 
   removeSource: (id) => {
     const doc = get().doc;
-    persist({
+    commit({
       ...doc,
       sources: (doc.sources ?? []).filter((x) => x.id !== id),
       items: doc.items.map((it) => {
@@ -370,23 +346,14 @@ export const useApp = create<AppState>((set, get) => ({
     const dup = (doc.dependencies ?? []).find((d) => d.blockerId === blockerId && d.blockedId === blockedId && d.kind === kind);
     if (dup) return null;
     const id = newId();
-    set((s) => {
-      pushSnapshot(s.doc);
-      const dep: Dependency = { id, blockerId, blockedId, kind };
-      const doc = { ...s.doc, dependencies: [...(s.doc.dependencies ?? []), dep] };
-      persist(doc);
-      return { doc };
-    });
+    const dep: Dependency = { id, blockerId, blockedId, kind };
+    commit({ ...doc, dependencies: [...(doc.dependencies ?? []), dep] });
     return id;
   },
 
   removeDependency: (id) => {
-    set((s) => {
-      pushSnapshot(s.doc);
-      const doc = { ...s.doc, dependencies: (s.doc.dependencies ?? []).filter((d) => d.id !== id) };
-      persist(doc);
-      return { doc };
-    });
+    const doc = get().doc;
+    commit({ ...doc, dependencies: (doc.dependencies ?? []).filter((d) => d.id !== id) });
   },
 
   // ---- M4: Filtre ----
@@ -394,23 +361,15 @@ export const useApp = create<AppState>((set, get) => ({
   setFilter: (f) => set({ activeFilter: f }),
 
   saveFilter: (name, f) => {
-    set((s) => {
-      pushSnapshot(s.doc);
-      const doc = { ...s.doc, savedFilters: { ...(s.doc.savedFilters ?? {}), [name]: f } };
-      persist(doc);
-      return { doc };
-    });
+    const doc = get().doc;
+    commit({ ...doc, savedFilters: { ...(doc.savedFilters ?? {}), [name]: f } });
   },
 
   removeSavedFilter: (name) => {
-    set((s) => {
-      pushSnapshot(s.doc);
-      const sf = { ...(s.doc.savedFilters ?? {}) };
-      delete sf[name];
-      const doc = { ...s.doc, savedFilters: sf };
-      persist(doc);
-      return { doc };
-    });
+    const doc = get().doc;
+    const sf = { ...(doc.savedFilters ?? {}) };
+    delete sf[name];
+    commit({ ...doc, savedFilters: sf });
   },
 
   // ---- M9: Multi-doc profiles ----
@@ -469,6 +428,8 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   // ---- M10: Undo/Redo ----
+  // Bearbejder IKKE gennem commit(): undo/redo må ikke selv presse et snapshot,
+  // så ville en undo ikke kunne redoes.
   undoAction: () => {
     const cur = get().doc;
     const prev = histUndo(cur);
@@ -518,12 +479,16 @@ export const useApp = create<AppState>((set, get) => ({
   pasteClipboard: () => {
     const cbs = get().clipboard;
     if (!cbs.length) return;
-    set((s) => {
-      pushSnapshot(s.doc);
-      const newItems = cbs.map((it) => ({ ...it, id: newId() }));
-      const doc = { ...s.doc, items: [...s.doc.items, ...newItems] };
-      persist(doc);
-      return { doc };
-    });
+    const doc = get().doc;
+    const newItems = cbs.map((it) => ({ ...it, id: newId() }));
+    commit({ ...doc, items: [...doc.items, ...newItems] });
   },
 }));
+
+/** Atomar mutations-vej (issue #1): snapshot + persist + set i én pakke,
+ * så en action ikke kan "glemme" at opdatere UI'et eller gøre sig fortrydelig. */
+function commit(next: TimelineDoc, extra?: Partial<AppState>) {
+  pushSnapshot(useApp.getState().doc);
+  persist(next);
+  useApp.setState({ doc: next, ...extra });
+}
