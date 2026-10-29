@@ -216,7 +216,7 @@ export const useApp = create<AppState>((set, get) => ({
       pushSnapshot(get().doc);
       const doc = emptyDoc();
       persist(doc);
-      clearHistory(); // fresh start for new doc
+      // NB: clearHistory() var her engang — det gjorde Ryd alt ufortrydeligt (issue #3)
       return { doc, errors: {}, selectedId: null, activeFilter: null };
     });
   },
@@ -229,7 +229,7 @@ export const useApp = create<AppState>((set, get) => ({
     doc.relations ??= [];
     doc.dependencies ??= [];
     doc.savedFilters ??= {};
-    clearHistory();
+    // NB: clearHistory() var her engang — det gjorde import ufortrydelig (issue #3)
     persist(doc);
     lastDocSetTime = Date.now();
     set({ doc, errors: {}, selectedId: null, activeFilter: null });

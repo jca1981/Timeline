@@ -119,6 +119,35 @@ describe('issue #4: reorder + dokumentnavn', () => {
   });
 });
 
+describe('issue #3: destriuktive handlinger kan fortrydes', () => {
+  let useApp: Awaited<ReturnType<typeof freshStore>>;
+  beforeEach(async () => {
+    useApp = await freshStore();
+  });
+
+  it('clearAll kan fortrydes og genopretter poster + lager', () => {
+    const st = () => useApp.getState();
+    st().addItem({ label: 'Fad1' });
+    st().addItem({ label: 'Fad2' });
+    st().clearAll();
+    expect(st().doc.items.length).toBe(0);
+    st().undoAction();
+    expect(st().doc.items.map((i) => i.label)).toEqual(['Fad1', 'Fad2']);
+    expect(JSON.parse(localStorage.getItem(LS_KEY)!).items.length).toBe(2);
+  });
+
+  it('importDoc (demo/skabelon) kan fortrydes', () => {
+    const st = () => useApp.getState();
+    st().addItem({ label: 'Min lokale' });
+    const before = st().doc;
+    st().importDoc({ ...before, name: 'Importeret', items: [...before.items, { ...before.items[0], id: 'ny-1', label: 'Importert' }] });
+    expect(st().doc.items.length).toBe(2);
+    st().undoAction();
+    expect(st().doc.items.map((i) => i.label)).toEqual(['Min lokale']);
+    expect(JSON.parse(localStorage.getItem(LS_KEY)!).items.length).toBe(1);
+  });
+});
+
 describe('commit()-invariant (issue #1)', () => {
   let useApp: Awaited<ReturnType<typeof freshStore>>;
   beforeEach(async () => {

@@ -67,8 +67,8 @@ export function SpreadsheetView() {
     <div>
       <div className="toolbar">
         <button className="primary" onClick={() => addItem()}>+ Tilføj post</button>
-        <button onClick={() => useApp.getState().importDoc(demoDoc())}>Indlæs bibel-demo</button>
-        <button className="danger" onClick={clearAll}>Ryd alt</button>
+        <button onClick={() => { if (doc.items.length === 0 || window.confirm('Indlæs bibel-demo? Nuværende indhold erstattes (Ctrl+Z fortryder).')) useApp.getState().importDoc(demoDoc()); }}>Indlæs bibel-demo</button>
+        <button className="danger" onClick={() => { if (doc.items.length === 0 || window.confirm('Ryd alle poster? Ctrl+Z fortryder.')) clearAll(); }}>Ryd alt</button>
         <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)} title="Sorteringsrækkefølge">
           <option value="chrono">Kronologisk</option>
           <option value="tree">Hierarki</option>
