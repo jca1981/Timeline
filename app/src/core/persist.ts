@@ -98,21 +98,20 @@ export async function listDocs(): Promise<DocMeta[]> {
 export async function saveDocById(id: string, data: unknown, name: string): Promise<void> {
   try {
     const db = await openDB();
-    // Save the doc itself
+    // EEN readwrite-transaktion: undgå race hvor to samtidige saves læser samme
+    // gamle liste og overskriver hinanden (mistede dokumenter i listen).
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).put(data, id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-    // Update the list
-    const list = await listDocs();
-    const meta: DocMeta = { id, name, updatedAt: Date.now() };
-    const idx = list.findIndex((d) => d.id === id);
-    if (idx >= 0) list[idx] = meta; else list.push(meta);
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).put(list, LIST_KEY);
+      const store = tx.objectStore(STORE_NAME);
+      store.put(data, id);
+      const req = store.get(LIST_KEY);
+      req.onsuccess = () => {
+        const list: DocMeta[] = (req.result as DocMeta[]) ?? [];
+        const meta: DocMeta = { id, name, updatedAt: Date.now() };
+        const idx = list.findIndex((d) => d.id === id);
+        if (idx >= 0) list[idx] = meta; else list.push(meta);
+        store.put(list, LIST_KEY);
+      };
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });

@@ -22,7 +22,7 @@ import {
 
 const LS_KEY = 'aeon-clone:doc:v1';
 const LS_DOCID = 'aeon-clone:docId:v1';
-let lastDocSetTime = 0; // guard mod hydrate race
+let rev = 0; // tæller hver gang doc sættes programmatisk — hydrate-vagt (issue #5)
 
 function getDocId(): string {
   return localStorage.getItem(LS_DOCID) || DOC_KEY;
@@ -31,6 +31,31 @@ function setDocId(id: string) {
   try { localStorage.setItem(LS_DOCID, id); } catch { /* */ }
 }
 const DOC_KEY = 'current';
+
+/**
+ * issue #5: det implicitte 'current'-dok gemmes kun i den globale slot, ikke som
+ * profil. Før vi opretter/skifter dokument, flyt det aktive over under en rigtig
+ * profil-id, så dets indhold ikke overskrives eller forsvinder.
+ */
+function ensureProfileId(): void {
+  if (getDocId() !== DOC_KEY) return;
+  const id = newId();
+  const doc = useApp.getState().doc;
+  void saveDocById(id, doc, doc.name);
+  setDocId(id);
+}
+
+/** Sikrer at et læst/indlæst dokument har alle felter (brugt af sync-load, hydrate og switchDoc). */
+function normalizeDoc(doc: TimelineDoc): TimelineDoc {
+  doc.itemTypes ??= DEFAULT_TYPES;
+  if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
+  doc.relationTypes ??= DEFAULT_RELATION_TYPES;
+  doc.relations ??= [];
+  doc.dependencies ??= [];
+  doc.savedFilters ??= {};
+  doc.sources ??= [];
+  return doc;
+}
 
 /** Sync initial load (localStorage som lynhurtig cache; IndexedDB hydrates senere). */
 function loadDocSync(): TimelineDoc {
@@ -64,6 +89,7 @@ function persist(doc: TimelineDoc) {
 
 /** Hydrate fra IndexedDB (kaldes én gang efter mount). */
 export async function hydrateStore() {
+  const myRev = rev; // race-vagt: hvis en handling sætter doc mens vi venter, skal hydrate IKKE overskrive
   const id = getDocId();
   let doc: TimelineDoc | null = null;
   if (id !== DOC_KEY) {
@@ -71,20 +97,13 @@ export async function hydrateStore() {
   }
   if (!doc) doc = await idbLoad<TimelineDoc>();
   if (doc) {
-    doc.itemTypes ??= DEFAULT_TYPES;
-    if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
-    doc.relationTypes ??= DEFAULT_RELATION_TYPES;
-    doc.relations ??= [];
-    doc.dependencies ??= [];
-    doc.savedFilters ??= {};
-    doc.sources ??= [];
-    // Overskriv IKKON hvis en import/switch allerede har sat doc efter vi startede hydrate
-    if (lastDocSetTime > 0) return;
+    normalizeDoc(doc);
+    if (rev !== myRev) return;
     useApp.setState({ doc, errors: {}, selectedId: null });
   }
   // Load doc list
   const list = await listDocs();
-  useApp.setState({ docList: list });
+  if (rev === myRev) useApp.setState({ docList: list });
 }
 
 interface AppState {
@@ -216,6 +235,7 @@ export const useApp = create<AppState>((set, get) => ({
       pushSnapshot(get().doc);
       const doc = emptyDoc();
       persist(doc);
+      rev++;
       // NB: clearHistory() var her engang — det gjorde Ryd alt ufortrydeligt (issue #3)
       return { doc, errors: {}, selectedId: null, activeFilter: null };
     });
@@ -223,15 +243,8 @@ export const useApp = create<AppState>((set, get) => ({
 
   importDoc: (doc) => {
     pushSnapshot(get().doc);
-    doc.itemTypes ??= DEFAULT_TYPES;
-    if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
-    doc.relationTypes ??= DEFAULT_RELATION_TYPES;
-    doc.relations ??= [];
-    doc.dependencies ??= [];
-    doc.savedFilters ??= {};
-    // NB: clearHistory() var her engang — det gjorde import ufortrydelig (issue #3)
-    persist(doc);
-    lastDocSetTime = Date.now();
+    persist(normalizeDoc(doc));
+    rev++;
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
   },
 
@@ -397,29 +410,30 @@ export const useApp = create<AppState>((set, get) => ({
   docList: [],
 
   newDoc: (name) => {
+    // issue #5: det implicitte 'current'-dok gemmes ikke per profil (persist springer
+    // DOC_KEY over), så et nyt doc overskrev dets indhold. Flyt det aktive over under
+    // sin EGEN profil-id først — så gemmes det, og det nye får sit eget id.
+    ensureProfileId();
+    const id = newId();
+    setDocId(id);
+    const doc = normalizeDoc(emptyDoc(name || 'Nyt tidslinje'));
     pushSnapshot(get().doc);
-    const doc = emptyDoc(name || 'Nyt tidslinje');
     persist(doc);
-    lastDocSetTime = Date.now();
+    rev++;
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
+    get().refreshDocList();
   },
 
   switchDoc: async (id) => {
-    // Save current first
-    const cur = get().doc;
-    persist(cur);
+    // Gem aktuelle først — og materialisér 'current' så det ikke mistes (issue #5)
+    ensureProfileId();
     clearHistory();
     // Load the target
     const doc = await loadDocById<TimelineDoc>(id);
     if (!doc) return;
-    doc.itemTypes ??= DEFAULT_TYPES;
-    if (!doc.itemTypes.length) doc.itemTypes = DEFAULT_TYPES;
-    doc.relationTypes ??= DEFAULT_RELATION_TYPES;
-    doc.relations ??= [];
-    doc.dependencies ??= [];
-    doc.savedFilters ??= {};
+    normalizeDoc(doc);
     setDocId(id);
-    lastDocSetTime = Date.now();
+    rev++;
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
   },
 
@@ -428,9 +442,21 @@ export const useApp = create<AppState>((set, get) => ({
     const list = await listDocs();
     set({ docList: list });
     if (getDocId() === id) {
-      // switched away — load current/first
-      setDocId(DOC_KEY);
-      await hydrateStore();
+      // issue #5: 'current'-nøglen må ikke blive stående med det sattedte indhold,
+      // så genopstår det ved næste reload. Skift eksplicit til første tilbageværende.
+      if (list.length) {
+        const doc = normalizeDoc((await loadDocById<TimelineDoc>(list[0].id)) ?? emptyDoc());
+        setDocId(list[0].id);
+        persist(doc);
+        rev++;
+        set({ doc, errors: {}, selectedId: null, activeFilter: null });
+      } else {
+        const doc = emptyDoc();
+        setDocId(DOC_KEY);
+        persist(doc);
+        rev++;
+        set({ doc, errors: {}, selectedId: null, activeFilter: null });
+      }
     }
   },
 
