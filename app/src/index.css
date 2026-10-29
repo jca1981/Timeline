@@ -55,10 +55,14 @@ header input#doc { background: transparent; border: 1px solid transparent; color
 header input#doc:hover, header input#doc:focus { border-color: var(--line); outline: none; }
 nav { display: flex; gap: 6px; margin-left: auto; }
 .tab { background: var(--panel); border: 1px solid var(--line); color: var(--dim); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-/* issue #15: import/eksport samlet i et affaermet cluster saa værktøjslinjen ser ryddelig ud */
-.toolgroup { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--panel) 55%, transparent); }
-.toolgroup-label { color: var(--meta); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding-right: 2px; }
-.toolgroup-sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
+/* issue #15: import/eksport klappet sammen i en "Data"-menu saa værktøjslinjen er smal */
+.menu { position: relative; display: inline-block; }
+.menu-btn { white-space: nowrap; }
+.menu-backdrop { position: fixed; inset: 0; z-index: 40; }
+.menu-body { position: absolute; right: 0; top: calc(100% + 6px); z-index: 41; display: flex; flex-direction: column; min-width: 200px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
+.menu-item { display: flex; align-items: center; width: 100%; text-align: left; background: none; border: none; color: var(--dim); padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: inherit; }
+.menu-item:hover { background: var(--bg2); color: var(--fg); }
+.menu-sep { height: 1px; background: var(--line); margin: 4px 2px; }
 /* issue #18: inline levetid-editorer i Person-visningens celler */
 td.life .life-edit { display: flex; flex-direction: column; gap: 4px; } td.life .life-edit label { color: var(--meta); font-size: 12px; white-space: nowrap; }
 .tab.on { color: var(--fg); background: var(--active); }

@@ -28,6 +28,13 @@ export default function App() {
   const mergeDoc = useApp((s) => s.mergeDoc);
   const [view, setView] = useState<View>('tidslinje');
   const [importing, setImporting] = useState(false);
+  const [dataMenu, setDataMenu] = useState(false); // issue #15: import/eksport klappet sammen i menu
+  useEffect(() => { // luk Data-menuen paa Escape
+    if (!dataMenu) return;
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setDataMenu(false); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [dataMenu]);
   // M20: Theme toggle
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('tl-theme') as 'dark' | 'light') || 'dark');
   useEffect(() => { document.body.classList.toggle('light', theme === 'light'); localStorage.setItem('tl-theme', theme); }, [theme]);
@@ -151,26 +158,33 @@ export default function App() {
             Personer
           </button>
         </nav>
-        <div className="toolgroup" role="group" aria-label="Import og eksport">
-          <span className="toolgroup-label">Data</span>
-          <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
-            {importing ? 'Importer…' : 'Importer .aeon'}
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".aeon"
-              hidden
-              onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-            />
-          </label>
-          <label className="tab" title="Importér JSON-fil">
-            Importér JSON
-            <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
-          </label>
-          <span className="toolgroup-sep" aria-hidden="true" />
-          <button className="tab" onClick={exportJson} title="Eksportér som JSON">Eksportér JSON</button>
-          <button className="tab" onClick={() => downloadHtml(doc)} title="Eksportér statisk HTML-tidslinje">HTML</button>
-          <button className="tab" onClick={() => downloadSvg(doc)} title="Eksportér SVG-billede">SVG</button>
+        <div className="menu" role="group" aria-label="Import og eksport">
+          <button
+            className="tab menu-btn"
+            aria-haspopup="true"
+            aria-expanded={dataMenu}
+            onClick={() => setDataMenu((v) => !v)}
+            title="Importér og eksportér"
+          >Data ▾</button>
+          {dataMenu && (
+            <>
+              <span className="menu-backdrop" onClick={() => setDataMenu(false)} />
+              <div className="menu-body" role="menu">
+                <label className="menu-item importbtn" role="menuitem" title="Importer en .aeon-fil fra Aeon Timeline" onClick={() => setDataMenu(false)}>
+                  {importing ? 'Importer…' : 'Importer .aeon'}
+                  <input ref={fileRef} type="file" accept=".aeon" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+                </label>
+                <label className="menu-item" role="menuitem" title="Importér JSON-fil" onClick={() => setDataMenu(false)}>
+                  Importér JSON
+                  <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
+                </label>
+                <span className="menu-sep" />
+                <button className="menu-item" role="menuitem" onClick={() => { exportJson(); setDataMenu(false); }} title="Eksportér som JSON">Eksportér JSON</button>
+                <button className="menu-item" role="menuitem" onClick={() => { downloadHtml(doc); setDataMenu(false); }} title="Eksportér statisk HTML-tidslinje">HTML</button>
+                <button className="menu-item" role="menuitem" onClick={() => { downloadSvg(doc); setDataMenu(false); }} title="Eksportér SVG-billede">SVG</button>
+              </div>
+            </>
+          )}
         </div>
         <button className="tab" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Skift tema">{theme === 'dark' ? 'Lys' : 'Mørk'} tilstand</button>
         <select className="tab" onChange={(e) => {
