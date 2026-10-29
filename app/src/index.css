@@ -294,6 +294,10 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 
 /* Entity-sidebar */
 .entity-sidebar { width: clamp(200px, 15vw, 320px); min-width: 180px; max-width: 340px; border-right: 1px solid var(--line); background: var(--panel); overflow-y: auto; font-size: 13px; padding: 8px 10px; }
+/* issue #17: kollapset sidebar = smal lodret stribe, fylder ikke vandret */
+.entity-sidebar.collapsed { width: auto; min-width: 0; max-width: none; padding: 6px 4px; flex: 0 0 auto; }
+.entity-collapse { writing-mode: vertical-rl; background: var(--panel); border: 1px solid var(--line); color: var(--fg); cursor: pointer; font-size: 12px; padding: 10px 4px; border-radius: 4px; }
+.entity-header-actions { display: flex; gap: 6px; align-items: center; }
 .entity-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 4px; }
 .entity-header strong { font-size: 13px; }
 .entity-group { margin-bottom: 8px; }

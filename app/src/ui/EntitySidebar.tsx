@@ -69,11 +69,19 @@ export function EntitySidebar() {
     return result;
   }, [grouped, sbQuery]);
 
+  const collapsed = collapsedIds.has('sidebar'); // issue #17: klap hele entity-listen sammen
   return (
-    <aside className="entity-sidebar">
+    <aside className={`entity-sidebar${collapsed ? ' collapsed' : ''}`}>
+      {collapsed ? (
+        <button className="entity-collapse" title="Vis entity-liste" onClick={() => toggleCollapse('sidebar')}>☰ Entity</button>
+      ) : (
+      <>
       <div className="entity-header">
         <strong>Entity-liste</strong>
-        {(activeFilter) && <button className="btn-link" onClick={clearFilter}>Ryd filter</button>}
+        <span className="entity-header-actions">
+          {activeFilter && <button className="btn-link" onClick={clearFilter}>Ryd filter</button>}
+          <button className="btn-link" title="Skjul listen" onClick={() => toggleCollapse('sidebar')}>«</button>
+        </span>
       </div>
       <input className="sb-search" placeholder="Søg i liste..." value={sbQuery} onChange={(e) => setSbQuery(e.target.value)} />
 
@@ -150,6 +158,8 @@ export function EntitySidebar() {
         </div>
       )}
       <TagManager />
+      </>
+      )}
     </aside>
   );
 }
