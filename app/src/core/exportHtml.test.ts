@@ -137,3 +137,26 @@ describe('exportAsHtml', () => {
     expect(html).not.toContain('href="javascript:');
   });
 });
+
+// **** Regression: issue #8 — XSS i eksport (label/color/note/url) ****
+describe('issue #8 HTML-eksport escaping', () => {
+  it('ondsindest label, color, note og url injicerer ikke markup', () => {
+    const doc = emptyDoc('X');
+    doc.itemTypes = [{ id: 't-event', name: 'E', color: '#888' }];
+    doc.items = [{
+      id: 'a', typeId: 't-event', label: '<script>alert(1)</script>',
+      span: { start: { y: 1, precision: 'year' }, end: { y: 2, precision: 'year' } },
+      color: 'red" onload="alert(1)', notes: '<img src=x onerror=alert(1)>',
+      sourceIds: ['s1'],
+    } as Item];
+    doc.sources = [{ id: 's1', title: '<b>t</b>', url: 'x" onmouseover="alert(1)' }];
+    const html = exportAsHtml(doc);
+    // label/notes escaped, farve-uhygiejne fjernet, url attr-escapet
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('onload=');
+    expect(html).not.toContain('<img src=x onerror=');
+    expect(html).not.toContain('" onmouseover="');
+    expect(html).toContain('#888'); // safeColor fallback for ulovlig color
+  });
+});

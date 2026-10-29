@@ -3,6 +3,7 @@ import type { TimelineDoc, Item } from '../model/doc';
 import { spanBounds, contentBounds, ticksFor } from './scale';
 import { applyFilter } from './filters';
 import { textColorFor, readableOn } from './color';
+import { esc, safeColor } from './escape';
 import type { Filter } from '../model/doc';
 
 export function exportAsSvg(doc: TimelineDoc, filter?: Filter): string {
@@ -35,7 +36,7 @@ export function exportAsSvg(doc: TimelineDoc, filter?: Filter): string {
   for (const t of ticks) {
     const tx = x(t.jd);
     svg += `<line x1="${tx}" y1="30" x2="${tx}" y2="${H}" stroke="#2c313b" stroke-width="0.5"/>`;
-    svg += `<text x="${tx}" y="22" fill="#8b93a3" text-anchor="middle" font-size="10">${t.label}</text>`;
+    svg += `<text x="${tx}" y="22" fill="#8b93a3" text-anchor="middle" font-size="10">${esc(t.label)}</text>`;
   }
 
   // Bars
@@ -44,7 +45,7 @@ export function exportAsSvg(doc: TimelineDoc, filter?: Filter): string {
     const xa = x(r.bd.a);
     const xb = x(r.bd.b);
     const w = Math.max(3, xb - xa);
-    const color = typeColor(r.it);
+    const color = safeColor(typeColor(r.it)); // issue #8: item.color kan komme fra ondsindet import
     svg += `<rect x="${xa}" y="${y + 5}" width="${w}" height="14" rx="3" fill="${color}" opacity="0.85"/>`;
     if (w > 26) {
       const tcol = w > 140 ? textColorFor(color).color : readableOn(color, '#16181d');
@@ -65,8 +66,4 @@ export function downloadSvg(doc: TimelineDoc, filter?: Filter): void {
   a.download = (doc.name || 'timeline') + '.svg';
   a.click();
   URL.revokeObjectURL(url);
-}
-
-function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

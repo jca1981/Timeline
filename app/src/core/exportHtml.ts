@@ -4,6 +4,7 @@ import { bibliography, citeLabel, isStaleLink, reliabilityLabel, reliabilityStar
 import { spanBounds } from './scale';
 import { contentBounds } from './scale';
 import { textColorFor, readableOn } from './color';
+import { esc, attr, safeColor } from './escape';
 
 /**
  * Generates a self-contained HTML file with a static SVG timeline.
@@ -45,10 +46,7 @@ export function exportAsHtml(doc: TimelineDoc, filter?: (it: Item) => boolean): 
 
   // Sikkerhed: etiketter/navne/farver kan komme fra importerte .aeon-filer og må ikke kunne
   // injicere markup i den eksporterede, selvstaendige HTML-fil.
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const attr = (s: string) => esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  // hex eller gængst CSS-navn (kun bogstaver -ingen anfoerselstegn/koder, saa det er sikkert i SVG/HTML)
-  const safeColor = (c: string | undefined) => (c && (/^#[0-9a-fA-F]{3,8}$/.test(c) || /^[a-zA-Z]+$/.test(c)) ? c : '#888');
+  // Sikkerhed (issue #8): esc/attr/safeColor ligger nu i core/escape.ts (importeret).
 
   const eraSvgs = eras.map((it) => {
     const bd = spanBounds(it.span)!;
