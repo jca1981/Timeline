@@ -103,3 +103,16 @@ describe('buildTree / flattenTree', () => {
     expect(flat[2].depth).toBe(2); // c
   });
 });
+
+// **** Regression: issue #10 — cyklus i parentId må ikke give uendelig rekursion ****
+describe('issue #10 buildTree cyklus', () => {
+  it('bygger uden at hænge ved gensidig parentId', () => {
+    const cyc: Item[] = [
+      { id: 'a', typeId: 'event', label: 'A', span: {}, parentId: 'b' },
+      { id: 'b', typeId: 'event', label: 'B', span: {}, parentId: 'a' },
+    ];
+    const roots = buildTree(cyc);
+    // cyklus-noder har altid en forælder → aldrig en rod → utilgængelige, men ingen stack overflow
+    expect(flattenTree(roots).length).toBe(0);
+  });
+});

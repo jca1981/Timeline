@@ -106,3 +106,15 @@ describe('parentId filter (M12)', () => {
     expect(result.map((i) => i.id)).toEqual(['root']);
   });
 });
+
+// **** Regression: issue #10 — parentId-cyklus må ikke hænge i BFS ****
+describe('issue #10 cyklus-værn', () => {
+  it('applyFilter med parentId-cyklus returnerer uden at hænge', () => {
+    const cyc: Item[] = [
+      { id: 'a', typeId: 'event', label: 'A', span: {}, parentId: 'b' },
+      { id: 'b', typeId: 'event', label: 'B', span: {}, parentId: 'a' },
+    ];
+    const out = applyFilter(cyc, { parentId: 'a' } as Filter);
+    expect(out.map((i) => i.id).sort()).toEqual(['a', 'b']);
+  });
+});

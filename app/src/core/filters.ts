@@ -77,8 +77,8 @@ export function applyFilter(items: Item[], filter: Filter | null | undefined): I
     while (queue.length) {
       const pid = queue.shift()!;
       for (const childId of byParent.get(pid) ?? []) {
-        allowed.add(childId);
-        queue.push(childId);
+        // bug #10: hopping over allerede-besogte undgaar uendelig lokke ved cyklus (a.parent=b, b.parent=a)
+        if (!allowed.has(childId)) { allowed.add(childId); queue.push(childId); }
       }
     }
   }
