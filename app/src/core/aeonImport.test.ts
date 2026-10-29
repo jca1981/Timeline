@@ -377,6 +377,44 @@ describe('Aeon-kilder (M29b)', () => {
   });
 });
 
+// ---- committet fixture: JSON-blokken fra brugerens virkelige .aeon-fil (uden billeder) — kører i CI ----
+// genskriv hvis den virkelige fil ændres: node tools/make-fixture.mjs "C:\path\til\Tidslinie-Historien Til nu.aeon"
+const FIXTURE = fileURLToPath(new URL('../../testdata/aeon-real-fixture.json', import.meta.url));
+const fixtureBuf = readFileSync(FIXTURE);
+const FIXTURE_ARRAY = fixtureBuf.buffer.slice(fixtureBuf.byteOffset, fixtureBuf.byteOffset + fixtureBuf.byteLength) as ArrayBuffer;
+
+describe('committet .aeon-fixture (M34 — format-drift)', () => {
+  const { doc, warnings } = importAeon(FIXTURE_ARRAY, 'Tidslinje');
+
+  it('alle 357 poster fra den virkelige fil overlever — intet droppet', () => {
+    expect(doc.items.length).toBe(357);
+    expect(warnings.filter((w) => w.includes('ukendt type'))).toEqual([]);
+    expect(doc.itemTypes.length).toBe(9);
+    // M32: datoer (også f.Kr.) skal overleve; 251 daterede, 150 f.Kr.
+    expect(doc.items.filter((i) => i.span.start).length).toBe(251);
+    expect(doc.items.filter((i) => (i.span.start?.y ?? 0) < 0).length).toBe(150);
+  });
+
+  it('relationer, kilder og citationer (M29b/M32)', () => {
+    expect(doc.relations?.length).toBe(237);
+    expect(doc.relations!.filter((r) => r.typeId === 'rt-parent').length).toBe(77);
+    const jesus = doc.items.find((i) => i.label === 'Jesus');
+    expect(doc.relations!.filter((r) => r.typeId === 'rt-parent' && r.toId === jesus?.id)
+      .map((r) => doc.items.find((i) => i.id === r.fromId)?.label).sort()).toEqual(['Josef', 'Maria Jesus mor']);
+    expect(doc.sources?.length).toBe(5);
+    expect(doc.items.filter((i) => i.sourceIds?.length).length).toBe(38);
+    expect(doc.items.some((i) => i.label === 'JW.ORG')).toBe(false);
+  });
+
+  it('person-overblik (M30)', () => {
+    const rows = peopleOf(doc);
+    expect(rows.length).toBe(89);
+    expect(peopleStats(rows).families).toBe(56);
+    expect(rows.find((r) => r.item.label === 'Zerubbabel')?.parents.map((p) => p.label)).toEqual(['Shealtiel']);
+    expect(rows.find((r) => r.item.label === 'Maria Jesus mor')?.spouses.map((s) => s.label)).toEqual(['Josef']);
+  });
+});
+
 // ---- ægte fil (kun lokalt — hopper automatisk over i CI) ----
 const REAL_CANDIDATES = [
   fileURLToPath(new URL('../../../Import/Tidslinie-Historien Til nu.aeon', import.meta.url)),
