@@ -332,7 +332,9 @@ tr[draggable]:hover { outline: 1px dashed var(--line); }
 .entity-tags { display: flex; flex-wrap: wrap; gap: 3px; padding: 4px; }
 .tag-chip { background: var(--bg2); border: 1px solid var(--line); color: var(--dim); font-size: 13px; padding: 2px 6px; border-radius: 10px; cursor: pointer; }
 .tag-chip:hover { background: var(--active); color: var(--fg); }
-.tag-chip.active { background: var(--active); color: var(--fg); border-color: var(--line); }
+.tag-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+/* issue #19: samme tydelige valgt/trykte-markering paa tags som paa faner */
+.tag-chip:active { transform: translateY(1px); }
 
 /* Søg i toolbar */
 .tl-search { position: relative; flex: 0 1 200px; }
