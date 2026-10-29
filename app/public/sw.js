@@ -1,13 +1,17 @@
 // **** Service Worker: offline-first PWA (M10) ****
-// V2: kun immutables cache-first, kun same-origin OK-svar, og aldrig HTML som .json/manifest.
-const CACHE_NAME = 'timeline-v2';
+// V3: robust precache (per-del, ikke all-eller-nothing), altid en offline-shell, og
+// kun same-origin OK-svar (aldrig HTML som .json/manifest). Bump version nar immutables ændres.
+const CACHE_NAME = 'timeline-v3';
 const IMMUTABLE = '/Timeline/assets/';
+const SHELL = ['/Timeline/', '/Timeline/index.html', '/Timeline/manifest.json'];
 
 self.addEventListener('install', (event) => {
+  // Cache hver del uafhaengigt: én manglende fil (fx manifest 404) ma ALDRIG flette hele precachen
+  // sä offline-pladsen bliver tom. (review 06: verificer offline)
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(['/Timeline/', '/Timeline/manifest.json']).catch(() => undefined))
-      .catch(() => undefined)
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.allSettled(SHELL.map((u) => cache.add(u)));
+    })
   );
   self.skipWaiting();
 });
@@ -36,10 +40,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Navigation: network-first, fallback til cache
+  // Navigation: network-first, fallback til cache - ALDRIG undefined (beskeden ellers knaekker).
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('/Timeline/').then((r) => r ?? caches.match('/Timeline/index.html')))
+      fetch(event.request).catch(async () => {
+        const hit = (await caches.match('/Timeline/')) || (await caches.match('/Timeline/index.html'));
+        return hit ?? new Response('Offline - ingen cached kopi.', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      })
     );
     return;
   }
