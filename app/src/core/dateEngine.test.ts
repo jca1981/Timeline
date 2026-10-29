@@ -165,3 +165,31 @@ describe('Parent-range-advarsler (blokerer ikke, advarer som Aeon)', () => {
     expect(rangeWarning({ start: Y(2022) }, undefined)).toBeUndefined();
   });
 });
+
+// **** Regression: issue #6 — skudår-clamp, midnat-carry, BC-år i narrativ ****
+describe('issue #6 dato-motor fixes', () => {
+  it('29. feb + 1 år → 28. feb (ikke 1. mar)', () => {
+    const r = addDuration(YMD(2024, 2, 29), { y: 1 });
+    expect({ y: r.y, mo: r.mo, d: r.d }).toEqual({ y: 2025, mo: 2, d: 28 });
+  });
+  it('31. jan + 1 md → 29. feb (skudår) / 28. feb (almint)', () => {
+    const a = addDuration(YMD(2024, 1, 31), { mo: 1 });
+    expect({ y: a.y, mo: a.mo, d: a.d }).toEqual({ y: 2024, mo: 2, d: 29 });
+    const b = addDuration(YMD(2025, 1, 31), { mo: 1 });
+    expect({ y: b.y, mo: b.mo, d: b.d }).toEqual({ y: 2025, mo: 2, d: 28 });
+  });
+  it('29. feb + 4 år → 29. feb (gyldigt skudår forbliver)', () => {
+    const r = addDuration(YMD(2024, 2, 29), { y: 4 });
+    expect({ y: r.y, mo: r.mo, d: r.d }).toEqual({ y: 2028, mo: 2, d: 29 });
+  });
+  it('midnat-carry: 23:59:59.x runder til næste dag 00:00, ikke samme dag', () => {
+    const jd = gregorianToJDN(2024, 1, 1) - 0.5 + (86399.6 / 86400);
+    const r = fromJD(jd, 'time');
+    expect({ y: r.y, mo: r.mo, d: r.d, h: r.h, mi: r.mi, s: r.s })
+      .toEqual({ y: 2024, mo: 1, d: 2, h: 0, mi: 0, s: 0 });
+  });
+  it('BC-år: astronomisk 0 = 1 f.Kr., −1 = 2 f.Kr.', () => {
+    expect(displayYear(0)).toBe('1 f.Kr.');
+    expect(displayYear(-1)).toBe('2 f.Kr.');
+  });
+});

@@ -2,7 +2,8 @@
 import { useMemo } from 'react';
 import { useApp } from '../store';
 import { buildTree, flattenTree } from '../core/hierarchy';
-import { formatUncertainty } from '../core/format';
+import { formatUncertainty, displayYear } from '../core/format';
+import { toJD } from '../core/jdn';
 import { readableOn, PANEL_BG } from '../core/color';
 import { citeLabel, sourcesOf } from '../core/sources';
 import { ItemImage } from './ItemImage';
@@ -10,17 +11,17 @@ import type { Item } from '../model/doc';
 
 function sortItems(items: Item[]): Item[] {
   return [...items].sort((a, b) => {
-    const ya = a.span.start?.y ?? 0;
-    const yb = b.span.start?.y ?? 0;
-    if (ya !== yb) return ya - yb;
+    // bug #6: sortér på faktisk JD, ikke kun år — ellers blandes måneder/dage forkert
+    const ja = a.span.start ? toJD(a.span.start) : Infinity;
+    const jb = b.span.start ? toJD(b.span.start) : Infinity;
+    if (ja !== jb) return ja - jb;
     return a.label.localeCompare(b.label);
   });
 }
 
 function fmtYear(y: number | undefined): string {
-  if (y === undefined) return '?';
-  if (y < 0) return `${-y} f.Kr.`;
-  return `${y} e.Kr.`;
+  // bug #6: astronomisk årstal (0 = 1 f.Kr., −1 = 2 f.Kr.) — brug displayYear, ikke -y
+  return y === undefined ? '?' : displayYear(y);
 }
 
 export function NarrativeView() {

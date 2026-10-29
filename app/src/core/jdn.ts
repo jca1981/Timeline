@@ -65,8 +65,9 @@ export function fromJD(jd: number, precision: Precision = 'time'): DateValue {
   const dayInt = Math.floor(jd + 0.5);
   let frac = jd + 0.5 - dayInt; // andel af døgn siden.midnat
   if (frac < 0) frac += 1;
-  const g = jdnToGregorian(dayInt);
-  const secs = Math.round(frac * 86400) % 86400;
+  let g = jdnToGregorian(dayInt);
+  let secs = Math.round(frac * 86400);
+  if (secs >= 86400) { secs -= 86400; g = jdnToGregorian(dayInt + 1); } // bug #6: midnat-carry
   const dv: DateValue = { y: g.y, precision };
   if (precision !== 'year') dv.mo = g.mo;
   if (precision !== 'year' && precision !== 'month') dv.d = g.d;
@@ -92,11 +93,9 @@ export function addDuration(dv: DateValue, dur: Duration): DateValue {
   mo = ((mo % 12) + 12) % 12 + 1;
   let d = r.d;
   let y2 = y;
-  if (mo !== r.mo) {
-    let target = ((mo % 12) + 12) % 12;
-    if (target === 0) target = 12;
-    d = Math.min(d, daysInMonth(y2, target)); // clamp: 31. jan +1 md → 28. feb
-  }
+  // bug #6: clamp dag til månedens længde ALTID (ikke kun ved månedsskift), ellers
+  // bliver 29. feb + 1 år til 1. mar. Ved gyldigt skudårs-år forbliver 29.
+  d = Math.min(d, daysInMonth(y2, mo));
   let h = r.h + (dur.h ?? 0);
   let mi = r.mi + (dur.mi ?? 0);
   let s = r.s + (dur.s ?? 0);
