@@ -55,6 +55,10 @@ header input#doc { background: transparent; border: 1px solid transparent; color
 header input#doc:hover, header input#doc:focus { border-color: var(--line); outline: none; }
 nav { display: flex; gap: 6px; margin-left: auto; }
 .tab { background: var(--panel); border: 1px solid var(--line); color: var(--dim); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+/* issue #15: import/eksport samlet i et affaermet cluster saa værktøjslinjen ser ryddelig ud */
+.toolgroup { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--panel) 55%, transparent); }
+.toolgroup-label { color: var(--meta); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding-right: 2px; }
+.toolgroup-sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
 .tab.on { color: var(--fg); background: var(--active); }
 
 .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }

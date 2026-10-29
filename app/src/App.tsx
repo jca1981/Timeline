@@ -151,24 +151,28 @@ export default function App() {
             Personer
           </button>
         </nav>
-        <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
-          {importing ? 'Importer…' : 'Importer .aeon'}
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".aeon"
-            hidden
-            onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-          />
-        </label>
-        <button className="tab" onClick={exportJson} title="Eksportér som JSON">Eksportér JSON</button>
-        <button className="tab" onClick={() => downloadHtml(doc)} title="Eksportér statisk HTML-tidslinje">HTML</button>
-        <button className="tab" onClick={() => downloadSvg(doc)} title="Eksportér SVG-billede">SVG</button>
+        <div className="toolgroup" role="group" aria-label="Import og eksport">
+          <span className="toolgroup-label">Data</span>
+          <label className="tab importbtn" title="Importer en .aeon-fil fra Aeon Timeline">
+            {importing ? 'Importer…' : 'Importer .aeon'}
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".aeon"
+              hidden
+              onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+            />
+          </label>
+          <label className="tab" title="Importér JSON-fil">
+            Importér JSON
+            <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
+          </label>
+          <span className="toolgroup-sep" aria-hidden="true" />
+          <button className="tab" onClick={exportJson} title="Eksportér som JSON">Eksportér JSON</button>
+          <button className="tab" onClick={() => downloadHtml(doc)} title="Eksportér statisk HTML-tidslinje">HTML</button>
+          <button className="tab" onClick={() => downloadSvg(doc)} title="Eksportér SVG-billede">SVG</button>
+        </div>
         <button className="tab" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Skift tema">{theme === 'dark' ? 'Lys' : 'Mørk'} tilstand</button>
-        <label className="tab" title="Importér JSON-fil">
-          Importér JSON
-          <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
-        </label>
         <select className="tab" onChange={(e) => {
           const tpl = TEMPLATES.find((t) => t.name === e.target.value);
           if (tpl && window.confirm(`Anvend skabelon “${tpl.name}”? Nuværende indhold erstattes.`)) {
