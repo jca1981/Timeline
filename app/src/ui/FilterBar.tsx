@@ -14,18 +14,15 @@ export function FilterBar() {
 
   const [text, setText] = useState(activeFilter?.text ?? '');
   const [types, setTypes] = useState<string[]>(activeFilter?.types ?? []);
-  const [tags, setTags] = useState<string[]>(activeFilter?.tags ?? []);
   const [fromY, setFromY] = useState('');
   const [toY, setToY] = useState('');
-
-  // Collect all tags in use
-  const allTags = [...new Set(doc.items.flatMap((it) => it.tags ?? []))].sort();
 
   function buildFilter(): Filter | null {
     const f: Filter = { match: 'all' };
     if (text.trim()) f.text = text.trim();
     if (types.length) f.types = types;
-    if (tags.length) f.tags = tags;
+    // tag-filtrering haandteres i entry-listen (sidebar); bevar evt. eksisterende saa Filtrer ikke overskriver den
+    if (activeFilter?.tags?.length) f.tags = activeFilter.tags;
     if (fromY || toY) {
       f.dateRange = {};
       if (fromY) f.dateRange.from = toJD({ y: +fromY, precision: 'year' });
@@ -42,7 +39,6 @@ export function FilterBar() {
   function clear() {
     setText('');
     setTypes([]);
-    setTags([]);
     setFromY('');
     setToY('');
     setFilter(null);
@@ -95,20 +91,6 @@ export function FilterBar() {
         <input type="number" placeholder="fra år" value={fromY} onChange={(e) => setFromY(e.target.value)} title="Fra år (negativt = f.Kr.)" />
         <input type="number" placeholder="til år" value={toY} onChange={(e) => setToY(e.target.value)} title="Til år" />
       </div>
-
-      {allTags.length > 0 && (
-        <div className="filter-tags">
-          {allTags.map((tg) => (
-            <button
-              key={tg}
-              className={`filter-chip ${tags.includes(tg) ? 'active' : ''}`}
-              onClick={() => setTags(tags.includes(tg) ? tags.filter((x) => x !== tg) : [...tags, tg])}
-            >
-              {tg}
-            </button>
-          ))}
-        </div>
-      )}
 
       <button onClick={apply}>Filtrér</button>
       <button onClick={clear} className="dim">Ryd</button>
