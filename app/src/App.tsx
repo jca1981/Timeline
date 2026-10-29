@@ -107,11 +107,14 @@ export default function App() {
     try {
       const raw = JSON.parse(await file.text());
       if (raw?.kind === 'timeline-backup') {
-        // Gendannelse af sikker kopi: doc + billeder, med verificeret antal (review 05)
+        // Gendannelse af sikker kopi: doc + billeder, med verificeret antal (review 05).
+        // Docs fra EGNE backup trustes fuldt ud - den er vor serialiserede tilstand.
+        // Vi brugte sanitizeImport her, men den forkastede lovlige poster med relativt
+        // span (kun duration/uncertain, ingen absolut start) = DATATAB. parseBackup validerer
+        // strukturen; importDoc/mergeDoc normaliserer og bevarer alle poster.
         const bf = parseBackup(raw);
-        const { doc: ndoc, skipped } = sanitizeImport(bf.doc);
-        const warn = skipped ? ` (${skipped} ugylde post(er) sprunget over)` : '';
-        const replace = window.confirm(`GendAN Sikker kopi "${ndoc.name || file.name}": ${ndoc.items.length} poster, ${bf.images.length} billeder.${warn}\n\nOK = Erstat alt\nCancel = Merge ind\n\nCtrl+Z fortryder bagefter.`);
+        const ndoc = bf.doc;
+        const replace = window.confirm(`GendAN Sikker kopi "${ndoc.name || file.name}": ${ndoc.items.length} poster, ${bf.images.length} billeder.\n\nOK = Erstat alt\nCancel = Merge ind\n\nCtrl+Z fortryder bagefter.`);
         if (replace) importDoc(ndoc); else mergeDoc(ndoc);
         const r = await restoreImages(bf);
         setView('ark');
