@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { hydrateStore, useApp } from './store';
+import { hydrateStore, sanitizeImport, useApp } from './store';
 import { historyInfo } from './core/history';
 import { SpreadsheetView } from './ui/SpreadsheetView';
 import { TimelineView } from './ui/TimelineView';
@@ -88,10 +88,10 @@ export default function App() {
   // JSON import
   async function onJsonFile(file: File) {
     try {
-      const json = JSON.parse(await file.text());
-      if (!json.items || !Array.isArray(json.items)) throw new Error('Ugyldigt JSON: mangler items[]');
-      const replace = window.confirm(`Importer "${json.name || file.name}" (${json.items.length} poster)?\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)`);
-        if (replace) { importDoc(json); } else { mergeDoc(json); }
+      const { doc, skipped } = sanitizeImport(JSON.parse(await file.text())); // valideret: ugylde poster springes fra (review 03)
+      const warn = skipped ? `\n${skipped} ugylde(e) post(er) blev sprunget over` : '';
+      const replace = window.confirm(`Importer "${doc.name || file.name}" (${doc.items.length} poster)?${warn}\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)\n\nCtrl+Z fortryder bagefter.`);
+        if (replace) { importDoc(doc); } else { mergeDoc(doc); }
         setView('ark');
     } catch (e) {
       alert('JSON-import fejlede: ' + (e instanceof Error ? e.message : String(e)));
@@ -104,7 +104,7 @@ export default function App() {
     setImporting(true);
     try {
       const { doc: imported, images, warnings } = importAeon(await file.arrayBuffer(), file.name.replace(/\.aeon$/i, ''));
-      const replace = window.confirm(`Importer ${imported.items.length} poster, ${imported.relations?.length ?? 0} relationer${imported.sources?.length ? `, ${imported.sources.length} kilder` : ''}${images.length ? ` og ${images.length} billeder` : ''}?\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)`);
+      const replace = window.confirm(`Importer ${imported.items.length} poster, ${imported.relations?.length ?? 0} relationer${imported.sources?.length ? `, ${imported.sources.length} kilder` : ''}${images.length ? ` og ${images.length} billeder` : ''}?\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)\n\nCtrl+Z fortryder bagefter.`);
       if (imported.items.length) {
         if (images.length) await putImages(images.map((img) => ({ id: img.id, entry: { blob: img.blob, mimeType: img.mimeType, filename: img.filename } })));
         if (replace) { importDoc(imported); } else { mergeDoc(imported); }

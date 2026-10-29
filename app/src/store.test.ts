@@ -1,5 +1,6 @@
 // **** Store-tests (issue #1 + #11): commit()-vejen — UI, persist og undo hænger sammen ****
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TimelineDoc } from './model/doc';
 
 // Minimal localStorage-stub (Node-miljø); persist() falder tilbage hertil når IndexedDB mangler.
 function makeStorage() {
@@ -189,5 +190,75 @@ describe('setSpan validering (#7)', () => {
     expect(useApp.getState().errors[id]).toBeTruthy();
     useApp.getState().setSpan(id, { start: { y: 2024, mo: 2, d: 28, precision: 'day' } });
     expect(useApp.getState().errors[id]).toBeUndefined();
+  });
+});
+
+describe('fletning + valideret import + fortryd (review 03)', () => {
+  let useApp: Awaited<ReturnType<typeof freshStore>>;
+  let sanitizeImport: (raw: unknown) => { doc: TimelineDoc; skipped: number };
+  const mk = (o: object): TimelineDoc =>
+    ({ name: '', version: 1, itemTypes: [], relationTypes: [], relations: [], dependencies: [], sources: [], savedFilters: {}, ...o }) as unknown as TimelineDoc;
+  beforeEach(async () => {
+    useApp = await freshStore();
+    const mod = await import('./store'); // samme post-reset-instans som freshStore lige har indlaest
+    sanitizeImport = mod.sanitizeImport;
+  });
+
+  it('mergeDoc bevarer dependencies og relationTypes fra BOTH docs, dedup on id', async () => {
+    const base = mk({
+      items: [{ id: 'A', label: 'A', span: { start: { y: 1 }, end: { y: 2 } } }],
+      dependencies: [{ id: 'd1', blockerId: 'A', blockedId: 'A', kind: 'FS' }],
+      relationTypes: [{ id: 'rt1', name: 'Slægt', directed: false, inverseId: 'rt1' }],
+    });
+    useApp.getState().importDoc(base);
+    const incoming = mk({
+      items: [{ id: 'B', label: 'B', span: { start: { y: 3 }, end: { y: 4 } } }],
+      dependencies: [
+        { id: 'd1', blockerId: 'A', blockedId: 'A', kind: 'FS' }, // dup -> ignoreres
+        { id: 'd2', blockerId: 'B', blockedId: 'B', kind: 'FF' },
+      ],
+      relationTypes: [
+        { id: 'rt1', name: 'Slægt', directed: false, inverseId: 'rt1' }, // dup
+        { id: 'rt2', name: 'Ven', directed: false, inverseId: 'rt2' },
+      ],
+    });
+    useApp.getState().mergeDoc(incoming);
+    const doc = useApp.getState().doc;
+    expect(new Set(doc.items.map((i) => i.id))).toEqual(new Set(['A', 'B']));
+    expect((doc.dependencies ?? []).map((d) => d.id).sort()).toEqual(['d1', 'd2']);
+    const rt = new Set((doc.relationTypes ?? []).map((t) => t.id));
+    expect(rt.has('rt1') && rt.has('rt2')).toBe(true);
+  });
+
+  it('erstatnings-import kan fortrydes (rigtig Fortrod)', () => {
+    const st = () => useApp.getState();
+    st().importDoc(mk({ items: [{ id: 'v1', label: 'v1', span: { start: { y: 1 }, end: { y: 2 } } }] }));
+    st().importDoc(mk({ items: [{ id: 'v2', label: 'v2', span: { start: { y: 5 }, end: { y: 6 } } }, { id: 'v2b', label: 'v2b', span: { start: { y: 7 }, end: { y: 8 } } }] }));
+    expect(st().doc.items.map((i) => i.id)).toEqual(['v2', 'v2b']);
+    st().undoAction();
+    expect(st().doc.items.map((i) => i.id)).toEqual(['v1']); // tilbage foer erstatningen
+  });
+
+  it('sanitizeImport afviser ikke-arkiv og springer ugylde poster fra', () => {
+    expect(() => sanitizeImport(null)).toThrow();
+    expect(() => sanitizeImport({ foo: 1 })).toThrow();
+    const { doc, skipped } = sanitizeImport({
+      items: [
+        { id: 'ok', label: 'OK', span: { start: { y: 10 }, end: { y: 11 } } },
+        { id: 'noLabel' },
+        null,
+        { id: 'noSpan', label: 'X' },
+      ],
+    });
+    expect(doc.items.map((i) => i.id)).toEqual(['ok']);
+    expect(skipped).toBe(3);
+  });
+
+  it('importDoc gemmer den normaliserede doc i state (ikke raadata med manglende felter)', () => {
+    useApp.getState().importDoc({ items: [], savedFilters: {} } as unknown as TimelineDoc);
+    const doc = useApp.getState().doc;
+    expect(Array.isArray(doc.itemTypes) && doc.itemTypes.length > 0).toBe(true);
+    expect(Array.isArray(doc.relations)).toBe(true);
+    expect(Array.isArray(doc.dependencies)).toBe(true);
   });
 });

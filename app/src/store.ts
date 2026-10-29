@@ -84,6 +84,26 @@ function storageMsg(e: unknown): string {
   return 'Kunne ikke gemme aendringerne. De ligger stadig i hukommelsen.';
 }
 
+/**
+ * Validering ved import-graensen (review 03): afvis ikke-arkiv, spring
+ * ufuldstaendige/ugyldige poster fra (tæller dem), og normaliseer resten.
+ */
+export function sanitizeImport(raw: unknown): { doc: TimelineDoc; skipped: number } {
+  if (!raw || typeof raw !== 'object' || !Array.isArray((raw as TimelineDoc).items)) {
+    throw new Error('ugyldigt arkiv: mangler poster (items[])');
+  }
+  const r = raw as TimelineDoc;
+  const items: Item[] = [];
+  let skipped = 0;
+  for (const it of r.items) {
+    const ok = it && typeof it === 'object' && typeof it.id === 'string'
+      && typeof it.label === 'string'
+      && typeof it.span?.start?.y === 'number' && typeof it.span?.end?.y === 'number';
+    if (ok) items.push(it); else skipped++;
+  }
+  return { doc: normalizeDoc({ ...r, items }), skipped };
+}
+
 let saveSeq = 0; // kun den SIDSTE gemning bestemmmer status (seneste skriver vinder)
 async function persist(doc: TimelineDoc): Promise<void> {
   const mySeq = ++saveSeq;
@@ -261,10 +281,11 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   importDoc: (doc) => {
+    const nd = normalizeDoc(doc); // vis og GEM den samme (normaliserede) doc — ellers kan state mangle felter
     pushSnapshot(get().doc);
-    persist(normalizeDoc(doc));
+    persist(nd);
     rev++;
-    set({ doc, errors: {}, selectedId: null, activeFilter: null });
+    set({ doc: nd, errors: {}, selectedId: null, activeFilter: null });
   },
 
   mergeDoc: (incoming: TimelineDoc) => {
@@ -292,10 +313,15 @@ export const useApp = create<AppState>((set, get) => ({
     const existingRelIds = new Set((s.doc.relations ?? []).map((r) => r.id));
     const newRels = (incoming.relations ?? []).filter((r) => !existingRelIds.has(r.id));
     const existingTypeIds = new Set(s.doc.itemTypes.map((t) => t.id));
+    const existingRelTypeIds = new Set((s.doc.relationTypes ?? []).map((t) => t.id));
+    const existingDepIds = new Set((s.doc.dependencies ?? []).map((d) => d.id));
     const merged: TimelineDoc = {
       ...s.doc,
       items: [...s.doc.items, ...newItems],
       relations: [...(s.doc.relations ?? []), ...newRels],
+      // review 03: flet OGSAA afhaengigheder og relationstyper — ellers forsvinder data.
+      dependencies: [...(s.doc.dependencies ?? []), ...(incoming.dependencies ?? []).filter((d) => !existingDepIds.has(d.id))],
+      relationTypes: [...(s.doc.relationTypes ?? []), ...(incoming.relationTypes ?? []).filter((t) => !existingRelTypeIds.has(t.id))],
       itemTypes: [...s.doc.itemTypes, ...(incoming.itemTypes ?? []).filter((t) => !existingTypeIds.has(t.id))],
       sources,
     };
