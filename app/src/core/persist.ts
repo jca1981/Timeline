@@ -25,19 +25,21 @@ export function openDB(): Promise<IDBDatabase> {
   return dbReady;
 }
 
-/** Gem dokument (overskriver eksisterende). */
+/** Gem dokument (overskriver eksisterende). Kaster ved aechte lagerfejl (review 04). */
 export async function saveDoc(data: unknown): Promise<void> {
   try {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).put(data, DOC_KEY);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('transaktion afbrudt')); // kvote-fejl
     });
-  } catch {
-    // fallback til localStorage hvis IndexedDB fejler (fx private browsing)
-    try { localStorage.setItem('aeon-clone:doc:v1', JSON.stringify(data)); } catch { /* give up */ }
+  } catch (e) {
+    // IndexedDB fejlede (fx private browsing): faldb til localStorage — kast hvis DET ogsaa fejler.
+    localStorage.setItem('aeon-clone:doc:v1', JSON.stringify(data));
+    void e;
   }
 }
 
@@ -94,28 +96,27 @@ export async function listDocs(): Promise<DocMeta[]> {
   } catch { return []; }
 }
 
-/** Save a doc under a specific profile id. */
+/** Save a doc under a specific profile id. Kaster ved lagerfejl saa UI'en kan vise det (review 04). */
 export async function saveDocById(id: string, data: unknown, name: string): Promise<void> {
-  try {
-    const db = await openDB();
-    // EEN readwrite-transaktion: undgå race hvor to samtidige saves læser samme
-    // gamle liste og overskriver hinanden (mistede dokumenter i listen).
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      const store = tx.objectStore(STORE_NAME);
-      store.put(data, id);
-      const req = store.get(LIST_KEY);
-      req.onsuccess = () => {
-        const list: DocMeta[] = (req.result as DocMeta[]) ?? [];
-        const meta: DocMeta = { id, name, updatedAt: Date.now() };
-        const idx = list.findIndex((d) => d.id === id);
-        if (idx >= 0) list[idx] = meta; else list.push(meta);
-        store.put(list, LIST_KEY);
-      };
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  } catch { /* silent */ }
+  const db = await openDB();
+  // EEN readwrite-transaktion: undgå race hvor to samtidige saves læser samme
+  // gamle liste og overskriver hinanden (mistede dokumenter i listen).
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.put(data, id);
+    const req = store.get(LIST_KEY);
+    req.onsuccess = () => {
+      const list: DocMeta[] = (req.result as DocMeta[]) ?? [];
+      const meta: DocMeta = { id, name, updatedAt: Date.now() };
+      const idx = list.findIndex((d) => d.id === id);
+      if (idx >= 0) list[idx] = meta; else list.push(meta);
+      store.put(list, LIST_KEY);
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error('transaktion afbrudt')); // kvote-fejl
+  });
 }
 
 /** Load a doc by profile id. */

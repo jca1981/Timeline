@@ -10,6 +10,8 @@ export function DocumentBar() {
   const deleteDoc = useApp((s) => s.deleteDoc);
   const saveAsDoc = useApp((s) => s.saveAsDoc);
   const refreshDocList = useApp((s) => s.refreshDocList);
+  const saveStatus = useApp((s) => s.saveStatus);
+  const saveError = useApp((s) => s.saveError);
 
   useEffect(() => { refreshDocList(); }, [refreshDocList]);
 
@@ -43,6 +45,19 @@ export function DocumentBar() {
             if (window.confirm(`Slet “${docList[idx]!.name}”?`)) deleteDoc(docList[idx]!.id);
           }
         }} title="Slet dokument">Slet</button>
+      )}
+      <span
+        className={`save-chip ${saveStatus}`}
+        role="status"
+        aria-live="polite"
+        title={saveError ?? undefined}
+      >
+        {saveStatus === 'saving' ? 'Gemmer…' : saveStatus === 'error' ? 'Nye aendringer er IKKE gemt' : 'Gemt'}
+      </span>
+      {saveStatus === 'error' && (
+        <button className="doc-btn" onClick={() => useApp.getState().retrySave()} title={saveError ?? 'Proev at gemme igen'}>
+          Proev igen
+        </button>
       )}
     </div>
   );

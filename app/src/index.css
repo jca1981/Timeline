@@ -219,6 +219,10 @@ table.matrix { border-collapse: collapse; font-size: 13px; }
 .doc-select { font-size: 13px; padding: 2px 6px; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
 .doc-btn { font-size: 13px; padding: 2px 8px; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
 .doc-btn:hover { background: var(--bg2); }
+.save-chip { font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 6px; white-space: nowrap; }
+.save-chip.saved { color: var(--fg2, #7a8a99); opacity: 0.75; }
+.save-chip.saving { color: var(--accent); }
+.save-chip.error { color: #fff; background: #e5484d; font-weight: 600; }
 .doc-del:hover { color: var(--negative); }
 
 /* Narrative/Outline view (M9) */

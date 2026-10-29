@@ -41,7 +41,7 @@ function ensureProfileId(): void {
   if (getDocId() !== DOC_KEY) return;
   const id = newId();
   const doc = useApp.getState().doc;
-  void saveDocById(id, doc, doc.name);
+  void saveDocById(id, doc, doc.name).catch(() => {}); // best-effort; persist() ejer fejlhaandtering
   setDocId(id);
 }
 
@@ -77,14 +77,30 @@ function loadDocSync(): TimelineDoc {
 }
 
 /** Async persist (IndexedDB + localStorage cache). Fire-and-forget. */
-function persist(doc: TimelineDoc) {
-  // localStorage som sync cache (instant genindlæsning næste gang)
-  try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch { /* ignorer */ }
-  // IndexedDB som primær lager (større dokumenter)
-  saveDoc(doc).catch(() => {});
-  // Also save by docId for multi-doc
+/** Menneskelaesbar besked for lagerfejl (review 04). */
+function storageMsg(e: unknown): string {
+  const name = (e as { name?: string } | undefined)?.name;
+  if (name === 'QuotaExceededError') return 'Lagringspladsen er opbrugt — aendringer er IKKE gemt.';
+  return 'Kunne ikke gemme aendringerne. De ligger stadig i hukommelsen.';
+}
+
+let saveSeq = 0; // kun den SIDSTE gemning bestemmmer status (seneste skriver vinder)
+async function persist(doc: TimelineDoc): Promise<void> {
+  const mySeq = ++saveSeq;
+  useApp.setState({ saveStatus: 'saving', saveError: null });
+  // localStorage er lyn-cache/fallback; en kvote-fejl her er ikke kritisk naar IDB virker.
+  try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch { /* cache kan fejle */ }
   const id = getDocId();
-  if (id !== DOC_KEY) saveDocById(id, doc, doc.name).catch(() => {});
+  try {
+    // IndexedDB er primært lager: skriv ALTID global slot (dækker implicit 'current').
+    await saveDoc(doc);
+    // ...og bind skrivningen til den rigtige profil-id, naar en findes.
+    if (id !== DOC_KEY) await saveDocById(id, doc, doc.name);
+    if (mySeq === saveSeq) useApp.setState({ saveStatus: 'saved', saveError: null });
+  } catch (e) {
+    // Reel lagerfejl: BEVAR data i minne (state er allerede opdateret), vis fejl tydeligt.
+    if (mySeq === saveSeq) useApp.setState({ saveStatus: 'error', saveError: storageMsg(e) });
+  }
 }
 
 /** Hydrate fra IndexedDB (kaldes én gang efter mount). */
@@ -103,7 +119,7 @@ export async function hydrateStore() {
   }
   // Load doc list
   const list = await listDocs();
-  if (rev === myRev) useApp.setState({ docList: list });
+  if (rev === myRev) useApp.setState({ docList: list, saveStatus: 'saved', saveError: null });
 }
 
 interface AppState {
@@ -112,6 +128,8 @@ interface AppState {
   selectedId: string | null; // inspektør-valgt post
   activeFilter: Filter | null; // M4 aktivt filter
   docList: DocMeta[]; // M9 multi-doc profiles
+  saveStatus: 'saved' | 'saving' | 'error'; // review 04: aehlbar gemme-status
+  saveError: string | null;
   select(id: string | null): void;
   addItem(partial?: Partial<Item>): string;
   updateItem(id: string, patch: Partial<Item>): void;
@@ -148,6 +166,7 @@ interface AppState {
   deleteDoc(id: string): Promise<void>;
   saveAsDoc(name: string): Promise<void>;
   refreshDocList(): Promise<void>;
+  retrySave(): void; // review 04: genproev gemning efter fejl
   // M10: Undo/Redo
   undoAction(): void;
   redoAction(): void;
@@ -409,6 +428,8 @@ export const useApp = create<AppState>((set, get) => ({
 
   // ---- M9: Multi-doc profiles ----
   docList: [],
+  saveStatus: 'saved',
+  saveError: null,
 
   newDoc: (name) => {
     // issue #5: det implicitte 'current'-dok gemmes ikke per profil (persist springer
@@ -482,6 +503,11 @@ export const useApp = create<AppState>((set, get) => ({
   refreshDocList: async () => {
     const list = await listDocs();
     set({ docList: list });
+  },
+
+  retrySave: () => {
+    // Gemmer den aktuelle state igen (data er allerede i hukommelsen, saa intet gaar tabt).
+    persist(get().doc);
   },
 
   // ---- M10: Undo/Redo ----
