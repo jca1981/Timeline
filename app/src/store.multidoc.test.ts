@@ -149,6 +149,93 @@ describe('multi-doc (issue #5)', () => {
   });
 });
 
+// **** Overdragelse-review: 01 dok-isoleret historik + 02 hydrate-race ****
+describe('overdragelse 01/02: dok-isoleret undo + hydrate-vagt', () => {
+  let useApp: Awaited<ReturnType<typeof freshStore>>;
+  beforeEach(async () => {
+    useApp = await freshStore();
+  });
+
+  const labels = (d: { items: { label: string }[] }) => d.items.map((i) => i.label);
+
+  it('#01 Fortryd efter sletning af AKTIVT dok overskriver IKKE det nye aktive', async () => {
+    const st = () => useApp.getState();
+    st().importDoc({ ...st().doc, name: 'A', items: [{ ...st().doc.items[0]!, id: 'a1', label: 'Forskning i A' }] });
+    await flush();
+    st().newDoc('B'); // A materialiseres under egen profil-id
+    await flush();
+    st().addItem({ label: 'Kun i B' });
+    st().addItem({ label: 'Anden B-post' });
+    await flush();
+    const bId = localStorage.getItem(LS_DOCID)!;
+    await st().deleteDoc(bId); // slet det AKTIVE B
+    await flush();
+    // nu er A aktivt igen
+    expect(labels(st().doc)).toContain('Forskning i A');
+    const aId = localStorage.getItem(LS_DOCID)!;
+    st().undoAction(); // maatte VAR en no-op: historikken blev ryddet ved identitetsskift
+    await flush();
+    expect(labels(st().doc)).toContain('Forskning i A');
+    expect(labels(st().doc)).not.toContain('Kun i B');
+    const aDoc = await (await import('./core/persist')).loadDocById<{ items: { label: string }[] }>(aId);
+    expect(labels(aDoc!)).toContain('Forskning i A');
+    expect(labels(aDoc!)).not.toContain('Kun i B'); // heller ikke i IndexedDB
+  });
+
+  it('#01 Nyt dokument + Fortryd blander ikke dokumentidentiteter', async () => {
+    const st = () => useApp.getState();
+    st().importDoc({ ...st().doc, name: 'A', items: [{ ...st().doc.items[0]!, id: 'a1', label: 'A-post' }] });
+    await flush();
+    st().newDoc('B');
+    await flush();
+    const bId = localStorage.getItem(LS_DOCID)!;
+    st().undoAction();
+    await flush();
+    expect(st().doc.name).toBe('B');
+    expect(st().doc.items.length).toBe(0);
+    const bDoc = await (await import('./core/persist')).loadDocById<{ items: { label: string }[] }>(bId);
+    expect(labels(bDoc!)).not.toContain('A-post');
+  });
+
+  it('#01 Fejlslaaet dokumentskift rydder IKKE historikken', async () => {
+    const st = () => useApp.getState();
+    st().newDoc('X');
+    await flush();
+    st().addItem({ label: 'forste' });
+    st().addItem({ label: 'anden' });
+    await flush();
+    await st().switchDoc('ikke-eksisterende-id'); // returnerer uden at roere historik
+    await flush();
+    st().undoAction(); // undo skal VIRKE — historikken blev ikke slettet ved fejl
+    expect(labels(st().doc)).toContain('forste');
+  });
+
+  it('#02 Redigering under forsinket hydrate bliver bevaret', async () => {
+    const st = () => useApp.getState();
+    st().importDoc({ ...st().doc, name: 'Gemt', items: [] }); // tomt gemt dokument
+    await flush();
+    const mod = await import('./store');
+    const p = mod.hydrateStore(); // start laesning uden at afvente den
+    st().addItem({ label: 'Under hydrate' }); // commit oeger rev -> hydrate skal abortere
+    await p; // laesningen afslutter (forgrener sig ikke i state)
+    await flush();
+    expect(labels(st().doc)).toContain('Under hydrate');
+  });
+
+  it('#01/#02 Undo/Redo virker stadig for redigeringer i samme dok', async () => {
+    const st = () => useApp.getState();
+    st().newDoc('T');
+    await flush();
+    const id = st().addItem({ label: 'X' });
+    await flush();
+    expect(st().doc.items.some((i) => i.id === id)).toBe(true);
+    st().undoAction();
+    expect(st().doc.items.some((i) => i.id === id)).toBe(false);
+    st().redoAction();
+    expect(st().doc.items.some((i) => i.id === id)).toBe(true);
+  });
+});
+
 function emptyish() {
   return { name: '', itemTypes: [], relationTypes: [], items: [], relations: [], dependencies: [], savedFilters: {}, sources: [] } as any;
 }

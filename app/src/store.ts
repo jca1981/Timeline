@@ -281,6 +281,7 @@ export const useApp = create<AppState>((set, get) => ({
       sources,
     };
     persist(merged);
+    rev++; // issue 02: fletning er en aendring — maa ikke overskrives af aeldre hydrate
     set({ doc: merged });
   },
 
@@ -417,7 +418,10 @@ export const useApp = create<AppState>((set, get) => ({
     const id = newId();
     setDocId(id);
     const doc = normalizeDoc(emptyDoc(name || 'Nyt tidslinje'));
-    pushSnapshot(get().doc);
+    // issue 01: nyt dok skal have REN historik — pushSnapshot af det gamle dok lagde
+    // et ANDET dokuments indhold i dette dokuments undo-stak.
+    clearHistory();
+    lastAction = '';
     persist(doc);
     rev++;
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
@@ -427,12 +431,16 @@ export const useApp = create<AppState>((set, get) => ({
   switchDoc: async (id) => {
     // Gem aktuelle først — og materialisér 'current' så det ikke mistes (issue #5)
     ensureProfileId();
-    clearHistory();
+    const myRev = ++rev; // issue 02: invalidér aeldre/parallelle skift + hydrate
     // Load the target
     const doc = await loadDocById<TimelineDoc>(id);
-    if (!doc) return;
+    if (!doc) return; // fejl: ryd IKKE historik — brugerens nuværende dok er intakt
     normalizeDoc(doc);
+    if (rev !== myRev) return; // et senere valg har vundet (issue 02)
     setDocId(id);
+    // issue 01: ren historik pr. dok — KUN ved vellykket skift (ej foer await)
+    clearHistory();
+    lastAction = '';
     rev++;
     set({ doc, errors: {}, selectedId: null, activeFilter: null });
   },
@@ -444,19 +452,17 @@ export const useApp = create<AppState>((set, get) => ({
     if (getDocId() === id) {
       // issue #5: 'current'-nøglen må ikke blive stående med det sattedte indhold,
       // så genopstår det ved næste reload. Skift eksplicit til første tilbageværende.
-      if (list.length) {
-        const doc = normalizeDoc((await loadDocById<TimelineDoc>(list[0].id)) ?? emptyDoc());
-        setDocId(list[0].id);
-        persist(doc);
-        rev++;
-        set({ doc, errors: {}, selectedId: null, activeFilter: null });
-      } else {
-        const doc = emptyDoc();
-        setDocId(DOC_KEY);
-        persist(doc);
-        rev++;
-        set({ doc, errors: {}, selectedId: null, activeFilter: null });
-      }
+      // issue 01: vi skifter identitet -> REN historik, ellers kan undo gendanne det
+      // slettede dok under det nye docs id (både state og IndexedDB).
+      const next = list.length
+        ? normalizeDoc((await loadDocById<TimelineDoc>(list[0].id)) ?? emptyDoc())
+        : emptyDoc();
+      setDocId(list.length ? list[0].id : DOC_KEY);
+      persist(next);
+      rev++;
+      clearHistory();
+      lastAction = '';
+      set({ doc: next, errors: {}, selectedId: null, activeFilter: null });
     }
   },
 
@@ -466,6 +472,10 @@ export const useApp = create<AppState>((set, get) => ({
     await saveDocById(id, cur, name);
     setDocId(id);
     const list = await listDocs();
+    // issue 01: Gem som er et identitetsskift -> ren historik, saa undo ikke kan
+    // skrive pra-kopi state til det nye dok-id.
+    clearHistory();
+    lastAction = '';
     set({ doc: cur, docList: list });
   },
 
@@ -481,6 +491,7 @@ export const useApp = create<AppState>((set, get) => ({
     const cur = get().doc;
     const prev = histUndo(cur);
     if (!prev) return;
+    rev++; // issue 02: undo er en aendring — invalidér en evt. igangvaerende hydrate
     persist(prev);
     set({ doc: prev, errors: {}, selectedId: null });
   },
@@ -489,6 +500,7 @@ export const useApp = create<AppState>((set, get) => ({
     const cur = get().doc;
     const next = histRedo(cur);
     if (!next) return;
+    rev++; // issue 02: redo er en aendring — invalidér en evt. igangvaerende hydrate
     persist(next);
     set({ doc: next, errors: {}, selectedId: null });
   },
@@ -539,6 +551,7 @@ let lastAction = ''; // genvej: navne-change pr. tast trykker ellers 1 snapshot 
 function commit(next: TimelineDoc, extra?: Partial<AppState>, coalesce = false) {
   if (!(coalesce && lastAction === 'rename')) pushSnapshot(useApp.getState().doc);
   lastAction = coalesce ? 'rename' : '';
+  rev++; // issue 02: enhver indholds-aendring invalidierer aeldre asynkrone laesninger (hydrate)
   persist(next);
   useApp.setState({ doc: next, ...extra });
 }
