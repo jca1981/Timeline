@@ -64,9 +64,48 @@ export async function putImages(entries: Array<{ id: string; entry: ImageEntry }
   });
 }
 
+/** Hent mange billed-entryer ad gangen (kun de der findes). */
+export async function getImageEntries(ids: string[]): Promise<Array<{ id: string; entry: ImageEntry }>> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IMG_STORE, 'readonly');
+    const store = tx.objectStore(IMG_STORE);
+    const out: Array<{ id: string; entry: ImageEntry }> = [];
+    for (const id of ids) {
+      const req = store.get(id);
+      req.onsuccess = () => { if (req.result) out.push({ id, entry: req.result as ImageEntry }); };
+      req.onerror = () => reject(req.error);
+    }
+    tx.oncomplete = () => resolve(out);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Alle billed-id'er i butikken. */
+export async function listImageIds(): Promise<string[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IMG_STORE, 'readonly');
+    const req = tx.objectStore(IMG_STORE).getAllKeys();
+    req.onsuccess = () => resolve(req.result as string[]);
+    req.onerror = () => reject(req.error);
+  });
+}
+
 function arrayBufferToBase64(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);
   let binary = '';
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
+}
+
+export function abToB64(buf: ArrayBuffer): string {
+  return arrayBufferToBase64(buf);
+}
+
+export function b64ToAb(b64: string): ArrayBuffer {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
 }

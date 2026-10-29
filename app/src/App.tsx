@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { hydrateStore, sanitizeImport, useApp } from './store';
+import { buildBackup, parseBackup, restoreImages } from './core/backup';
 import { historyInfo } from './core/history';
 import { SpreadsheetView } from './ui/SpreadsheetView';
 import { TimelineView } from './ui/TimelineView';
@@ -85,10 +86,40 @@ export default function App() {
     URL.revokeObjectURL(url);
   }
 
-  // JSON import
+  // Sikker kopi (task 05): eksportér doc + alle billeder i én fil
+  async function exportBackup() {
+    try {
+      const bf = await buildBackup(useApp.getState().doc);
+      const blob = new Blob([JSON.stringify(bf, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${doc.name || 'timeline'}-sikker-kopi.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Sikker kopi fejlede: ' + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+
+  // JSON import (ogsaa sikker kopi med billeder)
   async function onJsonFile(file: File) {
     try {
-      const { doc, skipped } = sanitizeImport(JSON.parse(await file.text())); // valideret: ugylde poster springes fra (review 03)
+      const raw = JSON.parse(await file.text());
+      if (raw?.kind === 'timeline-backup') {
+        // Gendannelse af sikker kopi: doc + billeder, med verificeret antal (review 05)
+        const bf = parseBackup(raw);
+        const { doc: ndoc, skipped } = sanitizeImport(bf.doc);
+        const warn = skipped ? ` (${skipped} ugylde post(er) sprunget over)` : '';
+        const replace = window.confirm(`GendAN Sikker kopi "${ndoc.name || file.name}": ${ndoc.items.length} poster, ${bf.images.length} billeder.${warn}\n\nOK = Erstat alt\nCancel = Merge ind\n\nCtrl+Z fortryder bagefter.`);
+        if (replace) importDoc(ndoc); else mergeDoc(ndoc);
+        const r = await restoreImages(bf);
+        setView('ark');
+        const tail = r.missing.length ? ` Mangler: ${r.missing.length}` : '';
+        window.alert(`Billeder gendannet: ${r.restored}/${r.expected}.${tail}`);
+        return;
+      }
+      const { doc, skipped } = sanitizeImport(raw); // valideret: ugylde poster springes fra (review 03)
       const warn = skipped ? `\n${skipped} ugylde(e) post(er) blev sprunget over` : '';
       const replace = window.confirm(`Importer "${doc.name || file.name}" (${doc.items.length} poster)?${warn}\n\nOK = Erstat alt\nCancel = Merge ind (spring over dupliker)\n\nCtrl+Z fortryder bagefter.`);
         if (replace) { importDoc(doc); } else { mergeDoc(doc); }
@@ -174,12 +205,13 @@ export default function App() {
                   {importing ? 'Importer…' : 'Importer .aeon'}
                   <input ref={fileRef} type="file" accept=".aeon" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
                 </label>
-                <label className="menu-item" role="menuitem" title="Importér JSON-fil" onClick={() => setDataMenu(false)}>
-                  Importér JSON
+                <label className="menu-item" role="menuitem" title="Importér JSON-fil ELLER gendanst en sikker kopi (genkender automatisk billed-backup)" onClick={() => setDataMenu(false)}>
+                  Importér JSON / sikker kopi
                   <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
                 </label>
                 <span className="menu-sep" />
-                <button className="menu-item" role="menuitem" onClick={() => { exportJson(); setDataMenu(false); }} title="Eksportér som JSON">Eksportér JSON</button>
+                <button className="menu-item" role="menuitem" onClick={() => { exportJson(); setDataMenu(false); }} title="Eksportér som JSON (uden billeder)">Eksportér JSON</button>
+                <button className="menu-item" role="menuitem" onClick={() => { exportBackup(); setDataMenu(false); }} title="Fuld sikker kopi inkl. alle billeder - genoprettes via Import JSON">Sikker kopi (inkl. billeder)</button>
                 <button className="menu-item" role="menuitem" onClick={() => { downloadHtml(doc); setDataMenu(false); }} title="Eksportér statisk HTML-tidslinje">HTML</button>
                 <button className="menu-item" role="menuitem" onClick={() => { downloadSvg(doc); setDataMenu(false); }} title="Eksportér SVG-billede">SVG</button>
               </div>
