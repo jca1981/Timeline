@@ -59,6 +59,8 @@ nav { display: flex; gap: 6px; margin-left: auto; }
 .toolgroup { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--panel) 55%, transparent); }
 .toolgroup-label { color: var(--meta); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding-right: 2px; }
 .toolgroup-sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
+/* issue #18: inline levetid-editorer i Person-visningens celler */
+td.life .life-edit { display: flex; flex-direction: column; gap: 4px; } td.life .life-edit label { color: var(--meta); font-size: 12px; white-space: nowrap; }
 .tab.on { color: var(--fg); background: var(--active); }
 
 .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }

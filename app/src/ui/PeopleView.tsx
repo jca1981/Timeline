@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { useApp } from '../store';
 import { matchesFilter } from '../core/filters';
 import { lifespanText, peopleOf, peopleStats, sortPeople, type PeopleSort } from '../core/people';
+import { DateValueEditor } from './DateFields';
 import type { Item } from '../model/doc';
 
 const SORTS: Array<{ id: PeopleSort; label: string; title: string }> = [
@@ -38,6 +39,7 @@ export function PeopleView() {
   const doc = useApp((s) => s.doc);
   const activeFilter = useApp((s) => s.activeFilter);
   const select = useApp((s) => s.select);
+  const updateItem = useApp((s) => s.updateItem);
   const selectedId = useApp((s) => s.selectedId);
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<PeopleSort>('levetid');
@@ -114,7 +116,13 @@ export function PeopleView() {
                   >{r.item.label}</button>
                   <span className="dim"> {r.typeName}</span>
                 </td>
-                <td className="life">{lifespanText(r) || <span className="dim">ukendt</span>}</td>
+                <td className="life" title={lifespanText(r) || 'ukendt'}>
+                  {/* issue #18: vælg levetid direkte her (valgfri) - skrives til personens eget span */}
+                  <span className="life-edit">
+                    <label title="Fødselsdato (valgfri)">f.{' '}<DateValueEditor value={r.item.span.start} onChange={(v) => updateItem(r.item.id, { span: { ...r.item.span, start: v } })} /></label>
+                    <label title="Dødsdato (valgfri)">d.{' '}<DateValueEditor value={r.item.span.end} onChange={(v) => updateItem(r.item.id, { span: { ...r.item.span, end: v } })} /></label>
+                  </span>
+                </td>
                 <td><Kin list={r.parents} onPick={select} /></td>
                 <td><Kin list={r.children} onPick={select} /></td>
                 <td><Kin list={r.spouses} onPick={select} /></td>
