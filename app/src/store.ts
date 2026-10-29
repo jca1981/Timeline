@@ -96,9 +96,11 @@ export function sanitizeImport(raw: unknown): { doc: TimelineDoc; skipped: numbe
   const items: Item[] = [];
   let skipped = 0;
   for (const it of r.items) {
+    // Kun START er kravet - en span kan lovligt bruge duration/ongoing/uncertain i stedet for end.
+    // (Kravte vi end.y, blev alle aabne/varige poster forkastet som 'ugyldige'.)
     const ok = it && typeof it === 'object' && typeof it.id === 'string'
       && typeof it.label === 'string'
-      && typeof it.span?.start?.y === 'number' && typeof it.span?.end?.y === 'number';
+      && typeof it.span?.start?.y === 'number';
     if (ok) items.push(it); else skipped++;
   }
   return { doc: normalizeDoc({ ...r, items }), skipped };

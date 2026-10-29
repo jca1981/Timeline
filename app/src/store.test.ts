@@ -254,6 +254,18 @@ describe('fletning + valideret import + fortryd (review 03)', () => {
     expect(skipped).toBe(3);
   });
 
+  it('sanitizeImport beholder poster med aabent/relativt span (duration/ongoing, uden end)', () => {
+    const { doc, skipped } = sanitizeImport({
+      items: [
+        { id: 'dur', label: 'D', span: { start: { y: 10 }, duration: { y: 3 } } },
+        { id: 'ong', label: 'O', span: { start: { y: 20 }, ongoing: true } },
+        { id: 'unc', label: 'U', span: { start: { y: 5 }, uncertain: { latestStart: { y: 6 } } } },
+      ],
+    });
+    expect(skipped).toBe(0);
+    expect(doc.items.map((i) => i.id)).toEqual(['dur', 'ong', 'unc']);
+  });
+
   it('importDoc gemmer den normaliserede doc i state (ikke raadata med manglende felter)', () => {
     useApp.getState().importDoc({ items: [], savedFilters: {} } as unknown as TimelineDoc);
     const doc = useApp.getState().doc;
