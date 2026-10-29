@@ -201,14 +201,12 @@ export default function App() {
             <>
               <span className="menu-backdrop" onClick={() => setDataMenu(false)} />
               <div className="menu-body" role="menu">
-                <label className="menu-item importbtn" role="menuitem" title="Importer en .aeon-fil fra Aeon Timeline" onClick={() => setDataMenu(false)}>
+                <button className="menu-item" role="menuitem" title="Importer en .aeon-fil fra Aeon Timeline" onClick={() => { fileRef.current?.click(); setDataMenu(false); }}>
                   {importing ? 'Importer…' : 'Importer .aeon'}
-                  <input ref={fileRef} type="file" accept=".aeon" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-                </label>
-                <label className="menu-item" role="menuitem" title="Importér JSON-fil ELLER gendanst en sikker kopi (genkender automatisk billed-backup)" onClick={() => setDataMenu(false)}>
+                </button>
+                <button className="menu-item" role="menuitem" title="Importér JSON-fil ELLER gendanst en sikker kopi (genkender automatisk billed-backup)" onClick={() => { jsonRef.current?.click(); setDataMenu(false); }}>
                   Importér JSON / sikker kopi
-                  <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
-                </label>
+                </button>
                 <span className="menu-sep" />
                 <button className="menu-item" role="menuitem" onClick={() => { exportJson(); setDataMenu(false); }} title="Eksportér som JSON (uden billeder)">Eksportér JSON</button>
                 <button className="menu-item" role="menuitem" onClick={() => { exportBackup(); setDataMenu(false); }} title="Fuld sikker kopi inkl. alle billeder - genoprettes via Import JSON">Sikker kopi (inkl. billeder)</button>
@@ -217,6 +215,10 @@ export default function App() {
               </div>
             </>
           )}
+          {/* Fil-input ALDRIG inde i menu-blokken: ellers afmonteres de nar menuen lukkes,
+              og fil-valgets onChange fyrer ikke (import 'virker ikke'). */}
+          <input ref={fileRef} type="file" accept=".aeon" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+          <input ref={jsonRef} type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onJsonFile(e.target.files[0])} />
         </div>
         <button className="tab" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Skift tema">{theme === 'dark' ? 'Lys' : 'Mørk'} tilstand</button>
         <select className="tab" onChange={(e) => {
