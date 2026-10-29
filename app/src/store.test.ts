@@ -81,6 +81,44 @@ describe('source-crud (issue #1)', () => {
   });
 });
 
+describe('issue #4: reorder + dokumentnavn', () => {
+  let useApp: Awaited<ReturnType<typeof freshStore>>;
+  beforeEach(async () => {
+    useApp = await freshStore();
+  });
+
+  it('reorderItems gemmer rækkefoelgen i state og lager, og kan fortrydes', () => {
+    const st = () => useApp.getState();
+    const a = st().addItem({ label: 'A' });
+    const b = st().addItem({ label: 'B' });
+    st().reorderItems(b, a);
+    expect(st().doc.items.map((i) => i.label)).toEqual(['B', 'A']);
+    expect(JSON.parse(localStorage.getItem(LS_KEY)!).items.map((i: { label: string }) => i.label)).toEqual(['B', 'A']);
+    st().undoAction();
+    expect(st().doc.items.map((i) => i.label)).toEqual(['A', 'B']);
+  });
+
+  it("reorderItems med ukendte id'er gor ingen ting", () => {
+    const a = useApp.getState().addItem({ label: 'A' });
+    useApp.getState().reorderItems(a, 'fx-eksisterer-ikke');
+    expect(useApp.getState().doc.items.length).toBe(1);
+  });
+
+  it('renameDoc gemmer navn i state og lager (overlever reload)', () => {
+    useApp.getState().renameDoc('Mit vaerk');
+    expect(useApp.getState().doc.name).toBe('Mit vaerk');
+    expect(JSON.parse(localStorage.getItem(LS_KEY)!).name).toBe('Mit vaerk');
+  });
+
+  it('flere rename-klik kollapser til én undo', () => {
+    useApp.getState().renameDoc('M');
+    useApp.getState().renameDoc('Mi');
+    useApp.getState().renameDoc('Min bog');
+    useApp.getState().undoAction();
+    expect(useApp.getState().doc.name).not.toBe('Min bog');
+  });
+});
+
 describe('commit()-invariant (issue #1)', () => {
   let useApp: Awaited<ReturnType<typeof freshStore>>;
   beforeEach(async () => {

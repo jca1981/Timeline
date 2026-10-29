@@ -119,7 +119,7 @@ export default function App() {
         <input
           id="doc"
           value={doc.name}
-          onChange={(e) => useApp.setState((s) => ({ doc: { ...s.doc, name: e.target.value } }))}
+          onChange={(e) => useApp.getState().renameDoc(e.target.value)}
         />
         <DocumentBar />
         <button className="tab undo-btn" onClick={undoAction} title={`Fortryd (Ctrl+Z) [${historyInfo().undoCount}]`}>↩</button>

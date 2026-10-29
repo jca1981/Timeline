@@ -100,6 +100,9 @@ interface AppState {
   setItemColor(id: string, color: string): void;
   removeItem(id: string): void;
   duplicateItem(id: string): void;
+  // issue #4: drag-reorder og dokumentnavn skal persistres og kunne fortrydes
+  reorderItems(fromId: string, toId: string): void;
+  renameDoc(name: string): void;
   clearAll(): void;
   importDoc(doc: TimelineDoc): void;
   mergeDoc(incoming: TimelineDoc): void;
@@ -286,6 +289,24 @@ export const useApp = create<AppState>((set, get) => ({
     const existing = (get().doc.relations ?? []).find((r) => r.typeId === typeId && r.fromId === fromId && r.toId === toId);
     if (existing) get().removeRelation(existing.id);
     else get().addRelation(fromId, toId, typeId);
+  },
+
+  // ---- issue #4 ----
+  reorderItems: (fromId, toId) => {
+    const doc = get().doc;
+    const srcIdx = doc.items.findIndex((it) => it.id === fromId);
+    const tgtIdx = doc.items.findIndex((it) => it.id === toId);
+    if (srcIdx < 0 || tgtIdx < 0 || fromId === toId) return;
+    const items = [...doc.items];
+    const [moved] = items.splice(srcIdx, 1);
+    items.splice(tgtIdx, 0, moved);
+    commit({ ...doc, items });
+  },
+
+  renameDoc: (name) => {
+    const doc = get().doc;
+    if (doc.name === name) return;
+    commit({ ...doc, name }, undefined, true);
   },
 
   setVerseRefs: (id, refs) => {
@@ -487,8 +508,11 @@ export const useApp = create<AppState>((set, get) => ({
 
 /** Atomar mutations-vej (issue #1): snapshot + persist + set i én pakke,
  * så en action ikke kan "glemme" at opdatere UI'et eller gøre sig fortrydelig. */
-function commit(next: TimelineDoc, extra?: Partial<AppState>) {
-  pushSnapshot(useApp.getState().doc);
+let lastAction = ''; // genvej: navne-change pr. tast trykker ellers 1 snapshot pr. bogstav;
+// to naboundenavne kollider i én undo. Nulstilles af commit() i alle andre actions.
+function commit(next: TimelineDoc, extra?: Partial<AppState>, coalesce = false) {
+  if (!(coalesce && lastAction === 'rename')) pushSnapshot(useApp.getState().doc);
+  lastAction = coalesce ? 'rename' : '';
   persist(next);
   useApp.setState({ doc: next, ...extra });
 }

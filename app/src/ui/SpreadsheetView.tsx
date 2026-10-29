@@ -59,17 +59,7 @@ export function SpreadsheetView() {
   }
   function onDrop(e: React.DragEvent, targetId: string) {
     e.preventDefault();
-    const srcId = dragId.current;
-    if (!srcId || srcId === targetId) return;
-    useApp.setState((state) => {
-      const items = [...state.doc.items];
-      const srcIdx = items.findIndex((it) => it.id === srcId);
-      const tgtIdx = items.findIndex((it) => it.id === targetId);
-      if (srcIdx < 0 || tgtIdx < 0) return state;
-      const [moved] = items.splice(srcIdx, 1);
-      items.splice(tgtIdx, 0, moved);
-      return { doc: { ...state.doc, items } };
-    });
+    useApp.getState().reorderItems(dragId.current ?? '', targetId);
     dragId.current = null;
   }
 
