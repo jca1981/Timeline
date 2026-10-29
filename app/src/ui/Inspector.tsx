@@ -8,6 +8,7 @@ import { generations, linksOf, relationTypes } from '../core/relations';
 import { DEP_KIND_LABELS, DEP_KIND_SHORT, dependenciesOf, isDependencyViolated } from '../core/dependencies';
 import { citeLabel, reliabilityLabel, reliabilityStars, safeUrl, sourcesOf } from '../core/sources';
 import { ItemImage } from './ItemImage';
+import { DateValueEditor } from './DateFields';
 import { putImage } from '../core/images';
 import { BOOKS } from '../model/bibleBooks';
 import type { DepKind, VerseRef } from '../model/doc';
@@ -16,7 +17,7 @@ export function Inspector() {
   const doc = useApp((s) => s.doc);
   const id = useApp((s) => s.selectedId);
   const select = useApp((s) => s.select);
-  const { updateItem, setVerseRefs, addRelation, removeRelation, addDependency, removeDependency, addSource, toggleSource, setSourceIds } = useApp();
+  const { updateItem, setVerseRefs, addRelation, removeRelation, addDependency, removeDependency, addSource, toggleSource, setSourceIds, addItem, removeItem } = useApp();
   const item = doc.items.find((it) => it.id === id);
   if (!item) return null;
 
@@ -26,6 +27,12 @@ export function Inspector() {
   const deps = dependenciesOf(doc, item.id);
   const srcs = sourcesOf(doc, item);
   const labelOf = (itemId: string) => doc.items.find((it) => it.id === itemId)?.label ?? '(slettet)';
+  const facts = doc.items.filter((it) => it.parentId === item.id);
+  const isPerson = /person|rige|folk|nation/i.test(type?.name ?? '');
+  // Nyt faktum = underpost på denne post; people.ts udleder fødsel/død af etiketter
+  // der matcher 'fødsel/født' og 'død', så hurtig-knapperne forudfylder dem.
+  const eventId = doc.itemTypes.find((t) => /begiven|event/i.test(t.name))?.id ?? item.typeId;
+  const addFact = (label: string) => addItem({ parentId: item.id, typeId: eventId, label, span: {} });
 
   return (
     <aside className="inspector">
@@ -49,6 +56,26 @@ export function Inspector() {
         value={item.notes ?? ''}
         onChange={(e) => updateItem(item.id, { notes: e.target.value || undefined })}
       />
+
+      <section>
+        <h4>Fakta {facts.length > 0 && <span className="dim">({facts.length})</span>}</h4>
+        {facts.length === 0 && <p className="dim">Ingen fakta endnu. Tilføj fødsel/død for at vise hvornår personen levede.</p>}
+        {facts.map((f) => (
+          <div className="fact" key={f.id} style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 4 }}>
+            <a onClick={() => select(f.id)} style={{ flex: '0 0 auto' }}>{f.label}</a>
+            <DateValueEditor
+              value={f.span?.start}
+              onChange={(v) => updateItem(f.id, { span: { ...f.span, start: v } })}
+            />
+            <button className="danger" title="Fjern faktum" onClick={() => removeItem(f.id)}>x</button>
+          </div>
+        ))}
+        <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+          {isPerson && <button onClick={() => addFact('Fødsel')}>+ Fødsel</button>}
+          {isPerson && <button onClick={() => addFact('Død')}>+ Død</button>}
+          <button onClick={() => addFact('Nyt faktum')}>+ Faktum</button>
+        </div>
+      </section>
 
       <section>
         <h4>Tags</h4>
