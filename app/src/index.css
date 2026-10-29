@@ -80,6 +80,10 @@ table.sheet { width: 100%; border-collapse: collapse; font-size: 13px; }
 .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
 input, select { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; }
 input:focus, select:focus { outline: none; border-color: var(--accent); }
+/* issue #14 (a11y): synlig tastatur-fokus paa knapper/link - findes slet i forvejen */
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible, .tab:focus-visible, label.importbtn:focus-within {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
 input.label { width: 100%; min-width: 140px; }
 input[type='number'] { width: 58px; }
 input[type='checkbox'] { accent-color: var(--accent); }
