@@ -29,8 +29,8 @@ export function Inspector() {
   const labelOf = (itemId: string) => doc.items.find((it) => it.id === itemId)?.label ?? '(slettet)';
   const facts = doc.items.filter((it) => it.parentId === item.id);
   const isPerson = /person|rige|folk|nation/i.test(type?.name ?? '');
-  // Nyt faktum = underpost på denne post; people.ts udleder fødsel/død af etiketter
-  // der matcher 'fødsel/født' og 'død', så hurtig-knapperne forudfylder dem.
+  // Underpost = genuinely underliggende begivenelse paa denne post (ikke foedsel/doed,
+  // som er felter paa personen selv). people.ts udleder evt. levetid af etiketter.
   const eventId = doc.itemTypes.find((t) => /begiven|event/i.test(t.name))?.id ?? item.typeId;
   const addFact = (label: string) => addItem({ parentId: item.id, typeId: eventId, label, span: {} });
 
@@ -57,9 +57,19 @@ export function Inspector() {
         onChange={(e) => updateItem(item.id, { notes: e.target.value || undefined })}
       />
 
+      {isPerson && (
+        <section>
+          <h4>Levetid</h4>
+          <div className="life" style={{ display: 'grid', gap: 4 }}>
+            <label>Fødsel{' '}<DateValueEditor value={span.start} onChange={(v) => updateItem(item.id, { span: { ...span, start: v } })} /></label>
+            <label>Død{' '}<DateValueEditor value={span.end} onChange={(v) => updateItem(item.id, { span: { ...span, end: v } })} /></label>
+          </div>
+        </section>
+      )}
+
       <section>
         <h4>Fakta {facts.length > 0 && <span className="dim">({facts.length})</span>}</h4>
-        {facts.length === 0 && <p className="dim">Ingen fakta endnu. Tilføj fødsel/død for at vise hvornår personen levede.</p>}
+        {facts.length === 0 && <p className="dim">Ingen underposter (underliggende begivenelser).</p>}
         {facts.map((f) => (
           <div className="fact" key={f.id} style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 4 }}>
             <a onClick={() => select(f.id)} style={{ flex: '0 0 auto' }}>{f.label}</a>
@@ -71,9 +81,7 @@ export function Inspector() {
           </div>
         ))}
         <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-          {isPerson && <button onClick={() => addFact('Fødsel')}>+ Fødsel</button>}
-          {isPerson && <button onClick={() => addFact('Død')}>+ Død</button>}
-          <button onClick={() => addFact('Nyt faktum')}>+ Faktum</button>
+          <button onClick={() => addFact('Nyt faktum')}>+ Underpost</button>
         </div>
       </section>
 
