@@ -171,7 +171,9 @@ export function TimelineView() {
           duplicateItem(selectedId);
         } else if (e.key === 'c' && selectedId) {
           e.preventDefault();
-          const ids = multiSelected.size > 0 ? [...multiSelected] : [selectedId];
+          // multiSelected laeses fra butikken (ikke closure) — ellers kopieres et foraeldet selection-saet
+          const ms = useApp.getState().multiSelected;
+          const ids = ms.size > 0 ? [...ms] : [selectedId];
           useApp.getState().copyItems(ids);
         } else if (e.key === 'v') {
           e.preventDefault();
@@ -441,7 +443,7 @@ export function TimelineView() {
     const dless = applyFilter(doc.items, activeFilter).filter((it) => !hiddenByCollapse.has(it.id) && !spanBounds(it.span));
 
     return { rows: positioned, clusters: clusterList, laneGroups: laneInfo, eraBands: eras, datelessItems: dless };
-  }, [doc.items, doc.itemTypes, activeFilter, hiddenByCollapse, vp.px, laneMode, sortMode]);
+  }, [doc.items, doc.itemTypes, childrenMap, activeFilter, hiddenByCollapse, vp.px, laneMode, sortMode]);
 
   const visible = rows.filter((r) => x(r.bd.b) > -200 && x(r.bd.a) < width + 200);
   const hidden = rows.length - visible.length;

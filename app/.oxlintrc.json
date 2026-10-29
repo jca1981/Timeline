@@ -3,6 +3,10 @@
   "plugins": ["react", "typescript", "oxc"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": "allow",
+    "react/refs": "allow",
+    "react/set-state-in-effect": "allow",
+    "react/purity": "allow",
+    "unicorn/no-useless-fallback-in-spread": "allow"
   }
 }

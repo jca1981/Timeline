@@ -89,5 +89,3 @@ describe('readableOn (farve pa baggrund, fx etiket uden for bjelken)', () => {
     expect(contrastRatio(out, PANEL_BG)).toBeGreaterThanOrEqual(4.5);
   });
 });
-
-export {};

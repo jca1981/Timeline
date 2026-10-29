@@ -53,7 +53,7 @@ const RAW = {
 };
 
 function wrapAeon(json: string): ArrayBuffer {
-  const head = new Uint8Array([...[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], ...Array(500).fill(0x42)]);
+  const head = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...Array(500).fill(0x42)]);
   const body = new TextEncoder().encode(json);
   const foot = new Uint8Array(64); // zero-padding + footer
   const out = new Uint8Array(head.length + body.length + foot.length);

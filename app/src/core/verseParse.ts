@@ -11,7 +11,7 @@ export function parseVerseRefs(input: string): VerseRef[] {
   // Split on comma to handle multiple refs
   const parts = input.split(/,\s*/);
   for (const part of parts) {
-    const m = part.trim().match(/^(\d?\s?[A-Z\w\æøåÆØÅ.]+)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?$/);
+    const m = part.trim().match(/^(\d?\s?[A-Z\wæøåÆØÅ.]+)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?$/);
     if (m) {
       const ref: VerseRef = { bookSlug: m[1].replace(/\s+/g, ' '), ch: Number(m[2]) };
       if (m[3]) ref.vs = Number(m[3]);

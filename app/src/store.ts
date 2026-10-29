@@ -444,12 +444,12 @@ export const useApp = create<AppState>((set, get) => ({
 
   saveFilter: (name, f) => {
     const doc = get().doc;
-    commit({ ...doc, savedFilters: { ...(doc.savedFilters ?? {}), [name]: f } });
+    commit({ ...doc, savedFilters: { ...doc.savedFilters, [name]: f } });
   },
 
   removeSavedFilter: (name) => {
     const doc = get().doc;
-    const sf = { ...(doc.savedFilters ?? {}) };
+    const sf = { ...doc.savedFilters };
     delete sf[name];
     commit({ ...doc, savedFilters: sf });
   },
